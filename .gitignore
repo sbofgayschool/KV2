@@ -1,0 +1,22 @@
+# Mac
+.DS_Store
+
+# Swap
+*.swp
+*.bak
+
+# Pycharm
+.idea
+
+# Python
+*.py[cod]
+__pycache__
+
+# Virtual Env
+venv
+
+# Log
+*.log
+
+# Socket
+*.sock
