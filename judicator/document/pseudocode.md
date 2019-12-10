@@ -46,9 +46,7 @@ Register:
         this.mongodb.intialize_rs
     ELSE:
         remote.mongodb = this.etcd.mongodb/primary
-        IF this.mongodb IN remote.mongodb.member_list:
-            BREAK
-        ELSE:
+        IF NOT this.mongodb IN remote.mongodb.member_list:
             IF remote.mongodb.vote_member < 7:
                 remote.mongodb.add(this.mongodb, vote, priority)
             ELSE:

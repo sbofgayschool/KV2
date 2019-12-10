@@ -5,7 +5,9 @@
         {
             "times": 3,
             "interval": 5
-        }
+        },
+        "maintain_file": "data/etcd.maintain",
+        "pid_file": "data/etcd.pid"
         /*
         "log_daemon":
         {

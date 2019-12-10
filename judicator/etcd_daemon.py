@@ -6,8 +6,8 @@ import subprocess
 import threading
 from jsoncomment import JsonComment
 
-from utility.function import get_logger, check_empty_dir, try_with_times
-from utility.etcd import etcd_log_output, etcd_generate_run_command, etcd_get_self_status, etcd_add_and_get_members
+from utility.function import get_logger, log_output, check_empty_dir, try_with_times
+from utility.etcd import etcd_generate_run_command, generate_local_etcd_proxy, EtcdProxy
 from utility.define import RETURN_CODE
 
 json = JsonComment()
@@ -19,8 +19,7 @@ def check():
         retry_interval,
         daemon_logger,
         "check etcd status",
-        etcd_get_self_status,
-        "http://127.0.0.1:" + config["etcd"]["listen"]["client_port"]
+        local_etcd.get_self_status
     )[0]:
         return RETURN_CODE["OK"]
     etcd_proc.kill()
@@ -30,17 +29,18 @@ def check():
 if __name__ == "__main__":
     with open("config/etcd.json", "r") as f:
         config = json.load(f)
+        local_etcd = generate_local_etcd_proxy(config["etcd"])
     retry_times = config["daemon"]["retry"]["times"]
     retry_interval = config["daemon"]["retry"]["interval"]
 
     if "log_daemon" in config["daemon"]:
         daemon_logger = get_logger(
-            "daemon",
+            "etcd_daemon",
             config["daemon"]["log_daemon"]["info"],
             config["daemon"]["log_daemon"]["error"]
         )
     else:
-        daemon_logger = get_logger("daemon", None, None)
+        daemon_logger = get_logger("etcd_daemon", None, None)
 
     if "log_etcd" in config["daemon"]:
         etcd_logger = get_logger(
@@ -57,13 +57,13 @@ if __name__ == "__main__":
         daemon_logger.info("Found existing data directory. Skipping cluster parameters.")
 
     if "cluster" in config["etcd"] and config["etcd"]["cluster"]["type"] == "join":
+        remote_etcd = EtcdProxy(config["etcd"]["cluster"]["client"])
         success, res = try_with_times(
             retry_times,
             retry_interval,
             daemon_logger,
             "add member to etcd cluster status",
-            etcd_add_and_get_members,
-            config["etcd"]["cluster"]["client"],
+            remote_etcd.add_and_get_members,
             "http://" + config["etcd"]["advertise"]["address"] + ":" + config["etcd"]["advertise"]["peer_port"]
         )
         if not success:
@@ -79,16 +79,19 @@ if __name__ == "__main__":
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT
     )
+    with open(config["daemon"]["pid_file"], "w") as f:
+        f.write(str(etcd_proc.pid))
+        f.flush()
 
     check_thread = threading.Thread(target=check)
     check_thread.setDaemon(True)
     check_thread.start()
 
     try:
-        etcd_log_output(etcd_logger, etcd_proc.stdout)
+        log_output(etcd_logger, etcd_proc.stdout, 27)
         daemon_logger.info("Received EOF from etcd.")
     except:
-        daemon_logger.error("Received signal, killing etcd process.", exc_info=True)
+        daemon_logger.error("Accidentally terminated. Killing etcd process.", exc_info=True)
         etcd_proc.kill()
         etcd_proc.wait()
     daemon_logger.info("Exiting.")

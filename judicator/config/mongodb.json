@@ -5,7 +5,14 @@
         {
             "times": 3,
             "interval": 5
-        }
+        },
+        "maintain_file": "data/mongodb.maintain",
+        "pid_file": "data/mongodb.pid",
+        "etcd_path":
+        {
+            "primary": "/mongodb/primary"
+        },
+        "register_interval": 10
         /*
         "log_daemon":
         {

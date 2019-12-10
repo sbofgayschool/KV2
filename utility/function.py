@@ -39,6 +39,22 @@ def get_logger(name, info_file, error_file, raw=False):
 
     return logger
 
+def log_output(logger, output, bit):
+    while True:
+        message = output.readline()
+        if not message:
+            break
+        try:
+            message = message[: -1].decode(encoding="utf-8")
+            error = message[bit] == 'E' or  message[bit] == 'F'
+        except:
+            error = True
+        if not error:
+            logger.info(message)
+        else:
+            logger.error(message)
+    return
+
 def check_empty_dir(path):
     return len(os.listdir(path)) == 0
 
