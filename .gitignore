@@ -20,3 +20,9 @@ venv
 
 # Socket
 *.sock
+
+# Etcd data file
+data/etcd/*
+
+# Mongodb data file
+data/mongodb/*
