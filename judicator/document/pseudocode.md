@@ -7,7 +7,8 @@ ELSE:
         run this.etcd --initialize
     ELSE:
         remote.etcd.add(this.etcd)
-        run this.etcd --join
+        members = remote.etcd.member
+        run this.etcd --join members=members
 check_thread = Thread(Check)
 check_thread.set_daemon()
 check_thread.run()
@@ -44,6 +45,7 @@ Register:
     IF this.etcd.mongodb/primary == this.mongodb:
         this.mongodb.intialize_rs
     ELSE:
+        remote.mongodb = this.etcd.mongodb/primary
         IF this.mongodb IN remote.mongodb.member_list:
             BREAK
         ELSE:
