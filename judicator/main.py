@@ -4,4 +4,4 @@ __author__ = "chenty"
 
 
 if __name__ == "__main__":
-    pass
+    d

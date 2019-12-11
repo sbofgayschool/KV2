@@ -21,8 +21,11 @@ venv
 # Socket
 *.sock
 
-# Etcd data file
-data/etcd/*
+# Data directory
+*/data/*
 
-# Mongodb data file
-data/mongodb/*
+# Pid file
+*.pid
+
+# Maintainance indicator file
+*.maintain

@@ -7,14 +7,24 @@ import pymongo.errors
 
 
 def mongodb_generate_run_command(mongodb_config):
-    return
+    return [
+        mongodb_config["exe"],
+        "--replSet",
+        mongodb_config["replica_set"],
+        "--bind_ip",
+        mongodb_config["listen"]["address"],
+        "--port",
+        mongodb_config["listen"]["port"],
+        "--dbpath",
+        mongodb_config["data"]["dir"]
+    ]
 
 class MongoDBProxy:
-    def __init__(self, address, port, replica_name, log=None):
+    def __init__(self, address, port, replica_name, logger):
         self.address = address
         self.port = port
         self.replica_name = replica_name
-        self.log = log
+        self.logger = logger
         self.client = pymongo.MongoClient(address, port)
         return
 
@@ -56,5 +66,13 @@ class MongoDBProxy:
                 client.admin.command({'replSetReconfig': conf['config']})
         return
 
-def generate_local_mongodb_proxy(mongodb_config):
-    return MongoDBProxy("127.0.0.1", int(mongodb_config["listen"]["port"]), mongodb_config["replica_name"])
+    def check_primary(self):
+        return self.client.admin.command("isMaster")["isMaster"]
+
+def generate_local_mongodb_proxy(mongodb_config, logger):
+    return MongoDBProxy(
+        "127.0.0.1",
+        int(mongodb_config["listen"]["port"]),
+        mongodb_config["replica_name"],
+        logger
+    )

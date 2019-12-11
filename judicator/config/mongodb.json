@@ -12,7 +12,7 @@
         {
             "primary": "/mongodb/primary"
         },
-        "register_interval": 10
+        "register_interval": 5
         /*
         "log_daemon":
         {
@@ -41,6 +41,6 @@
             "address": "127.0.0.1",
             "peer_port": "3000"
         },
-        "replica_name": "rs"
+        "replica_set": "rs"
     }
 }

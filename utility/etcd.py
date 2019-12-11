@@ -50,9 +50,9 @@ def etcd_generate_run_command(etcd_config):
     return command
 
 class EtcdProxy:
-    def __init__(self, url, log=None):
+    def __init__(self, url, logger):
         self.url = url
-        self.log = log
+        self.logger = logger
         return
 
     def get_self_status(self):
@@ -105,5 +105,5 @@ class EtcdProxy:
             return dict([(x["key"], x["value"]) for x in res["node"]["nodes"] if "value" in x])
         return res["node"]["value"]
 
-def generate_local_etcd_proxy(etcd_config):
-    return EtcdProxy("http://127.0.0.1:" + etcd_config["listen"]["client_port"])
+def generate_local_etcd_proxy(etcd_config, logger):
+    return EtcdProxy("http://127.0.0.1:" + etcd_config["listen"]["client_port"], logger)

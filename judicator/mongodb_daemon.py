@@ -5,7 +5,6 @@ __author__ = "chenty"
 import subprocess
 import threading
 from jsoncomment import JsonComment
-import pymongo
 
 from utility.function import get_logger, log_output, try_with_times
 from utility.etcd import generate_local_etcd_proxy
@@ -31,27 +30,33 @@ def register():
         retry_times,
         retry_interval,
         daemon_logger,
-        "initialize or add this to mongodb replica set",
+        "initialize or add local mongodb to replica set",
         local_mongodb.initialize_replica_set,
         config["mongodb"]["advertise"]["address"] + ":" + config["mongodb"]["advertise"]["port"],
         local_etcd,
         config["daemon"]["etcd_path"]["primary"]
     )[0]:
         mongodb_proc.kill()
-        daemon_logger.error("Failed to initialize nor add this to mongodb replica set. Killing mongodb and exiting.")
+        daemon_logger.error("Failed to initialize nor add local mongodb to replica set. Killing mongodb and exiting.")
         return RETURN_CODE["ERROR"]
 
     while True:
-        IF this.mongodb.primary_member == this.mongodb:
-            this.etcd.mongodb / primary.set(this.mongodb)
-        sleep(duration)
+        time.sleep(time.sleep(config["daemon"]["register_interval"]))
+        try:
+            if local_mongodb.check_primary:
+                local_etcd.set(
+                    config["daemon"]["etcd_path"]["primary"],
+                    config["mongodb"]["advertise"]["address"] + ":" + config["mongodb"]["advertise"]["port"]
+                )
+                daemon_logger.info("Local mongodb is primary. Updated etcd.")
+            else:
+                daemon_logger.info("Local mongodb is secondary.")
+        except:
+            daemon_logger.error("Failed to check and update primary status.", exc_info=True)
 
 if __name__ == "__main__":
-    with open("config/etcd.json", "r") as f:
-        local_etcd = generate_local_etcd_proxy(json.load(f)["etcd"])
     with open("config/mongodb.json", "r") as f:
         config = json.load(f)
-        local_mongodb = generate_local_mongodb_proxy(config["mongodb"])
     retry_times = config["daemon"]["retry"]["times"]
     retry_interval = config["daemon"]["retry"]["interval"]
 
@@ -73,6 +78,10 @@ if __name__ == "__main__":
         )
     else:
         mongodb_logger = get_logger("mongodb", None, None, True)
+
+    with open("config/etcd.json", "r") as f:
+        local_etcd = generate_local_etcd_proxy(json.load(f)["etcd"], mongodb_logger)
+    local_mongodb = generate_local_mongodb_proxy(config["mongodb"], mongodb_logger)
 
     command = mongodb_generate_run_command(config["mongodb"])
     for c in command:

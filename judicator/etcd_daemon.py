@@ -29,7 +29,6 @@ def check():
 if __name__ == "__main__":
     with open("config/etcd.json", "r") as f:
         config = json.load(f)
-        local_etcd = generate_local_etcd_proxy(config["etcd"])
     retry_times = config["daemon"]["retry"]["times"]
     retry_interval = config["daemon"]["retry"]["interval"]
 
@@ -51,6 +50,8 @@ if __name__ == "__main__":
         )
     else:
         etcd_logger = get_logger("etcd", None, None, True)
+
+    local_etcd = generate_local_etcd_proxy(config["etcd"], daemon_logger)
 
     if not check_empty_dir(config["etcd"]["data_dir"]):
         del config["etcd"]["cluster"]
