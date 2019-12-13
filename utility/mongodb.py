@@ -16,7 +16,7 @@ def mongodb_generate_run_command(mongodb_config):
         "--port",
         mongodb_config["listen"]["port"],
         "--dbpath",
-        mongodb_config["data"]["dir"]
+        mongodb_config["data_dir"]
     ]
 
 class MongoDBProxy:
@@ -38,11 +38,14 @@ class MongoDBProxy:
             raise
 
     def initialize_replica_set(self, advertise_address, local_etcd, primary_key):
-        local_etcd.set(
-            primary_key,
-            advertise_address,
-            insert=True
-        )
+        try:
+            local_etcd.set(
+                primary_key,
+                advertise_address,
+                insert=True
+            )
+        except:
+            self.logger.warn("Failed to insert %s." % primary_key, exc_info=True)
         primary = local_etcd.get(primary_key)
         if primary == advertise_address:
             self.client.admin.command({
@@ -52,7 +55,7 @@ class MongoDBProxy:
                 }
             })
         else:
-            client = pymongo.MongoClient(primary_key.split(":")[0], int(primary_key.split(":")[1]))
+            client = pymongo.MongoClient(primary.split(":")[0], int(primary.split(":")[1]))
             conf = client.admin.command({"replSetGetConfig": 1})
             if not any([advertise_address == x["host"] for x in conf["config"]["members"]]):
                 votes = sum([x.get("votes", 0) for x in conf["config"]["members"]])
@@ -73,6 +76,6 @@ def generate_local_mongodb_proxy(mongodb_config, logger):
     return MongoDBProxy(
         "127.0.0.1",
         int(mongodb_config["listen"]["port"]),
-        mongodb_config["replica_name"],
+        mongodb_config["replica_set"],
         logger
     )

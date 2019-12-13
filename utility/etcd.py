@@ -57,46 +57,49 @@ class EtcdProxy:
 
     def get_self_status(self):
         resp = requests.get(urllib.parse.urljoin(self.url, "/v2/stats/self"))
-        if resp.status_code != 200:
+        if not resp:
             raise Exception("Get self status resulted in %d, not 200." % resp.status_code)
         return json.loads(resp.text)
 
     def add_and_get_members(self, peer_client):
-        ret_code = requests.post(self.url, json={"peerURLs":[peer_client]}).status_code
-        if ret_code != 200:
-            raise Exception("Add member resulted in %d, not 200." % ret_code)
+        resp = requests.post(self.url, json={"peerURLs":[peer_client]}).status_code
+        if not resp:
+            raise Exception("Add member resulted in %d, not 200." % resp.ret_code)
         resp = requests.get(urllib.parse.urljoin(self.url, "/v2/members"))
-        if resp.status_code != 200:
+        if not resp:
             raise Exception("Get member resulted in %d, not 200." % resp.status_code)
         return dict((x["name"], x["peerURLs"][0]) for x in json.loads(resp.text)["member"])
 
     def set(self, key, value, ttl=None, insert=False, prev_value=False):
-        url_postfix = urllib.parse.urljoin("/v2/keys", key)
-        args = {"value": value}
+        url_postfix = urllib.parse.urljoin("/v2/keys/", key)
+        data = {"value": value}
+        params = {}
         if ttl is not None:
-            args["ttl"] = "" if ttl == 0 else int(ttl)
+            data["ttl"] = "" if ttl == 0 else int(ttl)
         if insert:
-            args["prevExist"] = "true"
+            params["prevExist"] = "false"
         if prev_value:
-            args["prevValue"] = prev_value
-        resp = requests.put(urllib.parse.urljoin(self.url, url_postfix), params=args)
-        if resp.status_code != 200:
-            raise Exception("Set key-value: %s-%s resulted in %d, not 200." % (key, value, resp.status_code))
+            data["prevExist"] = "true"
+            data["prevValue"] = prev_value
+        self.logger.debug("Trying to visit " + urllib.parse.urljoin(self.url, url_postfix) + ".")
+        resp = requests.put(urllib.parse.urljoin(self.url, url_postfix), params=params, data=data)
+        if not resp:
+            raise Exception("Set key: %s, value: %s resulted in %d, not 200." % (key, value, resp.status_code))
         return json.loads(resp.text)
 
     def delete(self, key):
-        url_postfix = urllib.parse.urljoin("/v2/keys", key)
+        url_postfix = urllib.parse.urljoin("/v2/keys/", key)
         resp = requests.delete(urllib.parse.urljoin(self.url, url_postfix))
-        if resp.status_code != 200:
+        if not resp:
             raise Exception("Set key: %s resulted in %d, not 200." % (key, resp.status_code))
         return json.loads(resp.text)
 
     def get(self, key, simple=True, none_if_empty=True):
-        url_postfix = urllib.parse.urljoin("/v2/keys", key)
-        resp = requests.delete(urllib.parse.urljoin(self.url, url_postfix))
+        url_postfix = urllib.parse.urljoin("/v2/keys/", key)
+        resp = requests.get(urllib.parse.urljoin(self.url, url_postfix))
         if resp.status_code == 404 and none_if_empty:
             return None
-        elif resp.status_code != 200:
+        elif not resp:
             raise Exception("Get key: %s resulted in %d, not 200." % (key, resp.status_code))
         res = json.loads(resp.text)
         if not simple:

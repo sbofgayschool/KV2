@@ -70,9 +70,9 @@ start_rpc_server(Add, Cancel, Search, Get, Report)
 Lead():
     WHILE true:
         sleep(duration)
-        success = this.etcd.judicator/leader.set_if_empty(this.address, ttl=ttl)
+        success = this.etcd.judicator/leader.set_if_empty(this.name, ttl=ttl)
         IF success == false:
-            success = this.etcd.judicator/leader.set_if_equal(this.address, this.address, ttl=ttl)
+            success = this.etcd.judicator/leader.set_if_equal(prev_val==this.name, this.name, ttl=ttl)
         IF success == true:
             WHILE true:
                 success = this.mongodb.tasks.find_and_set(done==false, current_time>expire_time, executor=NULL, status=retrying)
@@ -84,10 +84,9 @@ Lead():
                     BREAK
 
 Register():
-    key = "rpc_" + self.address
     WHILE true:
         sleep(duration)
-        this.etcd.judicator/key.set(self.address, ttl=ttl)
+        this.etcd.judicator/service/this.name.set(this.address, ttl=ttl)
 
 Add(t):
     this.mongodb.tasks.add(t, executor=NULL, status=pending)
@@ -102,7 +101,7 @@ Get(t):
     RETURN this.mongodb.tasks.find(id==t)
 
 Report(e, tasks, vacant):
-    this.mongodb.executors.find_and_set(address==e, report_time=current_time)
+    this.mongodb.executors.find_and_set(this.name==e, report_time=current_time)
     FOR t IN tasks:
         IF t.done == true:
             executor = NULL

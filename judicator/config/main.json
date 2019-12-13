@@ -1,0 +1,39 @@
+{
+    "retry":
+    {
+        "times": 3,
+        "interval": 5
+    },
+    "maintain_file": "data/main.maintain",
+    "pid_file": "data/main.pid",
+    "name": "main1",
+    "listen":
+    {
+        "address": "0.0.0.0",
+        "port": "4000"
+    },
+    "advertise":
+    {
+        "address": "127.0.0.1",
+        "port": "4000"
+    },
+    "leader":
+    {
+        "etcd_path": "judicator/leader",
+        "interval": 20,
+        "ttl": 45
+    },
+    "register":
+    {
+        "etcd_path": "judicator/service",
+        "interval": 5,
+        "ttl": 12
+    }
+    /*
+    "log_daemon":
+    {
+        "info": "log/main/info.log",
+        "error": "log/main/error.log"
+    }
+    */
+}

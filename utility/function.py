@@ -59,15 +59,15 @@ def check_empty_dir(path):
     return len(os.listdir(path)) == 0
 
 def try_with_times(times, interval, logger, tag, func, *args, **kwargs):
-    logger.info("Trying to " + tag + " with %d chances." % times)
+    logger.info("Trying to %s with %d chances." % (tag, times))
     while times > 0:
         time.sleep(interval)
         try:
             res = func(*args, **kwargs)
-            logger.info(tag + " succeeded.")
+            logger.info("Operation %s succeeded." % tag)
             return True, res
         except:
             times -= 1
-            logger.warn("Failed to " + tag + ", %d more chances." % times, exc_info=True)
-    logger.error(tag + " failed.")
+            logger.warn("Failed to %s, %d more chances." % (tag, times), exc_info=True)
+    logger.error("Operation %s failed." % tag)
     return False, None

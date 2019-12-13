@@ -4,6 +4,7 @@ __author__ = "chenty"
 
 import subprocess
 import threading
+import time
 from jsoncomment import JsonComment
 
 from utility.function import get_logger, log_output, try_with_times
@@ -41,7 +42,7 @@ def register():
         return RETURN_CODE["ERROR"]
 
     while True:
-        time.sleep(time.sleep(config["daemon"]["register_interval"]))
+        time.sleep(config["daemon"]["register_interval"])
         try:
             if local_mongodb.check_primary:
                 local_etcd.set(
@@ -80,8 +81,8 @@ if __name__ == "__main__":
         mongodb_logger = get_logger("mongodb", None, None, True)
 
     with open("config/etcd.json", "r") as f:
-        local_etcd = generate_local_etcd_proxy(json.load(f)["etcd"], mongodb_logger)
-    local_mongodb = generate_local_mongodb_proxy(config["mongodb"], mongodb_logger)
+        local_etcd = generate_local_etcd_proxy(json.load(f)["etcd"], daemon_logger)
+    local_mongodb = generate_local_mongodb_proxy(config["mongodb"], daemon_logger)
 
     command = mongodb_generate_run_command(config["mongodb"])
     for c in command:

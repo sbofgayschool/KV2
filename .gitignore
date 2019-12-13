@@ -22,7 +22,9 @@ venv
 *.sock
 
 # Data directory
-*/data/*
+judicator/data/*
+executor/data/*
+gateway/data/*
 
 # Pid file
 *.pid
