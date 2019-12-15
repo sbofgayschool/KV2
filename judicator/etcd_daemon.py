@@ -14,6 +14,7 @@ json = JsonComment()
 
 
 def check():
+    daemon_logger.info("Check thread start to work.")
     if try_with_times(
         retry_times,
         retry_interval,
@@ -80,9 +81,6 @@ if __name__ == "__main__":
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT
     )
-    with open(config["daemon"]["pid_file"], "w") as f:
-        f.write(str(etcd_proc.pid))
-        f.flush()
 
     check_thread = threading.Thread(target=check)
     check_thread.setDaemon(True)

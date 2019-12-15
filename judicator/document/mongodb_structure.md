@@ -19,7 +19,7 @@
     "done": Boolean,
     "status": Int,
     "executor": String,
-    "report_time": String,
+    "report_time": Date,
     "result":
     {
         "compile": Binary,
@@ -33,6 +33,6 @@
 {
     "_id": ObjectId -> Auto generated id,
     "hostname": String -> Hostname of the executor,
-    "report_time": String -> Last report time
+    "report_time": Date -> Last report time
 }
 ```

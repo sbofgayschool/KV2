@@ -75,7 +75,7 @@ Lead():
             success = this.etcd.judicator/leader.set_if_equal(prev_val==this.name, this.name, ttl=ttl)
         IF success == true:
             WHILE true:
-                success = this.mongodb.tasks.find_and_set(done==false, current_time>expire_time, executor=NULL, status=retrying)
+                success = this.mongodb.tasks.find_and_set(done==false,executor != NULL, current_time>expire_time, executor=NULL, status=retrying)
                 if success == false:
                     BREAK
             WHILE true:
@@ -117,4 +117,26 @@ Report(e, tasks, vacant):
         add_list.append(t)
         vacant = vacant - 1
     RETURN delete_list, add_list
+```
+
+#### Boost
+```
+read_argments()
+modify_config_files()
+FOR service IN [etcd, mongodb, main]:
+    file = open(service.pid_file, "w")
+    file.write(-1)
+    file.close()
+WHILE true:
+    services = {etcd: NULL, mongodb: NULL, main: NULL}
+    FOR service IN [etcd, mongodb, main]:
+        file = open(service.pid_file, "r+")
+        IF file.get_lock(asycn=true):
+            IF services[service] == NULL OR services[service].poll() != NULL:
+                services[service] = run services[service]
+                file.truncate()
+                file.write(services[service].pid)
+            file.release_lock()
+        file.close()
+    sleep(duration)
 ```

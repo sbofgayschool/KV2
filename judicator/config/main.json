@@ -17,7 +17,7 @@
         "address": "127.0.0.1",
         "port": "4000"
     },
-    "leader":
+    "lead":
     {
         "etcd_path": "judicator/leader",
         "interval": 20,
@@ -28,6 +28,18 @@
         "etcd_path": "judicator/service",
         "interval": 5,
         "ttl": 12
+    },
+    "task":
+    {
+        "database": "judicator",
+        "collection": "task",
+        "expiration": 30
+    },
+    "executor":
+    {
+        "database": "judicator",
+        "collection": "executor",
+        "expiration": 40
     }
     /*
     "log_daemon":

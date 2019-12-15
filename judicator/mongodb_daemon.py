@@ -16,6 +16,7 @@ json = JsonComment()
 
 
 def register():
+    daemon_logger.info("Register thread start to work.")
     if not try_with_times(
         retry_times,
         retry_interval,
@@ -92,9 +93,6 @@ if __name__ == "__main__":
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT
     )
-    with open(config["daemon"]["pid_file"], "w") as f:
-        f.write(str(mongodb_proc.pid))
-        f.flush()
 
     register_thread = threading.Thread(target=register)
     register_thread.setDaemon(True)
