@@ -75,7 +75,7 @@ Lead():
             success = this.etcd.judicator/leader.set_if_equal(prev_val==this.name, this.name, ttl=ttl)
         IF success == true:
             WHILE true:
-                success = this.mongodb.tasks.find_and_set(done==false,executor != NULL, current_time>expire_time, executor=NULL, status=retrying)
+                success = this.mongodb.tasks.find_and_set(done==false,executor!=NULL, current_time>expire_time, executor=NULL, status=retrying)
                 if success == false:
                     BREAK
             WHILE true:
@@ -100,18 +100,19 @@ Search(conds):
 Get(t):
     RETURN this.mongodb.tasks.find(id==t)
 
-Report(e, tasks, vacant):
-    this.mongodb.executors.find_and_set(this.name==e, report_time=current_time)
-    FOR t IN tasks:
-        IF t.done == true:
-            executor = NULL
-        ELSE
-            executor = e
-        result = this.mongodb.tasks.find_and_set(id==t, executor=executor, report_time=current_time)
-        IF result == NULL OR result.executor != e:
-            delete_list.append(result)
+Report(e, complete, executing, vacant):
+    result = this.mongodb.executors.find_and_set(this.name==e, report_time=current_time)
+    IF result == NULL:
+        this.mongodb.executors.insert(e)
+    FOR t in complete:
+        this.mongodb.tasks.find_and_set(id==t.id, executor==e, executor=NULL, report_time=current_time)
+        delete_list.append(t)
+    FOR t IN executing:
+        result = this.mongodb.tasks.find_and_set(id==t.id, executor==e, report_time=current_time)
+        IF result == NULL:
+            delete_list.append(t)
     WHILE vacant:
-        t = this.mongodb.tasks.find_and_set(executor==NULL, done==false, executor=e)
+        t = this.mongodb.tasks.find_and_set(executor==NULL, done==false, executor=e, report_time=current_time)
         IF t == NULL:
             BREAK
         add_list.append(t)

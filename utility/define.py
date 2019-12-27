@@ -5,7 +5,7 @@ __author__ = "chenty"
 
 RETURN_CODE = {
     "OK": 0,
-    "ERROR": 1
+    "ERROR": -1
 }
 
 TASK_STATUS = {
@@ -15,5 +15,6 @@ TASK_STATUS = {
     "RUNNING": 3,
     "RUN_FAILED": 4,
     "SUCCESS": 5,
-    "RETRYING": 6
+    "RETRYING": 6,
+    "CANCEL": 7
 }

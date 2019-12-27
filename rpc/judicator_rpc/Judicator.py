@@ -30,10 +30,10 @@ class Iface(object):
         """
         pass
 
-    def cancel(self, task_id):
+    def cancel(self, id):
         """
         Parameters:
-         - task_id
+         - id
 
         """
         pass
@@ -50,19 +50,20 @@ class Iface(object):
         """
         pass
 
-    def get(self, task_id):
+    def get(self, id):
         """
         Parameters:
-         - task_id
+         - id
 
         """
         pass
 
-    def report(self, executor, tasks, vacant):
+    def report(self, executor, complete, executing, vacant):
         """
         Parameters:
          - executor
-         - tasks
+         - complete
+         - executing
          - vacant
 
         """
@@ -78,7 +79,7 @@ class Client(Iface):
 
     def ping(self):
         self.send_ping()
-        self.recv_ping()
+        return self.recv_ping()
 
     def send_ping(self):
         self._oprot.writeMessageBegin('ping', TMessageType.CALL, self._seqid)
@@ -98,7 +99,9 @@ class Client(Iface):
         result = ping_result()
         result.read(iprot)
         iprot.readMessageEnd()
-        return
+        if result.success is not None:
+            return result.success
+        raise TApplicationException(TApplicationException.MISSING_RESULT, "ping failed: unknown result")
 
     def add(self, task):
         """
@@ -132,19 +135,19 @@ class Client(Iface):
             return result.success
         raise TApplicationException(TApplicationException.MISSING_RESULT, "add failed: unknown result")
 
-    def cancel(self, task_id):
+    def cancel(self, id):
         """
         Parameters:
-         - task_id
+         - id
 
         """
-        self.send_cancel(task_id)
+        self.send_cancel(id)
         return self.recv_cancel()
 
-    def send_cancel(self, task_id):
+    def send_cancel(self, id):
         self._oprot.writeMessageBegin('cancel', TMessageType.CALL, self._seqid)
         args = cancel_args()
-        args.task_id = task_id
+        args.id = id
         args.write(self._oprot)
         self._oprot.writeMessageEnd()
         self._oprot.trans.flush()
@@ -204,19 +207,19 @@ class Client(Iface):
             return result.success
         raise TApplicationException(TApplicationException.MISSING_RESULT, "search failed: unknown result")
 
-    def get(self, task_id):
+    def get(self, id):
         """
         Parameters:
-         - task_id
+         - id
 
         """
-        self.send_get(task_id)
+        self.send_get(id)
         return self.recv_get()
 
-    def send_get(self, task_id):
+    def send_get(self, id):
         self._oprot.writeMessageBegin('get', TMessageType.CALL, self._seqid)
         args = get_args()
-        args.task_id = task_id
+        args.id = id
         args.write(self._oprot)
         self._oprot.writeMessageEnd()
         self._oprot.trans.flush()
@@ -236,22 +239,24 @@ class Client(Iface):
             return result.success
         raise TApplicationException(TApplicationException.MISSING_RESULT, "get failed: unknown result")
 
-    def report(self, executor, tasks, vacant):
+    def report(self, executor, complete, executing, vacant):
         """
         Parameters:
          - executor
-         - tasks
+         - complete
+         - executing
          - vacant
 
         """
-        self.send_report(executor, tasks, vacant)
+        self.send_report(executor, complete, executing, vacant)
         return self.recv_report()
 
-    def send_report(self, executor, tasks, vacant):
+    def send_report(self, executor, complete, executing, vacant):
         self._oprot.writeMessageBegin('report', TMessageType.CALL, self._seqid)
         args = report_args()
         args.executor = executor
-        args.tasks = tasks
+        args.complete = complete
+        args.executing = executing
         args.vacant = vacant
         args.write(self._oprot)
         self._oprot.writeMessageEnd()
@@ -311,7 +316,7 @@ class Processor(Iface, TProcessor):
         iprot.readMessageEnd()
         result = ping_result()
         try:
-            self._handler.ping()
+            result.success = self._handler.ping()
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
@@ -357,7 +362,7 @@ class Processor(Iface, TProcessor):
         iprot.readMessageEnd()
         result = cancel_result()
         try:
-            result.success = self._handler.cancel(args.task_id)
+            result.success = self._handler.cancel(args.id)
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
@@ -403,7 +408,7 @@ class Processor(Iface, TProcessor):
         iprot.readMessageEnd()
         result = get_result()
         try:
-            result.success = self._handler.get(args.task_id)
+            result.success = self._handler.get(args.id)
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
@@ -426,7 +431,7 @@ class Processor(Iface, TProcessor):
         iprot.readMessageEnd()
         result = report_result()
         try:
-            result.success = self._handler.report(args.executor, args.tasks, args.vacant)
+            result.success = self._handler.report(args.executor, args.complete, args.executing, args.vacant)
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
@@ -490,7 +495,15 @@ ping_args.thrift_spec = (
 
 
 class ping_result(object):
+    """
+    Attributes:
+     - success
 
+    """
+
+
+    def __init__(self, success=None,):
+        self.success = success
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -501,6 +514,11 @@ class ping_result(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 0:
+                if ftype == TType.I32:
+                    self.success = iprot.readI32()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -511,6 +529,10 @@ class ping_result(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('ping_result')
+        if self.success is not None:
+            oprot.writeFieldBegin('success', TType.I32, 0)
+            oprot.writeI32(self.success)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -529,6 +551,7 @@ class ping_result(object):
         return not (self == other)
 all_structs.append(ping_result)
 ping_result.thrift_spec = (
+    (0, TType.I32, 'success', None, None, ),  # 0
 )
 
 
@@ -613,9 +636,8 @@ class add_result(object):
             if ftype == TType.STOP:
                 break
             if fid == 0:
-                if ftype == TType.STRUCT:
-                    self.success = NormalReturn()
-                    self.success.read(iprot)
+                if ftype == TType.I32:
+                    self.success = iprot.readI32()
                 else:
                     iprot.skip(ftype)
             else:
@@ -629,8 +651,8 @@ class add_result(object):
             return
         oprot.writeStructBegin('add_result')
         if self.success is not None:
-            oprot.writeFieldBegin('success', TType.STRUCT, 0)
-            self.success.write(oprot)
+            oprot.writeFieldBegin('success', TType.I32, 0)
+            oprot.writeI32(self.success)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -650,20 +672,20 @@ class add_result(object):
         return not (self == other)
 all_structs.append(add_result)
 add_result.thrift_spec = (
-    (0, TType.STRUCT, 'success', [NormalReturn, None], None, ),  # 0
+    (0, TType.I32, 'success', None, None, ),  # 0
 )
 
 
 class cancel_args(object):
     """
     Attributes:
-     - task_id
+     - id
 
     """
 
 
-    def __init__(self, task_id=None,):
-        self.task_id = task_id
+    def __init__(self, id=None,):
+        self.id = id
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -676,7 +698,7 @@ class cancel_args(object):
                 break
             if fid == -1:
                 if ftype == TType.STRING:
-                    self.task_id = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                    self.id = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -689,9 +711,9 @@ class cancel_args(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('cancel_args')
-        if self.task_id is not None:
-            oprot.writeFieldBegin('task_id', TType.STRING, -1)
-            oprot.writeString(self.task_id.encode('utf-8') if sys.version_info[0] == 2 else self.task_id)
+        if self.id is not None:
+            oprot.writeFieldBegin('id', TType.STRING, -1)
+            oprot.writeString(self.id.encode('utf-8') if sys.version_info[0] == 2 else self.id)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -734,9 +756,8 @@ class cancel_result(object):
             if ftype == TType.STOP:
                 break
             if fid == 0:
-                if ftype == TType.STRUCT:
-                    self.success = NormalReturn()
-                    self.success.read(iprot)
+                if ftype == TType.I32:
+                    self.success = iprot.readI32()
                 else:
                     iprot.skip(ftype)
             else:
@@ -750,8 +771,8 @@ class cancel_result(object):
             return
         oprot.writeStructBegin('cancel_result')
         if self.success is not None:
-            oprot.writeFieldBegin('success', TType.STRUCT, 0)
-            self.success.write(oprot)
+            oprot.writeFieldBegin('success', TType.I32, 0)
+            oprot.writeI32(self.success)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -771,7 +792,7 @@ class cancel_result(object):
         return not (self == other)
 all_structs.append(cancel_result)
 cancel_result.thrift_spec = (
-    (0, TType.STRUCT, 'success', [NormalReturn, None], None, ),  # 0
+    (0, TType.I32, 'success', None, None, ),  # 0
 )
 
 
@@ -899,14 +920,9 @@ class search_result(object):
             if ftype == TType.STOP:
                 break
             if fid == 0:
-                if ftype == TType.LIST:
-                    self.success = []
-                    (_etype17, _size14) = iprot.readListBegin()
-                    for _i18 in range(_size14):
-                        _elem19 = TaskBrief()
-                        _elem19.read(iprot)
-                        self.success.append(_elem19)
-                    iprot.readListEnd()
+                if ftype == TType.STRUCT:
+                    self.success = SearchReturn()
+                    self.success.read(iprot)
                 else:
                     iprot.skip(ftype)
             else:
@@ -920,11 +936,8 @@ class search_result(object):
             return
         oprot.writeStructBegin('search_result')
         if self.success is not None:
-            oprot.writeFieldBegin('success', TType.LIST, 0)
-            oprot.writeListBegin(TType.STRUCT, len(self.success))
-            for iter20 in self.success:
-                iter20.write(oprot)
-            oprot.writeListEnd()
+            oprot.writeFieldBegin('success', TType.STRUCT, 0)
+            self.success.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -944,20 +957,20 @@ class search_result(object):
         return not (self == other)
 all_structs.append(search_result)
 search_result.thrift_spec = (
-    (0, TType.LIST, 'success', (TType.STRUCT, [TaskBrief, None], False), None, ),  # 0
+    (0, TType.STRUCT, 'success', [SearchReturn, None], None, ),  # 0
 )
 
 
 class get_args(object):
     """
     Attributes:
-     - task_id
+     - id
 
     """
 
 
-    def __init__(self, task_id=None,):
-        self.task_id = task_id
+    def __init__(self, id=None,):
+        self.id = id
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -970,7 +983,7 @@ class get_args(object):
                 break
             if fid == -1:
                 if ftype == TType.STRING:
-                    self.task_id = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                    self.id = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -983,9 +996,9 @@ class get_args(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('get_args')
-        if self.task_id is not None:
-            oprot.writeFieldBegin('task_id', TType.STRING, -1)
-            oprot.writeString(self.task_id.encode('utf-8') if sys.version_info[0] == 2 else self.task_id)
+        if self.id is not None:
+            oprot.writeFieldBegin('id', TType.STRING, -1)
+            oprot.writeString(self.id.encode('utf-8') if sys.version_info[0] == 2 else self.id)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1029,7 +1042,7 @@ class get_result(object):
                 break
             if fid == 0:
                 if ftype == TType.STRUCT:
-                    self.success = Task()
+                    self.success = GetReturn()
                     self.success.read(iprot)
                 else:
                     iprot.skip(ftype)
@@ -1065,7 +1078,7 @@ class get_result(object):
         return not (self == other)
 all_structs.append(get_result)
 get_result.thrift_spec = (
-    (0, TType.STRUCT, 'success', [Task, None], None, ),  # 0
+    (0, TType.STRUCT, 'success', [GetReturn, None], None, ),  # 0
 )
 
 
@@ -1073,15 +1086,17 @@ class report_args(object):
     """
     Attributes:
      - executor
-     - tasks
+     - complete
+     - executing
      - vacant
 
     """
 
 
-    def __init__(self, executor=None, tasks=None, vacant=None,):
+    def __init__(self, executor=None, complete=None, executing=None, vacant=None,):
         self.executor = executor
-        self.tasks = tasks
+        self.complete = complete
+        self.executing = executing
         self.vacant = vacant
 
     def read(self, iprot):
@@ -1099,12 +1114,28 @@ class report_args(object):
                 else:
                     iprot.skip(ftype)
             elif fid == -2:
-                if ftype == TType.STRUCT:
-                    self.tasks = TwoLists()
-                    self.tasks.read(iprot)
+                if ftype == TType.LIST:
+                    self.complete = []
+                    (_etype24, _size21) = iprot.readListBegin()
+                    for _i25 in range(_size21):
+                        _elem26 = Task()
+                        _elem26.read(iprot)
+                        self.complete.append(_elem26)
+                    iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == -3:
+                if ftype == TType.LIST:
+                    self.executing = []
+                    (_etype30, _size27) = iprot.readListBegin()
+                    for _i31 in range(_size27):
+                        _elem32 = TaskBrief()
+                        _elem32.read(iprot)
+                        self.executing.append(_elem32)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == -4:
                 if ftype == TType.I32:
                     self.vacant = iprot.readI32()
                 else:
@@ -1120,12 +1151,22 @@ class report_args(object):
             return
         oprot.writeStructBegin('report_args')
         if self.vacant is not None:
-            oprot.writeFieldBegin('vacant', TType.I32, -3)
+            oprot.writeFieldBegin('vacant', TType.I32, -4)
             oprot.writeI32(self.vacant)
             oprot.writeFieldEnd()
-        if self.tasks is not None:
-            oprot.writeFieldBegin('tasks', TType.STRUCT, -2)
-            self.tasks.write(oprot)
+        if self.executing is not None:
+            oprot.writeFieldBegin('executing', TType.LIST, -3)
+            oprot.writeListBegin(TType.STRUCT, len(self.executing))
+            for iter33 in self.executing:
+                iter33.write(oprot)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.complete is not None:
+            oprot.writeFieldBegin('complete', TType.LIST, -2)
+            oprot.writeListBegin(TType.STRUCT, len(self.complete))
+            for iter34 in self.complete:
+                iter34.write(oprot)
+            oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.executor is not None:
             oprot.writeFieldBegin('executor', TType.STRING, -1)
@@ -1173,7 +1214,7 @@ class report_result(object):
                 break
             if fid == 0:
                 if ftype == TType.STRUCT:
-                    self.success = TwoLists()
+                    self.success = ReportReturn()
                     self.success.read(iprot)
                 else:
                     iprot.skip(ftype)
@@ -1209,7 +1250,7 @@ class report_result(object):
         return not (self == other)
 all_structs.append(report_result)
 report_result.thrift_spec = (
-    (0, TType.STRUCT, 'success', [TwoLists, None], None, ),  # 0
+    (0, TType.STRUCT, 'success', [ReportReturn, None], None, ),  # 0
 )
 fix_spec(all_structs)
 del all_structs

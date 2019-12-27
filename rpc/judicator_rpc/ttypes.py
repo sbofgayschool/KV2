@@ -16,6 +16,24 @@ from thrift.transport import TTransport
 all_structs = []
 
 
+class ReturnCode(object):
+    OK = 0
+    ERROR = -1
+    NOT_EXIST = 1
+
+    _VALUES_TO_NAMES = {
+        0: "OK",
+        -1: "ERROR",
+        1: "NOT_EXIST",
+    }
+
+    _NAMES_TO_VALUES = {
+        "OK": 0,
+        "ERROR": -1,
+        "NOT_EXIST": 1,
+    }
+
+
 class Compile(object):
     """
     Attributes:
@@ -47,7 +65,7 @@ class Compile(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.command = iprot.readBinary()
+                    self.command = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
@@ -71,7 +89,7 @@ class Compile(object):
             oprot.writeFieldEnd()
         if self.command is not None:
             oprot.writeFieldBegin('command', TType.STRING, 2)
-            oprot.writeBinary(self.command)
+            oprot.writeString(self.command.encode('utf-8') if sys.version_info[0] == 2 else self.command)
             oprot.writeFieldEnd()
         if self.timeout is not None:
             oprot.writeFieldBegin('timeout', TType.I32, 3)
@@ -128,7 +146,7 @@ class Execute(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.command = iprot.readBinary()
+                    self.command = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
@@ -157,7 +175,7 @@ class Execute(object):
             oprot.writeFieldEnd()
         if self.command is not None:
             oprot.writeFieldBegin('command', TType.STRING, 2)
-            oprot.writeBinary(self.command)
+            oprot.writeString(self.command.encode('utf-8') if sys.version_info[0] == 2 else self.command)
             oprot.writeFieldEnd()
         if self.timeout is not None:
             oprot.writeFieldBegin('timeout', TType.I32, 3)
@@ -592,18 +610,18 @@ class Executor(object):
         return not (self == other)
 
 
-class NormalReturn(object):
+class SearchReturn(object):
     """
     Attributes:
      - result
-     - notice
+     - tasks
 
     """
 
 
-    def __init__(self, result=None, notice=None,):
+    def __init__(self, result=None, tasks=None,):
         self.result = result
-        self.notice = notice
+        self.tasks = tasks
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -615,13 +633,19 @@ class NormalReturn(object):
             if ftype == TType.STOP:
                 break
             if fid == 1:
-                if ftype == TType.BOOL:
-                    self.result = iprot.readBool()
+                if ftype == TType.I32:
+                    self.result = iprot.readI32()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
-                if ftype == TType.STRING:
-                    self.notice = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                if ftype == TType.LIST:
+                    self.tasks = []
+                    (_etype3, _size0) = iprot.readListBegin()
+                    for _i4 in range(_size0):
+                        _elem5 = TaskBrief()
+                        _elem5.read(iprot)
+                        self.tasks.append(_elem5)
+                    iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
             else:
@@ -633,14 +657,17 @@ class NormalReturn(object):
         if oprot._fast_encode is not None and self.thrift_spec is not None:
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
-        oprot.writeStructBegin('NormalReturn')
+        oprot.writeStructBegin('SearchReturn')
         if self.result is not None:
-            oprot.writeFieldBegin('result', TType.BOOL, 1)
-            oprot.writeBool(self.result)
+            oprot.writeFieldBegin('result', TType.I32, 1)
+            oprot.writeI32(self.result)
             oprot.writeFieldEnd()
-        if self.notice is not None:
-            oprot.writeFieldBegin('notice', TType.STRING, 2)
-            oprot.writeString(self.notice.encode('utf-8') if sys.version_info[0] == 2 else self.notice)
+        if self.tasks is not None:
+            oprot.writeFieldBegin('tasks', TType.LIST, 2)
+            oprot.writeListBegin(TType.STRUCT, len(self.tasks))
+            for iter6 in self.tasks:
+                iter6.write(oprot)
+            oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -660,18 +687,18 @@ class NormalReturn(object):
         return not (self == other)
 
 
-class TwoLists(object):
+class GetReturn(object):
     """
     Attributes:
-     - brief
-     - full
+     - result
+     - task
 
     """
 
 
-    def __init__(self, brief=None, full=None,):
-        self.brief = brief
-        self.full = full
+    def __init__(self, result=None, task=None,):
+        self.result = result
+        self.task = task
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -683,24 +710,100 @@ class TwoLists(object):
             if ftype == TType.STOP:
                 break
             if fid == 1:
-                if ftype == TType.LIST:
-                    self.brief = []
-                    (_etype3, _size0) = iprot.readListBegin()
-                    for _i4 in range(_size0):
-                        _elem5 = TaskBrief()
-                        _elem5.read(iprot)
-                        self.brief.append(_elem5)
-                    iprot.readListEnd()
+                if ftype == TType.I32:
+                    self.result = iprot.readI32()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRUCT:
+                    self.task = Task()
+                    self.task.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('GetReturn')
+        if self.result is not None:
+            oprot.writeFieldBegin('result', TType.I32, 1)
+            oprot.writeI32(self.result)
+            oprot.writeFieldEnd()
+        if self.task is not None:
+            oprot.writeFieldBegin('task', TType.STRUCT, 2)
+            self.task.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class ReportReturn(object):
+    """
+    Attributes:
+     - result
+     - cancel
+     - assign
+
+    """
+
+
+    def __init__(self, result=None, cancel=None, assign=None,):
+        self.result = result
+        self.cancel = cancel
+        self.assign = assign
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.I32:
+                    self.result = iprot.readI32()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.LIST:
-                    self.full = []
-                    (_etype9, _size6) = iprot.readListBegin()
-                    for _i10 in range(_size6):
-                        _elem11 = Task()
-                        _elem11.read(iprot)
-                        self.full.append(_elem11)
+                    self.cancel = []
+                    (_etype10, _size7) = iprot.readListBegin()
+                    for _i11 in range(_size7):
+                        _elem12 = TaskBrief()
+                        _elem12.read(iprot)
+                        self.cancel.append(_elem12)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.LIST:
+                    self.assign = []
+                    (_etype16, _size13) = iprot.readListBegin()
+                    for _i17 in range(_size13):
+                        _elem18 = Task()
+                        _elem18.read(iprot)
+                        self.assign.append(_elem18)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -713,19 +816,23 @@ class TwoLists(object):
         if oprot._fast_encode is not None and self.thrift_spec is not None:
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
-        oprot.writeStructBegin('TwoLists')
-        if self.brief is not None:
-            oprot.writeFieldBegin('brief', TType.LIST, 1)
-            oprot.writeListBegin(TType.STRUCT, len(self.brief))
-            for iter12 in self.brief:
-                iter12.write(oprot)
+        oprot.writeStructBegin('ReportReturn')
+        if self.result is not None:
+            oprot.writeFieldBegin('result', TType.I32, 1)
+            oprot.writeI32(self.result)
+            oprot.writeFieldEnd()
+        if self.cancel is not None:
+            oprot.writeFieldBegin('cancel', TType.LIST, 2)
+            oprot.writeListBegin(TType.STRUCT, len(self.cancel))
+            for iter19 in self.cancel:
+                iter19.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
-        if self.full is not None:
-            oprot.writeFieldBegin('full', TType.LIST, 2)
-            oprot.writeListBegin(TType.STRUCT, len(self.full))
-            for iter13 in self.full:
-                iter13.write(oprot)
+        if self.assign is not None:
+            oprot.writeFieldBegin('assign', TType.LIST, 3)
+            oprot.writeListBegin(TType.STRUCT, len(self.assign))
+            for iter20 in self.assign:
+                iter20.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -748,14 +855,14 @@ all_structs.append(Compile)
 Compile.thrift_spec = (
     None,  # 0
     (1, TType.STRING, 'source', 'BINARY', None, ),  # 1
-    (2, TType.STRING, 'command', 'BINARY', None, ),  # 2
+    (2, TType.STRING, 'command', 'UTF8', None, ),  # 2
     (3, TType.I32, 'timeout', None, None, ),  # 3
 )
 all_structs.append(Execute)
 Execute.thrift_spec = (
     None,  # 0
     (1, TType.STRING, 'source', 'BINARY', None, ),  # 1
-    (2, TType.STRING, 'command', 'BINARY', None, ),  # 2
+    (2, TType.STRING, 'command', 'UTF8', None, ),  # 2
     (3, TType.I32, 'timeout', None, None, ),  # 3
     (4, TType.STRING, 'standard', 'BINARY', None, ),  # 4
 )
@@ -795,17 +902,24 @@ Executor.thrift_spec = (
     (2, TType.STRING, 'hostname', 'UTF8', None, ),  # 2
     (3, TType.STRING, 'report_time', 'UTF8', None, ),  # 3
 )
-all_structs.append(NormalReturn)
-NormalReturn.thrift_spec = (
+all_structs.append(SearchReturn)
+SearchReturn.thrift_spec = (
     None,  # 0
-    (1, TType.BOOL, 'result', None, None, ),  # 1
-    (2, TType.STRING, 'notice', 'UTF8', None, ),  # 2
+    (1, TType.I32, 'result', None, None, ),  # 1
+    (2, TType.LIST, 'tasks', (TType.STRUCT, [TaskBrief, None], False), None, ),  # 2
 )
-all_structs.append(TwoLists)
-TwoLists.thrift_spec = (
+all_structs.append(GetReturn)
+GetReturn.thrift_spec = (
     None,  # 0
-    (1, TType.LIST, 'brief', (TType.STRUCT, [TaskBrief, None], False), None, ),  # 1
-    (2, TType.LIST, 'full', (TType.STRUCT, [Task, None], False), None, ),  # 2
+    (1, TType.I32, 'result', None, None, ),  # 1
+    (2, TType.STRUCT, 'task', [Task, None], None, ),  # 2
+)
+all_structs.append(ReportReturn)
+ReportReturn.thrift_spec = (
+    None,  # 0
+    (1, TType.I32, 'result', None, None, ),  # 1
+    (2, TType.LIST, 'cancel', (TType.STRUCT, [TaskBrief, None], False), None, ),  # 2
+    (3, TType.LIST, 'assign', (TType.STRUCT, [Task, None], False), None, ),  # 3
 )
 fix_spec(all_structs)
 del all_structs

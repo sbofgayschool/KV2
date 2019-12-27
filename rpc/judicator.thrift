@@ -2,13 +2,13 @@ namespace py judicator_rpc
 
 struct Compile {
     1: binary source,
-    2: binary command,
+    2: string command,
     3: i32 timeout
 }
 
 struct Execute {
     1: binary source,
-    2: binary command,
+    2: string command,
     3: i32 timeout,
     4: binary standard
 }
@@ -45,21 +45,33 @@ struct Executor {
     3: string report_time
 }
 
-struct NormalReturn {
-    1: bool result,
-    2: string notice
+enum ReturnCode {
+    OK = 0,
+    ERROR = -1,
+    NOT_EXIST = 1
 }
 
-struct TwoLists {
-    1: list<TaskBrief> brief,
-    2: list<Task> full
+struct SearchReturn {
+    1: ReturnCode result,
+    2: list<TaskBrief> tasks
+}
+
+struct GetReturn {
+    1: ReturnCode result,
+    2: Task task
+}
+
+struct ReportReturn {
+    1: ReturnCode result,
+    2: list<TaskBrief> cancel,
+    3: list<Task> assign
 }
 
 service Judicator {
-    void ping();
-    NormalReturn add(Task task);
-    NormalReturn cancel(string task_id);
-    list<TaskBrief> search(string id, string start_time, string end_time, bool old_to_new, i32 limit);
-    Task get(string task_id);
-    TwoLists report(string executor, TwoLists tasks, i32 vacant);
+    ReturnCode ping();
+    ReturnCode add(Task task);
+    ReturnCode cancel(string id);
+    SearchReturn search(string id, string start_time, string end_time, bool old_to_new, i32 limit);
+    GetReturn get(string id);
+    ReportReturn report(string executor, list<Task> complete, list<TaskBrief> executing, i32 vacant);
 }

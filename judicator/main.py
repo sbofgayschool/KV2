@@ -2,16 +2,20 @@
 
 __author__ = "chenty"
 
+from jsoncomment import JsonComment
 import datetime
 import threading
 import time
 import urllib.parse
-from jsoncomment import JsonComment
+import dateutil
+import pymongo
+from bson.objectid import ObjectId
 
 from utility.function import get_logger, try_with_times
 from utility.etcd import generate_local_etcd_proxy
-from utility.mongodb import generate_local_mongodb_proxy
+from utility.mongodb import generate_local_mongodb_proxy, transform_id
 from utility.define import TASK_STATUS
+from utility.rpc import extract, generate
 
 from rpc.judicator_rpc import Judicator
 from rpc.judicator_rpc.ttypes import *
@@ -66,8 +70,8 @@ def lead():
             expire_time = datetime.datetime.now() - datetime.timedelta(seconds=config["task"]["expiration"])
             while True:
                 res = mongodb_task.find_one_and_update(
-                    {"done": False, "executor": {"$exists": True}, "report_time": {"$ls": expire_time}},
-                    {"$unset": {"executor": ""}, "$set": {"status": TASK_STATUS["RETRYING"]}}
+                    {"done": False, "executor": {"$ne": None}, "report_time": {"$ls": expire_time}},
+                    {"$set": [{"executor": None}, {"status": TASK_STATUS["RETRYING"]}]}
                 )
                 if not res:
                     break
@@ -87,7 +91,93 @@ class RPCService:
         self.logger = logger
         return
 
-    # TODO: Work with rpc interfaces.
+    def ping(self):
+        return ReturnCode.OK
+
+    def add(self, task):
+        task = extract(task, result=False)
+        del task["id"]
+        task["done"] = False
+        task["status"] = TASK_STATUS["PENDING"]
+        task["report_time"] = datetime.datetime.now()
+        try:
+            mongodb_task.insert_one(task)
+            return ReturnCode.OK
+        except:
+            return ReturnCode.ERROR
+
+    def cancel(self, id):
+        result = mongodb_task.find_one_and_update(
+            {"_id": ObjectId(id), "done": False},
+            {"executor": None, "status": TASK_STATUS["CANCEL"], "done": True}
+        )
+        if result:
+            return ReturnCode.OK
+        return ReturnCode.ERROR
+
+    def search(self, id, start_time, end_time, old_to_new, limit):
+        filter = {}
+        if id:
+            filter["id"] = {"$regex": "*" + id + "*"}
+        if start_time or end_time:
+            filter["time"] = {}
+            if start_time:
+                filter["time"]["$gt"] = dateutil.parser.parse(start_time)
+            if end_time:
+                filter["time"]["$ls"] = dateutil.parser.parse(end_time)
+        result = mongodb_task.find(
+            filter=filter,
+            sort="report_time",
+            limit=limit if limit else 0).sort("report_time", pymongo.ASCENDING if old_to_new else pymongo.DESCENDING)
+        for r in result:
+            transform_id(r)
+        return SearchReturn(ReturnCode.OK, [generate(r, brief=True) for r in result])
+
+    def get(self, id):
+        result = mongodb_task.find_one({"_id": ObjectId(id)})
+        if result:
+            transform_id(result)
+            return GetReturn(ReturnCode.OK, generate(result))
+        return GetReturn(ReturnCode.NOT_EXIST, None)
+
+    def report(self, executor, complete, executing, vacant):
+        delete_list, assign_list = [], []
+        result = mongodb_executor.find_one_and_update({"hostname": executor}, {"report_time": datetime.datetime.now()})
+        if not result:
+            mongodb_executor.insert({"hostname": executor, "report_time": datetime.datetime.now()})
+        for t in complete:
+            task = extract(t)
+            mongodb_task.find_one_and_update(
+                {"id": ObjectId(task["id"]), "executor": executor},
+                {
+                    "done": True,
+                    "status": task["status"],
+                    "executor": None,
+                    "report_time": datetime.datetime.now(),
+                    "result": task["result"]
+                }
+            )
+            delete_list.append(generate(task, brief=True))
+        for t in executing:
+            task = extract(t, brief=True)
+            result = mongodb_task.find_one_and_update(
+                {"id": ObjectId(task["id"]), "executor": executor},
+                {"status": task["status"], "report_time": datetime.datetime.now()}
+            )
+            if not result:
+                delete_list.append(generate(task, brief=True))
+        while vacant:
+            task = mongodb_task.find_one_and_update(
+                {"done": False, "executor": None},
+                {"executor": executor, "report_time": datetime.datetime.now()},
+                return_document=pymongo.ReturnDocument.AFTER
+            )
+            if not task:
+                break
+            transform_id(task)
+            assign_list.append(generate(task))
+            vacant = vacant - 1
+        return ReportReturn(ReturnCode.OK, delete_list, assign_list)
 
 if __name__ == "__main__":
     with open("config/main.json", "r") as f:
@@ -119,15 +209,15 @@ if __name__ == "__main__":
     lead_thread.setDaemon(True)
     lead_thread.start()
 
-    handler = RPCService(logger)
-    processor = Judicator.Processor(handler)
-    transport = TSocket.TServerSocket(config["listen"]["address"], int(config["listen"]["port"]))
-    tfactory = TTransport.TBufferedTransportFactory()
-    pfactory = TBinaryProtocol.TBinaryProtocolFactory()
-    server = TServer.TSimpleServer(processor, transport, tfactory, pfactory)
+    server = TServer.TThreadedServer(
+        Judicator.Processor(RPCService(logger)),
+        TSocket.TServerSocket(config["listen"]["address"], int(config["listen"]["port"])),
+        TTransport.TBufferedTransportFactory(),
+        TBinaryProtocol.TBinaryProtocolFactory()
+    )
     try:
         logger.info("RPC server start to serve.")
         server.serve()
     except:
-        logger.error("Accidentally terminated. Killing etcd process.", exc_info=True)
+        logger.error("Accidentally terminated.", exc_info=True)
     logger.info("Exiting.")

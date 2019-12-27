@@ -79,3 +79,7 @@ def generate_local_mongodb_proxy(mongodb_config, logger):
         mongodb_config["replica_set"],
         logger
     )
+
+def transform_id(f):
+    f["id"] = f["_id"].toString()
+    del f["_id"]

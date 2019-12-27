@@ -3,27 +3,27 @@
 {
     "_id": ObjectId -> Auto generated id,
     "user": Int -> User id,
-    "compile":
+    "compile": -> Compile information
     {
-        "source": Binary,
-        "command": Binary，
-        "timeout": Int
+        "source": Binary -> Zipped source,
+        "command": String -> Compile command,
+        "timeout": Int -> Compile timeout
     },
-    "execute":
+    "execute": -> Execute information
     {
-        "data": Binary,
-        "command": Binary,
-        "timeout": Int,
-        "standard": Binary
+        "data": Binary -> Zipped input data,
+        "command": String -> Execute command,
+        "timeout": Int -> Execute timeout,
+        "standard": Binary -> Zipped standard output
     },
-    "done": Boolean,
-    "status": Int,
-    "executor": String,
-    "report_time": Date,
+    "done": Boolean -> If the task has been done,
+    "status": Int -> Current status,
+    "executor": String -> Executor hostname,
+    "report_time": Date -> Last report time,
     "result":
     {
-        "compile": Binary,
-        "execute": Binary
+        "compile": Binary -> Zipped compile output,
+        "execute": Binary -> Zipped execute output
     }
 }
 ```
