@@ -1,0 +1,10 @@
+{
+    "check_interval": 30
+    /*
+    "log":
+    {
+        "info": "log/boot/info.log",
+        "error": "log/boot/error.log"
+    }
+    */
+}

@@ -51,6 +51,11 @@ enum ReturnCode {
     NOT_EXIST = 1
 }
 
+struct AddReturn {
+    1: ReturnCode result,
+    2: string id
+}
+
 struct SearchReturn {
     1: ReturnCode result,
     2: list<TaskBrief> tasks
@@ -69,7 +74,7 @@ struct ReportReturn {
 
 service Judicator {
     ReturnCode ping();
-    ReturnCode add(Task task);
+    AddReturn add(Task task);
     ReturnCode cancel(string id);
     SearchReturn search(string id, string start_time, string end_time, bool old_to_new, i32 limit);
     GetReturn get(string id);

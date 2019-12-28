@@ -3,11 +3,7 @@
 __author__ = "chenty"
 
 
-RETURN_CODE = {
-    "OK": 0,
-    "ERROR": -1
-}
-
+# Status of a task
 TASK_STATUS = {
     "PENDING": 0,
     "COMPILING": 1,
@@ -16,5 +12,5 @@ TASK_STATUS = {
     "RUN_FAILED": 4,
     "SUCCESS": 5,
     "RETRYING": 6,
-    "CANCEL": 7
+    "CANCELLED": 7
 }

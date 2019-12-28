@@ -3,6 +3,8 @@
 __author__ = "chenty"
 
 from jsoncomment import JsonComment
+json = JsonComment()
+
 import datetime
 import threading
 import time
@@ -11,7 +13,7 @@ import dateutil
 import pymongo
 from bson.objectid import ObjectId
 
-from utility.function import get_logger, try_with_times
+from utility.function import get_logger
 from utility.etcd import generate_local_etcd_proxy
 from utility.mongodb import generate_local_mongodb_proxy, transform_id
 from utility.define import TASK_STATUS
@@ -24,10 +26,13 @@ from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
-json = JsonComment()
-
 
 def register():
+    """
+    Target function for register thread
+    Regularly register the rpc service address in etcd
+    :return: None
+    """
     logger.info("Register thread start to work.")
     reg_key = urllib.parse.urljoin(config["register"]["etcd_path"], config["name"])
     reg_value = config["advertise"]["address"] + ":" + config["advertise"]["port"]
@@ -40,9 +45,16 @@ def register():
             logger.error("Failed to update judicator service on etcd.", exc_info=True)
 
 def lead():
+    """
+    Target function for lead thread
+    Compete against others to be leader, and, if become the leader, do regular check of tasks and executors
+    :return: None
+    """
     logger.info("Lead thread start to work.")
     while True:
         time.sleep(config["lead"]["interval"])
+
+        # Try to become leader when there are no previous leader
         try:
             local_etcd.set(
                 config["lead"]["etcd_path"],
@@ -53,6 +65,8 @@ def lead():
             logger.info("No previous leader. This node has become leader.")
         except:
             logger.warn("Previous leader exists.", exc_info=True)
+        # Try to fresh the leader information, if the this is the leader
+        # Set success to True if this successfully become the leader
         try:
             local_etcd.set(
                 config["lead"]["etcd_path"],
@@ -65,18 +79,24 @@ def lead():
         except:
             success = False
             logger.warn("Failed to become leader.", exc_info=True)
+
+        # If this is the leader, do some regular check
         if success:
             logger.info("This node is leader, starting routine check of tasks and executors.")
+
+            # Set all expired task to retrying and remove their executor
             expire_time = datetime.datetime.now() - datetime.timedelta(seconds=config["task"]["expiration"])
             while True:
                 res = mongodb_task.find_one_and_update(
                     {"done": False, "executor": {"$ne": None}, "report_time": {"$ls": expire_time}},
-                    {"$set": [{"executor": None}, {"status": TASK_STATUS["RETRYING"]}]}
+                    {"$set": {"executor": None, "status": TASK_STATUS["RETRYING"]}}
                 )
                 if not res:
                     break
                 logger.warn("Set expired task %s into retrying status." % str(res["_id"]))
 
+            # Remove all expired executor from the record
+            # Currently this is only for monitor usage
             expire_time = datetime.datetime.now() - datetime.timedelta(seconds=config["executor"]["expiration"])
             while True:
                 res = mongodb_executor.find_one_and_delete({"report_time": {"$ls": expire_time}})
@@ -87,44 +107,88 @@ def lead():
             logger.info("Finished routine check.")
 
 class RPCService:
+    """
+    RPC handler class
+    """
     def __init__(self, logger):
+        """
+        Initializer of the class
+        :param logger: The logger
+        """
         self.logger = logger
         return
 
     def ping(self):
+        """
+        Interface: Ping
+        Check whether the service is on
+        :return: Always OK
+        """
         return ReturnCode.OK
 
     def add(self, task):
+        """
+        Interface: Add
+        Add a new task
+        :param task: Task struture, the task needed to be added
+        :return: An AddResult structure containing the result and the generated id of the new task
+        """
+        # Extract and clean the task
         task = extract(task, result=False)
         del task["id"]
         task["done"] = False
         task["status"] = TASK_STATUS["PENDING"]
         task["report_time"] = datetime.datetime.now()
+
+        # Add and return the auto generated id
         try:
-            mongodb_task.insert_one(task)
-            return ReturnCode.OK
+            result = mongodb_task.insert_one(task)
+            return AddReturn(ReturnCode.OK, str(result["_id"]))
         except:
-            return ReturnCode.ERROR
+            return AddReturn(ReturnCode.ERROR, None)
 
     def cancel(self, id):
+        """
+        Interface: Cancel
+        Cancel a Task which has not been done
+        :param id: The id of the job neede to be cancelled
+        :return: Whether the cancellation is successful
+        """
+        # Try to update the status and executor of a undone task
         result = mongodb_task.find_one_and_update(
             {"_id": ObjectId(id), "done": False},
-            {"executor": None, "status": TASK_STATUS["CANCEL"], "done": True}
+            {"executor": None, "status": TASK_STATUS["CANCELLED"], "done": True}
         )
         if result:
             return ReturnCode.OK
-        return ReturnCode.ERROR
+        return ReturnCode.NOT_EXIST
 
-    def search(self, id, start_time, end_time, old_to_new, limit):
+    def search(self, id, user, start_time, end_time, old_to_new, limit):
+        """
+        Interface: Search
+        Search tasks according to conditions
+        :param id: Exact id of a task
+        :param user: Exact user id of a task
+        :param start_time: Start time of tasks
+        :param end_time: End time of tasks
+        :param old_to_new: If the result should be sorted in old-to-new order
+        :param limit: Limitation of the total amount
+        :return: A SearchReturn structure containing the result and all
+        """
+        # Add conditions to the filter
         filter = {}
         if id:
-            filter["id"] = {"$regex": "*" + id + "*"}
+            filter["_id"] = ObjectId(id)
+        if user:
+            filter["user"] = user
         if start_time or end_time:
             filter["time"] = {}
             if start_time:
                 filter["time"]["$gt"] = dateutil.parser.parse(start_time)
             if end_time:
                 filter["time"]["$ls"] = dateutil.parser.parse(end_time)
+
+        # Find all result and transform them into TaskBrief structure
         result = mongodb_task.find(
             filter=filter,
             sort="report_time",
@@ -134,6 +198,13 @@ class RPCService:
         return SearchReturn(ReturnCode.OK, [generate(r, brief=True) for r in result])
 
     def get(self, id):
+        """
+        Interface: Get
+        Get a specific task by id
+        :param id: The id of the task
+        :return: A GetResult structure containing return code and the task
+        """
+        # Find and transform the result
         result = mongodb_task.find_one({"_id": ObjectId(id)})
         if result:
             transform_id(result)
@@ -141,10 +212,22 @@ class RPCService:
         return GetReturn(ReturnCode.NOT_EXIST, None)
 
     def report(self, executor, complete, executing, vacant):
-        delete_list, assign_list = [], []
+        """
+        Interface: Report
+        Accept report from an executor, update corresponding information, and assign new task to the executor
+        :param executor: Reporting executor
+        :param complete: Completed tasks of the executor
+        :param executing: Executing tasks
+        :param vacant: Vacant place of the executor
+        :return: A ReportResult structure containing return code, tasks needed to be deleted, and assigned tasks
+        """
+        # Refresh or add the information of the executor
         result = mongodb_executor.find_one_and_update({"hostname": executor}, {"report_time": datetime.datetime.now()})
         if not result:
             mongodb_executor.insert({"hostname": executor, "report_time": datetime.datetime.now()})
+
+        delete_list, assign_list = [], []
+        # Update all completed tasks, if the task indeed belong to the executor, and request the executor to delete it
         for t in complete:
             task = extract(t)
             mongodb_task.find_one_and_update(
@@ -157,7 +240,9 @@ class RPCService:
                     "result": task["result"]
                 }
             )
+            # Complete task is going to be deleted, no matter whether there is such a task record
             delete_list.append(generate(task, brief=True))
+        # Update all executing tasks, and request the executor to delete it if the task does not belong to it
         for t in executing:
             task = extract(t, brief=True)
             result = mongodb_task.find_one_and_update(
@@ -166,7 +251,10 @@ class RPCService:
             )
             if not result:
                 delete_list.append(generate(task, brief=True))
+
+        # While there is still vacant position in the executor
         while vacant:
+            # Find task undone task with no executor and assign it to the executor
             task = mongodb_task.find_one_and_update(
                 {"done": False, "executor": None},
                 {"executor": executor, "report_time": datetime.datetime.now()},
@@ -177,14 +265,17 @@ class RPCService:
             transform_id(task)
             assign_list.append(generate(task))
             vacant = vacant - 1
+
         return ReportReturn(ReturnCode.OK, delete_list, assign_list)
 
 if __name__ == "__main__":
+    # Load configuration
     with open("config/main.json", "r") as f:
         config = json.load(f)
     retry_times = config["retry"]["times"]
     retry_interval = config["retry"]["interval"]
 
+    # Generate a logger
     if "log" in config:
         logger = get_logger(
             "main",
@@ -194,21 +285,26 @@ if __name__ == "__main__":
     else:
         logger = get_logger("main", None, None)
 
+    # Generate proxy for etcd and mongodb
     with open("config/etcd.json", "r") as f:
         local_etcd = generate_local_etcd_proxy(json.load(f)["etcd"], logger)
     with open("config/mongodb.json", "r") as f:
         local_mongodb = generate_local_mongodb_proxy(json.load(f)["mongodb"], logger)
+    # Get a connection to both task and executor collection in mongodb
     mongodb_task = local_mongodb.client[config["task"]["database"]][config["task"]["collection"]]
     mongodb_executor = local_mongodb.client[config["executor"]["database"]][config["executor"]["collection"]]
 
+    # Create and start the register thread
     register_thread = threading.Thread(target=register)
     register_thread.setDaemon(True)
     register_thread.start()
 
+    # Create and start the
     lead_thread = threading.Thread(target=lead)
     lead_thread.setDaemon(True)
     lead_thread.start()
 
+    # Start the rpc server and serve until receiving a signal
     server = TServer.TThreadedServer(
         Judicator.Processor(RPCService(logger)),
         TSocket.TServerSocket(config["listen"]["address"], int(config["listen"]["port"])),

@@ -42,7 +42,7 @@
         "expiration": 40
     }
     /*
-    "log":
+    "log_daemon":
     {
         "info": "log/main/info.log",
         "error": "log/main/error.log"

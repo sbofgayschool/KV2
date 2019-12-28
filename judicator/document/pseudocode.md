@@ -120,17 +120,17 @@ Report(e, complete, executing, vacant):
     RETURN delete_list, add_list
 ```
 
-#### Boost
+#### Boot
 ```
 read_argments()
 modify_config_files()
-FOR service IN [etcd, mongodb, main]:
+services = {etcd: NULL, mongodb: NULL, main: NULL}
+FOR service IN services:
     file = open(service.pid_file, "w")
     file.write(-1)
     file.close()
 WHILE true:
-    services = {etcd: NULL, mongodb: NULL, main: NULL}
-    FOR service IN [etcd, mongodb, main]:
+    FOR service IN services:
         file = open(service.pid_file, "r+")
         IF file.get_lock(asycn=true):
             IF services[service] == NULL OR services[service].poll() != NULL:

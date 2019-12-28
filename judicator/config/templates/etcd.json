@@ -1,0 +1,63 @@
+{
+    "daemon":
+    {
+        "retry":
+        {
+            "times": 3,
+            "interval": 5
+        },
+        "maintain_file": "data/etcd.maintain",
+        "pid_file": "data/etcd.pid"
+        /*
+        "log_daemon":
+        {
+            "info": "log/etcd/daemon_info.log",
+            "error": "log/etcd/daemon_error.log"
+        },
+        "log_etcd":
+        {
+            "info": "log/etcd/etcd_info.log",
+            "error": "log/etcd/etcd_error.log"
+        }
+        */
+    },
+    "etcd":
+    {
+        "exe": "/Users/chentingyu/Programme/Practice/Etcd/etcd",
+        "name": "etcd1",
+        "data_dir": "data/etcd",
+        "listen":
+        {
+            "address": "0.0.0.0",
+            "peer_port": "2000",
+            "client_port": "2001"
+        },
+        "advertise":
+        {
+            "address": "127.0.0.1",
+            "peer_port": "2000",
+            "client_port": "2001"
+        },
+        /*
+        "cluster":
+        {
+            "type": "init"
+            "discovery": "https://discovery.etcd.io/token"
+        },
+        "cluster":
+        {
+            "type": "init",
+            "member": "name=url"
+        },
+        "cluster":
+        {
+            "type": "join",
+            "client": "url"
+        },
+        */
+        "cluster":
+        {
+            "type": "init"
+        }
+    }
+}
