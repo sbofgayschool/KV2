@@ -32,7 +32,7 @@ if __name__ == "__main__":
     else:
         logger = get_logger("boot", None, None)
 
-    services = {"etcd": {}, "mongodb": {}, "main": {}}
+    services = {}
     # TODO: Load and modify configuration of etcd, mongodb and main
 
     # Generate pid files for service daemons
