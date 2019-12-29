@@ -29,9 +29,9 @@ class MongoDBProxy:
     """
     Class representing a mongodb proxy connected to a mongodb instance
     """
-    def __init__(self, address, port, replica_name, logger):
+    def __init__(self, address, port, replica_name, logger, replica):
         """
-
+        Initializer of the class
         :param address: The address of the mongodb instance
         :param port: The port
         :param replica_name: The name of the replica set of the mongodb instance
@@ -41,8 +41,29 @@ class MongoDBProxy:
         self.port = port
         self.replica_name = replica_name
         self.logger = logger
+
         # Generate a pymongo client, which can be accessed by others
-        self.client = pymongo.MongoClient(address, port)
+        self.client = None
+        self.reconnect(replica)
+
+        return
+
+    def reconnect(self, replica):
+        """
+        Reconnect the pymongo client to the address and host
+        This can switch the internal client between single mode and replica mode
+        :param replica: If the replica mode is on
+        :return: None
+        """
+        if self.client:
+            try:
+                self.client.close()
+            except:
+                self.logger("Failed to close previous connection.", exc_info=True)
+        if replica:
+            self.client = pymongo.MongoClient(self.address, self.port, replicaSet=self.replica_name)
+        else:
+            self.client = pymongo.MongoClient(self.address, self.port)
         return
 
     def check_self_running(self):
@@ -79,7 +100,7 @@ class MongoDBProxy:
                 insert=True
             )
         except:
-            self.logger.warn("Failed to insert %s." % primary_key, exc_info=True)
+            self.logger.warning("Failed to insert %s." % primary_key, exc_info=True)
 
         # Check the current primary node of the replica set
         primary = local_etcd.get(primary_key)
@@ -119,26 +140,28 @@ class MongoDBProxy:
                 client.admin.command({'replSetReconfig': conf['config']})
         return
 
-    def check_primary(self):
+    def get_primary(self):
         """
-        Check if current instance is primary of the replica set
-        :return: True if it is, or False
+        Get the primary node of the replica set
+        :return: Address of the primary node
         """
         # Done by executing the isMaster command
-        return self.client.admin.command("isMaster")["isMaster"]
+        return self.client.admin.command("isMaster").get("primary", "")
 
-def generate_local_mongodb_proxy(mongodb_config, logger):
+def generate_local_mongodb_proxy(mongodb_config, logger, replica=False):
     """
     Generate a mongodb proxy instance from mongodb configuration
     :param mongodb_config: The configuration
     :param logger: The logger
+    :param replica: If the replica mode is on
     :return: Instance of mongodb proxy class
     """
     return MongoDBProxy(
         "127.0.0.1",
         int(mongodb_config["listen"]["port"]),
         mongodb_config["replica_set"],
-        logger
+        logger,
+        replica
     )
 
 def transform_id(f):

@@ -1,17 +1,18 @@
 {
     "daemon":
     {
+        "exe": ["python3", "mongodb_daemon.py"],
         "retry":
         {
             "times": 3,
             "interval": 5
         },
-        "maintain_file": "data/mongodb.maintain",
         "pid_file": "data/mongodb.pid",
         "etcd_path":
         {
             "primary": "mongodb/primary"
         },
+        "raw_log_symbol_pos": 29,
         "register_interval": 5
         /*
         "log_daemon":

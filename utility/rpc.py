@@ -129,6 +129,6 @@ def generate(task, brief=False, compile=True, execute=True, result=True):
             task["done"],
             task["status"],
             task["executor"],
-            task["report_time"],
+            t,
             r
         )

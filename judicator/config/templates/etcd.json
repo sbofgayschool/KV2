@@ -1,13 +1,14 @@
 {
     "daemon":
     {
+        "exe": ["python3", "etcd_daemon.py"],
         "retry":
         {
             "times": 3,
             "interval": 5
         },
-        "maintain_file": "data/etcd.maintain",
-        "pid_file": "data/etcd.pid"
+        "pid_file": "data/etcd.pid",
+        "raw_log_symbol_pos": 27
         /*
         "log_daemon":
         {
@@ -41,8 +42,8 @@
         /*
         "cluster":
         {
-            "type": "init"
-            "discovery": "https://discovery.etcd.io/token"
+            "type": "init",
+            "discovery": "https://discovery.etcd.io/9ddd1320b7116daae3847cb3cf5664c9"
         },
         "cluster":
         {

@@ -23,6 +23,7 @@ def check():
     if try_with_times(
         retry_times,
         retry_interval,
+        True,
         daemon_logger,
         "check etcd status",
         local_etcd.get_self_status
@@ -82,9 +83,11 @@ if __name__ == "__main__":
         success, res = try_with_times(
             retry_times,
             retry_interval,
+            True,
             daemon_logger,
             "add member to etcd cluster status",
             remote_etcd.add_and_get_members,
+            config["etcd"]["name"],
             "http://" + config["etcd"]["advertise"]["address"] + ":" + config["etcd"]["advertise"]["peer_port"]
         )
         if not success:
@@ -109,9 +112,9 @@ if __name__ == "__main__":
     check_thread.setDaemon(True)
     check_thread.start()
 
-    # Log the raw output of etcd until it exist or this process encounter a signal
+    # Log the raw output of etcd until it exit or terminated
     try:
-        log_output(etcd_logger, etcd_proc.stdout, 27)
+        log_output(etcd_logger, etcd_proc.stdout, config["daemon"]["raw_log_symbol_pos"])
         daemon_logger.info("Received EOF from etcd.")
     except:
         daemon_logger.error("Accidentally terminated. Killing etcd process.", exc_info=True)

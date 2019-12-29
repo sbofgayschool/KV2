@@ -1,10 +1,10 @@
 {
+    "exe": ["python3", "main.py"],
     "retry":
     {
         "times": 3,
         "interval": 5
     },
-    "maintain_file": "data/main.maintain",
     "pid_file": "data/main.pid",
     "name": "main1",
     "listen":
@@ -25,7 +25,7 @@
     },
     "register":
     {
-        "etcd_path": "judicator/service",
+        "etcd_path": "judicator/service/",
         "interval": 5,
         "ttl": 12
     },
@@ -42,7 +42,7 @@
         "expiration": 40
     }
     /*
-    "log_daemon":
+    "log":
     {
         "info": "log/main/info.log",
         "error": "log/main/error.log"

@@ -38,10 +38,11 @@ class Iface(object):
         """
         pass
 
-    def search(self, id, start_time, end_time, old_to_new, limit):
+    def search(self, id, user, start_time, end_time, old_to_new, limit):
         """
         Parameters:
          - id
+         - user
          - start_time
          - end_time
          - old_to_new
@@ -167,23 +168,25 @@ class Client(Iface):
             return result.success
         raise TApplicationException(TApplicationException.MISSING_RESULT, "cancel failed: unknown result")
 
-    def search(self, id, start_time, end_time, old_to_new, limit):
+    def search(self, id, user, start_time, end_time, old_to_new, limit):
         """
         Parameters:
          - id
+         - user
          - start_time
          - end_time
          - old_to_new
          - limit
 
         """
-        self.send_search(id, start_time, end_time, old_to_new, limit)
+        self.send_search(id, user, start_time, end_time, old_to_new, limit)
         return self.recv_search()
 
-    def send_search(self, id, start_time, end_time, old_to_new, limit):
+    def send_search(self, id, user, start_time, end_time, old_to_new, limit):
         self._oprot.writeMessageBegin('search', TMessageType.CALL, self._seqid)
         args = search_args()
         args.id = id
+        args.user = user
         args.start_time = start_time
         args.end_time = end_time
         args.old_to_new = old_to_new
@@ -385,7 +388,7 @@ class Processor(Iface, TProcessor):
         iprot.readMessageEnd()
         result = search_result()
         try:
-            result.success = self._handler.search(args.id, args.start_time, args.end_time, args.old_to_new, args.limit)
+            result.success = self._handler.search(args.id, args.user, args.start_time, args.end_time, args.old_to_new, args.limit)
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
@@ -801,6 +804,7 @@ class search_args(object):
     """
     Attributes:
      - id
+     - user
      - start_time
      - end_time
      - old_to_new
@@ -809,8 +813,9 @@ class search_args(object):
     """
 
 
-    def __init__(self, id=None, start_time=None, end_time=None, old_to_new=None, limit=None,):
+    def __init__(self, id=None, user=None, start_time=None, end_time=None, old_to_new=None, limit=None,):
         self.id = id
+        self.user = user
         self.start_time = start_time
         self.end_time = end_time
         self.old_to_new = old_to_new
@@ -831,21 +836,26 @@ class search_args(object):
                 else:
                     iprot.skip(ftype)
             elif fid == -2:
-                if ftype == TType.STRING:
-                    self.start_time = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                if ftype == TType.I32:
+                    self.user = iprot.readI32()
                 else:
                     iprot.skip(ftype)
             elif fid == -3:
                 if ftype == TType.STRING:
-                    self.end_time = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                    self.start_time = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == -4:
+                if ftype == TType.STRING:
+                    self.end_time = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == -5:
                 if ftype == TType.BOOL:
                     self.old_to_new = iprot.readBool()
                 else:
                     iprot.skip(ftype)
-            elif fid == -5:
+            elif fid == -6:
                 if ftype == TType.I32:
                     self.limit = iprot.readI32()
                 else:
@@ -861,20 +871,24 @@ class search_args(object):
             return
         oprot.writeStructBegin('search_args')
         if self.limit is not None:
-            oprot.writeFieldBegin('limit', TType.I32, -5)
+            oprot.writeFieldBegin('limit', TType.I32, -6)
             oprot.writeI32(self.limit)
             oprot.writeFieldEnd()
         if self.old_to_new is not None:
-            oprot.writeFieldBegin('old_to_new', TType.BOOL, -4)
+            oprot.writeFieldBegin('old_to_new', TType.BOOL, -5)
             oprot.writeBool(self.old_to_new)
             oprot.writeFieldEnd()
         if self.end_time is not None:
-            oprot.writeFieldBegin('end_time', TType.STRING, -3)
+            oprot.writeFieldBegin('end_time', TType.STRING, -4)
             oprot.writeString(self.end_time.encode('utf-8') if sys.version_info[0] == 2 else self.end_time)
             oprot.writeFieldEnd()
         if self.start_time is not None:
-            oprot.writeFieldBegin('start_time', TType.STRING, -2)
+            oprot.writeFieldBegin('start_time', TType.STRING, -3)
             oprot.writeString(self.start_time.encode('utf-8') if sys.version_info[0] == 2 else self.start_time)
+            oprot.writeFieldEnd()
+        if self.user is not None:
+            oprot.writeFieldBegin('user', TType.I32, -2)
+            oprot.writeI32(self.user)
             oprot.writeFieldEnd()
         if self.id is not None:
             oprot.writeFieldBegin('id', TType.STRING, -1)

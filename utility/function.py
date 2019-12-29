@@ -65,7 +65,7 @@ def log_output(logger, output, bit):
         # Judge the level of the information by the bit
         try:
             message = message[: -1].decode(encoding="utf-8")
-            error = message[bit] == 'E' or  message[bit] == 'F'
+            error = message[bit] == 'E' or message[bit] == 'F' or message[bit] == 'C'
         except:
             error = True
 
@@ -84,7 +84,7 @@ def check_empty_dir(path):
     """
     return len(os.listdir(path)) == 0
 
-def try_with_times(times, interval, logger, tag, func, sleep_first=True, *args, **kwargs):
+def try_with_times(times, interval, sleep_first, logger, tag, func, *args, **kwargs):
     """
     Try a function with certain chances and retry intervals
     :param times: Amount of chances
@@ -110,7 +110,7 @@ def try_with_times(times, interval, logger, tag, func, sleep_first=True, *args, 
         except:
             times -= 1
             # Log the info of the exception
-            logger.warn("Failed to %s, %d more chances." % (tag, times), exc_info=True)
+            logger.warning("Failed to %s, %d more chances." % (tag, times), exc_info=True)
         if times > 0:
             time.sleep(interval)
 

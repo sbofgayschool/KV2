@@ -9,7 +9,7 @@ import subprocess
 import threading
 import time
 
-from utility.function import get_logger, log_output, try_with_times
+from utility.function import get_logger, log_output, try_with_times, check_empty_dir
 from utility.etcd import generate_local_etcd_proxy
 from utility.mongodb import mongodb_generate_run_command, generate_local_mongodb_proxy
 
@@ -26,6 +26,7 @@ def register():
     if not try_with_times(
         retry_times,
         retry_interval,
+        True,
         daemon_logger,
         "check mongodb status",
         local_mongodb.check_self_running,
@@ -34,14 +35,16 @@ def register():
         daemon_logger.error("Failed to start mongodb. Killing mongodb and exiting.")
         return
 
-    # Try to initialize the replica set (either initialize or join)
-    if not try_with_times(
+    advertise_address = config["mongodb"]["advertise"]["address"] + ":" + config["mongodb"]["advertise"]["port"]
+    # If initialization should not be skipped, try to initialize the replica set (either initialize or join)
+    if not config["daemon"].get("skip_init", False) and not try_with_times(
         retry_times,
         retry_interval,
+        True,
         daemon_logger,
         "initialize or add local mongodb to replica set",
         local_mongodb.initialize_replica_set,
-        config["mongodb"]["advertise"]["address"] + ":" + config["mongodb"]["advertise"]["port"],
+        advertise_address,
         local_etcd,
         config["daemon"]["etcd_path"]["primary"]
     )[0]:
@@ -49,15 +52,29 @@ def register():
         daemon_logger.error("Failed to initialize nor add local mongodb to replica set. Killing mongodb and exiting.")
         return
 
+    # When everything is done, switch the mode of mongodb proxy from single to replica
+    if not try_with_times(
+        retry_times,
+        retry_interval,
+        True,
+        daemon_logger,
+        "switch mode to replica",
+        local_mongodb.reconnect,
+        True
+    )[0]:
+        mongodb_proc.kill()
+        daemon_logger.error("Failed to switch mongodb proxy from single to replica. Killing mongodb and exiting.")
+        return
+
     # Loop forever to regularly check whether local mongodb has become primary node of the replica set
     while True:
         time.sleep(config["daemon"]["register_interval"])
         try:
             # If it is primary, update the key-value pair in etcd with its own advertise address
-            if local_mongodb.check_primary():
+            if local_mongodb.get_primary() == advertise_address:
                 local_etcd.set(
                     config["daemon"]["etcd_path"]["primary"],
-                    config["mongodb"]["advertise"]["address"] + ":" + config["mongodb"]["advertise"]["port"]
+                    advertise_address
                 )
                 daemon_logger.info("Local mongodb is primary. Updated etcd.")
             else:
@@ -99,6 +116,12 @@ if __name__ == "__main__":
     # Get a local mongodb proxy
     local_mongodb = generate_local_mongodb_proxy(config["mongodb"], daemon_logger)
 
+    # If the data dir is not empty, then the node should probably started up before
+    # If not specified, skip the initialization
+    if "skip_init" not in config["daemon"] and not check_empty_dir(config["mongodb"]["data_dir"]):
+        config["daemon"]["skip_init"] = True
+        daemon_logger.info("Found existing data directory. Initialization will be skipped.")
+
     # Generate command and run mongodb instance as a subprocess
     command = mongodb_generate_run_command(config["mongodb"])
     for c in command:
@@ -114,9 +137,9 @@ if __name__ == "__main__":
     register_thread.setDaemon(True)
     register_thread.start()
 
-    # Log the output of mongodb instance until EOF or a signal is received
+    # Log the output of mongodb instance until EOF or terminated
     try:
-        log_output(mongodb_logger, mongodb_proc.stdout, 29)
+        log_output(mongodb_logger, mongodb_proc.stdout, config["daemon"]["raw_log_symbol_pos"])
         daemon_logger.info("Received EOF from mongodb.")
     except:
         # When a signal is received, kill the subprocess

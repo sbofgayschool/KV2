@@ -76,7 +76,7 @@ service Judicator {
     ReturnCode ping();
     AddReturn add(Task task);
     ReturnCode cancel(string id);
-    SearchReturn search(string id, string start_time, string end_time, bool old_to_new, i32 limit);
+    SearchReturn search(string id, i32 user, string start_time, string end_time, bool old_to_new, i32 limit);
     GetReturn get(string id);
     ReportReturn report(string executor, list<Task> complete, list<TaskBrief> executing, i32 vacant);
 }

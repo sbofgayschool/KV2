@@ -3,3 +3,5 @@
 rm -rf ./data/*
 mkdir ./data/etcd
 mkdir ./data/mongodb
+
+rm -f config/*.json

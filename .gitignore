@@ -29,5 +29,10 @@ gateway/data/*
 # Pid file
 *.pid
 
+# Config file
+judicator/config/*.json
+executor/config/*.json
+gateway/config/*.json
+
 # Maintainance indicator file
 *.maintain
