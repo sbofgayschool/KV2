@@ -31,15 +31,16 @@ if __name__ == "__main__":
         "id": None,
         "user": 1,
         "compile": {
-            "source": b"1234",
-            "command": "asdf",
+            "source": b"compile_source",
+            "command": b"compile_command",
             "timeout": 1
         },
         "execute": {
-            "source": b"5678",
-            "command": "qwer",
+            "input": b"execute_input",
+            "data": b"execute_data",
+            "command": b"execute_command",
             "timeout": 2,
-            "standard": b"90-="
+            "standard": b"execute_standard"
         },
         "done": False,
         "status": 0,

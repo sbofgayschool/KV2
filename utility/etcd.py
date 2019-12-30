@@ -58,7 +58,7 @@ def etcd_generate_run_command(etcd_config):
                     )
 
         elif etcd_config["cluster"]["type"] == "join":
-            # When joining, list of  cluster members must be given
+            # When joining, list of cluster members must be given
             command.append("--initial-cluster-state")
             command.append("existing")
             command.append("--initial-cluster")

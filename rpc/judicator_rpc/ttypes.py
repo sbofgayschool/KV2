@@ -65,7 +65,7 @@ class Compile(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.command = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                    self.command = iprot.readBinary()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
@@ -89,7 +89,7 @@ class Compile(object):
             oprot.writeFieldEnd()
         if self.command is not None:
             oprot.writeFieldBegin('command', TType.STRING, 2)
-            oprot.writeString(self.command.encode('utf-8') if sys.version_info[0] == 2 else self.command)
+            oprot.writeBinary(self.command)
             oprot.writeFieldEnd()
         if self.timeout is not None:
             oprot.writeFieldBegin('timeout', TType.I32, 3)
@@ -116,7 +116,8 @@ class Compile(object):
 class Execute(object):
     """
     Attributes:
-     - source
+     - input
+     - data
      - command
      - timeout
      - standard
@@ -124,8 +125,9 @@ class Execute(object):
     """
 
 
-    def __init__(self, source=None, command=None, timeout=None, standard=None,):
-        self.source = source
+    def __init__(self, input=None, data=None, command=None, timeout=None, standard=None,):
+        self.input = input
+        self.data = data
         self.command = command
         self.timeout = timeout
         self.standard = standard
@@ -141,20 +143,25 @@ class Execute(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.source = iprot.readBinary()
+                    self.input = iprot.readBinary()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.command = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                    self.data = iprot.readBinary()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
+                if ftype == TType.STRING:
+                    self.command = iprot.readBinary()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 4:
                 if ftype == TType.I32:
                     self.timeout = iprot.readI32()
                 else:
                     iprot.skip(ftype)
-            elif fid == 4:
+            elif fid == 5:
                 if ftype == TType.STRING:
                     self.standard = iprot.readBinary()
                 else:
@@ -169,20 +176,24 @@ class Execute(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('Execute')
-        if self.source is not None:
-            oprot.writeFieldBegin('source', TType.STRING, 1)
-            oprot.writeBinary(self.source)
+        if self.input is not None:
+            oprot.writeFieldBegin('input', TType.STRING, 1)
+            oprot.writeBinary(self.input)
+            oprot.writeFieldEnd()
+        if self.data is not None:
+            oprot.writeFieldBegin('data', TType.STRING, 2)
+            oprot.writeBinary(self.data)
             oprot.writeFieldEnd()
         if self.command is not None:
-            oprot.writeFieldBegin('command', TType.STRING, 2)
-            oprot.writeString(self.command.encode('utf-8') if sys.version_info[0] == 2 else self.command)
+            oprot.writeFieldBegin('command', TType.STRING, 3)
+            oprot.writeBinary(self.command)
             oprot.writeFieldEnd()
         if self.timeout is not None:
-            oprot.writeFieldBegin('timeout', TType.I32, 3)
+            oprot.writeFieldBegin('timeout', TType.I32, 4)
             oprot.writeI32(self.timeout)
             oprot.writeFieldEnd()
         if self.standard is not None:
-            oprot.writeFieldBegin('standard', TType.STRING, 4)
+            oprot.writeFieldBegin('standard', TType.STRING, 5)
             oprot.writeBinary(self.standard)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -206,15 +217,19 @@ class Execute(object):
 class Result(object):
     """
     Attributes:
-     - compile
-     - execute
+     - compile_output
+     - compile_error
+     - execute_output
+     - execute_error
 
     """
 
 
-    def __init__(self, compile=None, execute=None,):
-        self.compile = compile
-        self.execute = execute
+    def __init__(self, compile_output=None, compile_error=None, execute_output=None, execute_error=None,):
+        self.compile_output = compile_output
+        self.compile_error = compile_error
+        self.execute_output = execute_output
+        self.execute_error = execute_error
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -227,12 +242,22 @@ class Result(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.compile = iprot.readBinary()
+                    self.compile_output = iprot.readBinary()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.execute = iprot.readBinary()
+                    self.compile_error = iprot.readBinary()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.STRING:
+                    self.execute_output = iprot.readBinary()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 4:
+                if ftype == TType.STRING:
+                    self.execute_error = iprot.readBinary()
                 else:
                     iprot.skip(ftype)
             else:
@@ -245,13 +270,21 @@ class Result(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('Result')
-        if self.compile is not None:
-            oprot.writeFieldBegin('compile', TType.STRING, 1)
-            oprot.writeBinary(self.compile)
+        if self.compile_output is not None:
+            oprot.writeFieldBegin('compile_output', TType.STRING, 1)
+            oprot.writeBinary(self.compile_output)
             oprot.writeFieldEnd()
-        if self.execute is not None:
-            oprot.writeFieldBegin('execute', TType.STRING, 2)
-            oprot.writeBinary(self.execute)
+        if self.compile_error is not None:
+            oprot.writeFieldBegin('compile_error', TType.STRING, 2)
+            oprot.writeBinary(self.compile_error)
+            oprot.writeFieldEnd()
+        if self.execute_output is not None:
+            oprot.writeFieldBegin('execute_output', TType.STRING, 3)
+            oprot.writeBinary(self.execute_output)
+            oprot.writeFieldEnd()
+        if self.execute_error is not None:
+            oprot.writeFieldBegin('execute_error', TType.STRING, 4)
+            oprot.writeBinary(self.execute_error)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -923,22 +956,25 @@ all_structs.append(Compile)
 Compile.thrift_spec = (
     None,  # 0
     (1, TType.STRING, 'source', 'BINARY', None, ),  # 1
-    (2, TType.STRING, 'command', 'UTF8', None, ),  # 2
+    (2, TType.STRING, 'command', 'BINARY', None, ),  # 2
     (3, TType.I32, 'timeout', None, None, ),  # 3
 )
 all_structs.append(Execute)
 Execute.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'source', 'BINARY', None, ),  # 1
-    (2, TType.STRING, 'command', 'UTF8', None, ),  # 2
-    (3, TType.I32, 'timeout', None, None, ),  # 3
-    (4, TType.STRING, 'standard', 'BINARY', None, ),  # 4
+    (1, TType.STRING, 'input', 'BINARY', None, ),  # 1
+    (2, TType.STRING, 'data', 'BINARY', None, ),  # 2
+    (3, TType.STRING, 'command', 'BINARY', None, ),  # 3
+    (4, TType.I32, 'timeout', None, None, ),  # 4
+    (5, TType.STRING, 'standard', 'BINARY', None, ),  # 5
 )
 all_structs.append(Result)
 Result.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'compile', 'BINARY', None, ),  # 1
-    (2, TType.STRING, 'execute', 'BINARY', None, ),  # 2
+    (1, TType.STRING, 'compile_output', 'BINARY', None, ),  # 1
+    (2, TType.STRING, 'compile_error', 'BINARY', None, ),  # 2
+    (3, TType.STRING, 'execute_output', 'BINARY', None, ),  # 3
+    (4, TType.STRING, 'execute_error', 'BINARY', None, ),  # 4
 )
 all_structs.append(Task)
 Task.thrift_spec = (

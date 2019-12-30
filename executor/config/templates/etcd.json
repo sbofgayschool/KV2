@@ -1,0 +1,61 @@
+{
+    "daemon":
+    {
+        "exe": ["python3", "etcd_daemon.py"],
+        "retry":
+        {
+            "times": 3,
+            "interval": 5
+        },
+        "pid_file": "data/etcd.pid",
+        "raw_log_symbol_pos": 27
+        /*
+        "log_daemon":
+        {
+            "info": "log/etcd/daemon_info.log",
+            "error": "log/etcd/daemon_error.log"
+        },
+        "log_etcd":
+        {
+            "info": "log/etcd/etcd_info.log",
+            "error": "log/etcd/etcd_error.log"
+        }
+        */
+    },
+    "etcd":
+    {
+        "exe": "/Users/chentingyu/Programme/Practice/Etcd/etcd",
+        "name": "executor_main1",
+        "data_dir": "data/etcd",
+        "listen":
+        {
+            "address": "0.0.0.0",
+            "peer_port": "5000",
+            "client_port": "5001"
+        },
+        "advertise":
+        {
+            "address": "127.0.0.1",
+            "peer_port": "5000",
+            "client_port": "5001"
+        },
+        "proxy": "on",
+        /*
+        "cluster":
+        {
+            "type": "init",
+            "discovery": "https://discovery.etcd.io/9ddd1320b7116daae3847cb3cf5664c9"
+        },
+        "cluster":
+        {
+            "type": "init",
+            "member": "name=url"
+        },
+        */
+        "cluster":
+        {
+            "type": "join",
+            "member": "etcd1=http://127.0.0.1:2000"
+        }
+    }
+}

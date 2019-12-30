@@ -45,7 +45,8 @@ def extract(task, brief=False, compile=True, execute=True, result=True):
     # Execute information
     if execute and task.execute:
         res["execute"] = {
-            "source": task.execute.source,
+            "input": task.execute.input,
+            "data": task.execute.data,
             "command": task.execute.command,
             "timeout": task.execute.timeout,
             "standard": task.execute.standard
@@ -56,8 +57,10 @@ def extract(task, brief=False, compile=True, execute=True, result=True):
     # Result information
     if result and task.result:
         res["result"] = {
-            "compile": task.result.compile,
-            "execute": task.result.execute,
+            "compile_output": task.result.compile_output,
+            "compile_error": task.result.compile_error,
+            "execute_output": task.result.execute_output,
+            "execute_error": task.result.execute_error,
         }
     else:
         res["result"] = None
@@ -104,7 +107,8 @@ def generate(task, brief=False, compile=True, execute=True, result=True):
     # Execute information
     if execute and task["execute"]:
         e = Execute(
-            task["execute"]["source"],
+            task["execute"]["input"],
+            task["execute"]["data"],
             task["execute"]["command"],
             task["execute"]["timeout"],
             task["execute"]["standard"]
@@ -115,8 +119,10 @@ def generate(task, brief=False, compile=True, execute=True, result=True):
     # Result information
     if result and task["result"]:
         r = Result(
-            task["result"]["compile"],
-            task["result"]["execute"]
+            task["result"]["compile_output"],
+            task["result"]["compile_error"],
+            task["result"]["execute_output"],
+            task["result"]["execute_error"]
         )
     else:
         r = None

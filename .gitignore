@@ -33,6 +33,3 @@ gateway/data/*
 judicator/config/*.json
 executor/config/*.json
 gateway/config/*.json
-
-# Maintainance indicator file
-*.maintain

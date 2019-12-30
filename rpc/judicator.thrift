@@ -2,20 +2,23 @@ namespace py judicator_rpc
 
 struct Compile {
     1: binary source,
-    2: string command,
+    2: binary command,
     3: i32 timeout
 }
 
 struct Execute {
-    1: binary source,
-    2: string command,
-    3: i32 timeout,
-    4: binary standard
+    1: binary input,
+    2: binary data,
+    3: binary command,
+    4: i32 timeout,
+    5: binary standard
 }
 
 struct Result {
-    1: binary compile,
-    2: binary execute
+    1: binary compile_output,
+    2: binary compile_error,
+    3: binary execute_output,
+    4: binary execute_error
 }
 
 struct Task {

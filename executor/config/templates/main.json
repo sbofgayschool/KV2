@@ -1,0 +1,47 @@
+{
+    "exe": ["python3", "main.py"],
+    "retry":
+    {
+        "times": 3,
+        "interval": 5
+    },
+    "pid_file": "data/main.pid",
+    "name": "executor_main1",
+    "data_dir": "data/main",
+    "judicator_etcd_path": "judicator/service",
+    "task":
+    {
+        "vacant": 3,
+        "dir":
+        {
+            "download": "download",
+            "source": "source",
+            "data": "data",
+            "result": "result"
+        },
+        "compile":
+        {
+            "source": "source.zip",
+            "command": "compile.sh",
+            "output": "compile.out",
+            "error": "compile.err"
+        },
+        "execute":
+        {
+            "input": "execute.in",
+            "data": "source.zip",
+            "command": "execute.sh",
+            "output": "execute.out",
+            "error": "execute.err"
+        }
+    },
+    "vacant": 3,
+    "report_interval": 5
+    /*
+    "log":
+    {
+        "info": "log/main/info.log",
+        "error": "log/main/error.log"
+    }
+    */
+}

@@ -37,7 +37,7 @@ if __name__ == "__main__":
         logger = get_logger("boot", None, None)
 
     services = {}
-    # TODO: Modify configuration of etcd, mongodb and main
+    # TODO: Modify configuration of etcd and main
     with open("config/templates/etcd.json", "r") as f:
         config_sub = json_comment.load(f)
     with open("config/etcd.json", "w") as f:
@@ -48,16 +48,7 @@ if __name__ == "__main__":
         "process": None
     }
 
-    with open("config/templates/mongodb.json", "r") as f:
-        config_sub = json_comment.load(f)
-    with open("config/mongodb.json", "w") as f:
-        f.write(json.dumps(config_sub))
-    services["mongodb"] = {
-        "pid_file": config_sub["daemon"]["pid_file"],
-        "command": config_sub["daemon"]["exe"],
-        "process": None
-    }
-
+    """
     with open("config/templates/main.json", "r") as f:
         config_sub = json_comment.load(f)
     with open("config/main.json", "w") as f:
@@ -67,6 +58,7 @@ if __name__ == "__main__":
         "command": config_sub["exe"],
         "process": None
     }
+    """
 
     # Generate pid files for service daemons
     for s in services:

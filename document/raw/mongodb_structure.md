@@ -5,14 +5,15 @@
     "user": Int -> User id,
     "compile": -> Compile information
     {
-        "source": Binary -> Zipped source,
-        "command": String -> Compile command,
+        "source": Binary -> Zip file containing source,
+        "command": Binary -> Zipped compile command,
         "timeout": Int -> Compile timeout
     },
     "execute": -> Execute information
     {
-        "data": Binary -> Zipped input data,
-        "command": String -> Execute command,
+        "input": Binary -> Zipped input data used as stdin,
+        "data: Binary -> Zip file containing extra data,
+        "command": Binary -> Zipped execute command,
         "timeout": Int -> Execute timeout,
         "standard": Binary -> Zipped standard output
     },
@@ -22,8 +23,10 @@
     "report_time": Date -> Last report time,
     "result":
     {
-        "compile": Binary -> Zipped compile output,
-        "execute": Binary -> Zipped execute output
+        "compile_output": Binary -> Zipped compile stdout output,
+        "compile_error": Binary -> Zipped compile stderr output,
+        "execute_output": Binary -> Zipped execute stdout output,
+        "execute_error": Binary -> Zipped execute stderr output,
     }
 }
 ```

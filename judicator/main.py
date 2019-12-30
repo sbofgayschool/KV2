@@ -128,6 +128,7 @@ class RPCService:
         Check whether the service is on
         :return: Always OK
         """
+        self.logger.debug("Received RPC request: Ping")
         return ReturnCode.OK
 
     def add(self, task):
@@ -137,6 +138,8 @@ class RPCService:
         :param task: Task struture, the task needed to be added
         :return: An AddResult structure containing the result and the generated id of the new task
         """
+        self.logger.debug("Received RPC request: Add")
+
         # Extract and clean the task
         task = extract(task, result=False)
         del task["id"]
@@ -160,6 +163,8 @@ class RPCService:
         :param id: The id of the job neede to be cancelled
         :return: Whether the cancellation is successful
         """
+        self.logger.debug("Received RPC request: Cancel")
+
         # Try to update the status and executor of a undone task
         result = self.mongodb_task.find_one_and_update(
             {"_id": ObjectId(id), "done": False},
@@ -181,6 +186,8 @@ class RPCService:
         :param limit: Limitation of the total amount
         :return: A SearchReturn structure containing the result and all
         """
+        self.logger.debug("Received RPC request: Search")
+
         # Add conditions to the filter
         filter = {}
         if id:
@@ -217,6 +224,8 @@ class RPCService:
         :param id: The id of the task
         :return: A GetResult structure containing return code and the task
         """
+        self.logger.debug("Received RPC request: Get")
+
         # Find and transform the result
         result = self.mongodb_task.find_one({"_id": ObjectId(id)})
         if result:
@@ -234,6 +243,8 @@ class RPCService:
         :param vacant: Vacant place of the executor
         :return: A ReportResult structure containing return code, tasks needed to be deleted, and assigned tasks
         """
+        self.logger.debug("Received RPC request: Report")
+
         # Refresh or add the information of the executor
         result = self.mongodb_executor.find_one_and_update(
             {"hostname": executor},
