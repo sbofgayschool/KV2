@@ -8,6 +8,7 @@ json = JsonComment()
 import os
 import threading
 import datetime
+import zlib
 
 from utility.function import get_logger
 import executor.main
@@ -34,19 +35,17 @@ if __name__ == "__main__":
     executor.main.lock = threading.Lock()
 
     data = {
-        "id": "0",
+        "id": None,
         "user": 1,
         "compile": {
             "source": b"",
-            # "command": b'x\x9c\xcb)V\xd0M\xcc\x01\x00\x07\x02\x01\xfa',
-            # "command": b'x\x9c+\xceIM-P0\xe5JM\xce\xc8WP\xb7\xb7\xb7W\x07\x007\xd0\x05C',
-            "command": b'x\x9c+\xceIM-P0\xe2JM\xce\xc8WP\xb7\xb7\xb7W\x07\x007\xac\x05@',
-            "timeout": 3
+            "command": zlib.compress(b"sleep 8\necho '???'"),
+            "timeout": 10
         },
         "execute": {
-            "input": b'x\x9c\x03\x00\x00\x00\x00\x01',
+            "input": zlib.compress(b"input\n"),
             "data": b"",
-            "command": b'x\x9cKM\xce\xc8WPO,NIS\x07\x00\x16\xfa\x03\xac',
+            "command": zlib.compress(b"while IFS= read -r line; do\n  printf '%s\n' \"$line\"\ndone\necho 'done~'"),
             "timeout": 3,
             "standard": b""
         },
@@ -57,6 +56,7 @@ if __name__ == "__main__":
         "result": None
     }
     executor.main.tasks = {"0": data}
+    executor.main.tasks["0"]["id"] = "0"
     executor.main.tasks["0"]["process"] = None
     executor.main.tasks["0"]["cancel"] = False
 

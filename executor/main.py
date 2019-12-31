@@ -33,6 +33,8 @@ def execute(id):
     :param id: Job id
     :return: None
     """
+    logger.info("Working thread for task %s started." % id)
+
     # Get the specified task
     task = tasks[id]
     task["result"] = {
@@ -54,6 +56,8 @@ def execute(id):
     os.mkdir(source_dir)
     os.mkdir(data_dir)
     os.mkdir(result_dir)
+
+    logger.info("Task %s generating dirs complete." % task["id"])
 
     # Generate all files for compilation
     # Compile source
@@ -95,6 +99,7 @@ def execute(id):
     execute_output = join(result_dir, config["task"]["execute"]["output"])
     # Execute error
     execute_error = join(result_dir, config["task"]["execute"]["error"])
+    logger.info("Task %s generating needed file complete." % task["id"])
 
     # Start to compile
     # Acquire the lock
@@ -104,6 +109,7 @@ def execute(id):
     # Otherwise, clean and exit
     try:
         if not cancel:
+            logger.info("Task %s starting to compile." % task["id"])
             task["status"] = TASK_STATUS["COMPILING"]
             with open(compile_output, "wb") as ostream, open(compile_error, "wb") as estream:
                 task["process"] = subprocess.Popen(
@@ -115,19 +121,23 @@ def execute(id):
         else:
             task["done"] = True
     except:
-        logger.error("Error occurs when trying to start compilation of %s." % task["id"], exc_info=True)
+        logger.error("Error occurs when trying to start compilation of task %s." % task["id"], exc_info=True)
         cancel = True
     finally:
         # Lock must be released
         lock.release()
         if cancel:
+            logger.info("Task %s exiting." % task["id"])
             shutil.rmtree(work_dir)
             return
 
     # Wait for the compilation with timeout
     try:
-        success = (task["process"].wait(task["compile"]["timeout"]) == 0)
+        res = task["process"].wait(task["compile"]["timeout"])
+        success = res == 0
+        logger.info("Task %s finished compiling with exit code %d." % (task["id"], res))
     except:
+        logger.warning("Task %s failed to compile." % task["id"], exc_info=True)
         # If timeout, kill and wait for the subprocess
         success = False
         task["process"].kill()
@@ -146,8 +156,9 @@ def execute(id):
             task["result"]["compile_error"] = zlib.compress(f.read())
         # If compilation is successful, execute it
         if success:
+            logger.info("Task %s start to run." % task["id"])
             task["status"] = TASK_STATUS["RUNNING"]
-            with open(execute_input, "wb") as istream, \
+            with open(execute_input, "rb") as istream, \
                     open(execute_output, "wb") as ostream, \
                     open(execute_error, "wb") as estream:
                 task["process"] = subprocess.Popen(
@@ -159,7 +170,7 @@ def execute(id):
                 )
     except:
         logger.error(
-            "Error occurs when trying to collect compilation result and start execution of %s." % task["id"],
+            "Error occurs when trying to collect compilation result and start execution of task %s." % task["id"],
             exc_info=True
         )
         success = False
@@ -173,13 +184,17 @@ def execute(id):
         lock.release()
         # It not successful, clean and exit
         if not success:
+            logger.info("Task %s exiting." % task["id"])
             shutil.rmtree(work_dir)
             return
 
     # Wait for the execution with timeout
     try:
-        success = (task["process"].wait(task["execute"]["timeout"]) == 0)
+        res = task["process"].wait(task["execute"]["timeout"])
+        success = res == 0
+        logger.info("Task %s finished running with exit code %d." % (task["id"], res))
     except:
+        logger.warning("Task %s failed to run." % task["id"], exc_info=True)
         # If timeout, kill and wait for the subprocess
         success = False
         task["process"].kill()
@@ -196,7 +211,7 @@ def execute(id):
             task["result"]["execute_error"] = zlib.compress(f.read())
         task["status"] = TASK_STATUS["SUCCESS"] if success else TASK_STATUS["RUN_FAILED"]
     except:
-        logger.error("Error occurs when trying to collect execution result of %s." % task["id"], exc_info=True)
+        logger.error("Error occurs when trying to collect execution result of task %s." % task["id"], exc_info=True)
         task["status"] = TASK_STATUS["RUN_FAILED"]
     finally:
         task["done"] = True
@@ -204,6 +219,7 @@ def execute(id):
         # Lock must be released
         lock.release()
 
+    logger.info("Task %s exiting." % task["id"])
     # Clean files
     shutil.rmtree(work_dir)
 
@@ -222,9 +238,9 @@ def report(complete, executing, vacant):
     logger.debug("Get judicator list %s." % str(judicator))
     if not judicator:
         raise Exception("No judicator rpc service detected.")
-    name, address = random.choice(judicator.items())
+    name, address = random.choice(tuple(judicator.items()))
     host, port = address.split(":")
-    logger.debug("Reporting to judicator %s at %s", (name, address))
+    logger.debug("Reporting to judicator %s at %s" % (name, address))
 
     # Start rpc transport
     transport = TTransport.TBufferedTransport(TSocket.TSocket(host, int(port)))
@@ -235,11 +251,11 @@ def report(complete, executing, vacant):
     transport.close()
 
     if res.result != ReturnCode.OK:
-        raise Exception("Return code from judicator is not 0 but %d." % (res.result))
+        raise Exception("Return code from judicator is not 0 but %d." % res.result)
 
     return res.cancel, res.assign
 
-if __name__ == "__main__ ":
+if __name__ == "__main__":
     # Load configuration
     with open("config/main.json", "r") as f:
         config = json.load(f)
@@ -255,6 +271,7 @@ if __name__ == "__main__ ":
         )
     else:
         logger = get_logger("main", None, None)
+    logger.info("Executor main program started.")
 
     # Generate proxy for etcd
     with open("config/etcd.json", "r") as f:
@@ -278,8 +295,10 @@ if __name__ == "__main__ ":
                 for t in tasks:
                     if not tasks[t]["cancel"]:
                         if tasks[t]["thread"] and not tasks[t]["thread"].is_alive():
+                            logger.info("Task %s added to complete list." % t)
                             complete.append(generate(tasks[t], False, False, False))
                         else:
+                            logger.info("Task %s added to executing list." % t)
                             executing.append(generate(tasks[t], True))
                             vacant -= 1
             except:
@@ -295,7 +314,7 @@ if __name__ == "__main__ ":
         success, res = try_with_times(
             retry_times,
             retry_interval,
-            True,
+            False,
             logger,
             "report to judicator",
             report,
@@ -318,12 +337,16 @@ if __name__ == "__main__ ":
             try:
                 # Cancel tasks
                 for t in cancel:
+                    logger.info("Task %s is going to be cancelled." % t)
                     if not t["id"] in tasks:
                         continue
                     tasks[t["id"]]["cancel"] = True
                     # If the subprocess is still running, kill it
-                    if tasks[t["id"]]["process"].poll() is None:
+                    if tasks[t["id"]]["process"] and tasks[t["id"]]["process"].poll() is None:
+                        logger.info("Killing subprocess of task %s." % t["id"])
                         tasks[t["id"]]["process"].kill()
+                    else:
+                        logger.info("No subprocess to kill for task %s." % t["id"])
 
                 # Clean all tasks
                 # A list ot tasks index must be built beforehand, as the tasks is going to change
@@ -334,16 +357,19 @@ if __name__ == "__main__ ":
                         # when thread.is_alive() is False (indicating the daemon thread has finished)
                         # and cancel (indicating the judicator has received the result) is True
                         if tasks[t]["cancel"]:
+                            logger.info("Delete task %s." % t)
                             del tasks[t]
 
                 # Handle newly assigned
                 for t in assign:
+                    logger.info("Newly assigned task %s." % t)
+
                     tasks[t["id"]] = t
                     tasks[t["id"]]["process"] = None
                     tasks[t["id"]]["cancel"] = False
 
                     # Generate a thread and start it
-                    tasks[t["id"]]["thread"] = threading.Thread(target=executing, args=(t["id"], ))
+                    tasks[t["id"]]["thread"] = threading.Thread(target=execute, args=(t["id"], ))
                     tasks[t["id"]]["thread"].setDaemon(True)
                     tasks[t["id"]]["thread"].start()
             except:

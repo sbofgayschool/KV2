@@ -102,7 +102,7 @@ def lead():
                     res = mongodb_executor.find_one_and_delete({"report_time": {"$lt": expire_time}})
                     if not res:
                         break
-                    logger.warning("Delete expired executor %s from records." % str(res["_id"]))
+                    logger.warning("Delete expired executor %s from records." % str(res["name"]))
 
                 logger.info("Finished routine check.")
         except:
@@ -128,7 +128,7 @@ class RPCService:
         Check whether the service is on
         :return: Always OK
         """
-        self.logger.debug("Received RPC request: Ping")
+        self.logger.debug("Received RPC request: Ping.")
         return ReturnCode.OK
 
     def add(self, task):
@@ -138,7 +138,7 @@ class RPCService:
         :param task: Task struture, the task needed to be added
         :return: An AddResult structure containing the result and the generated id of the new task
         """
-        self.logger.debug("Received RPC request: Add")
+        self.logger.debug("Received RPC request: Add.")
 
         # Extract and clean the task
         task = extract(task, result=False)
@@ -163,7 +163,8 @@ class RPCService:
         :param id: The id of the job neede to be cancelled
         :return: Whether the cancellation is successful
         """
-        self.logger.debug("Received RPC request: Cancel")
+        self.logger.debug("Received RPC request: Cancel.")
+        self.logger.info("Task %s is going to be cancelled." % id)
 
         # Try to update the status and executor of a undone task
         result = self.mongodb_task.find_one_and_update(
@@ -186,7 +187,7 @@ class RPCService:
         :param limit: Limitation of the total amount
         :return: A SearchReturn structure containing the result and all
         """
-        self.logger.debug("Received RPC request: Search")
+        self.logger.debug("Received RPC request: Search.")
 
         # Add conditions to the filter
         filter = {}
@@ -200,7 +201,7 @@ class RPCService:
                 filter["report_time"]["$gte"] = dateutil.parser.parse(start_time)
             if end_time:
                 filter["report_time"]["$lte"] = dateutil.parser.parse(end_time)
-        logger.debug("Filter: %s." % filter)
+        self.logger.debug("Filter: %s." % filter)
 
         # Find all result and transform them into TaskBrief structure
         result = self.mongodb_task.find(
@@ -224,10 +225,12 @@ class RPCService:
         :param id: The id of the task
         :return: A GetResult structure containing return code and the task
         """
-        self.logger.debug("Received RPC request: Get")
+        self.logger.debug("Received RPC request: Get.")
+        self.logger.info("Search for task %s." % id)
 
         # Find and transform the result
         result = self.mongodb_task.find_one({"_id": ObjectId(id)})
+        self.logger.debug("Search result: %s." % str(result))
         if result:
             transform_id(result)
             return GetReturn(ReturnCode.OK, generate(result))
@@ -243,7 +246,8 @@ class RPCService:
         :param vacant: Vacant place of the executor
         :return: A ReportResult structure containing return code, tasks needed to be deleted, and assigned tasks
         """
-        self.logger.debug("Received RPC request: Report")
+        self.logger.debug("Received RPC request: Report.")
+        self.logger.info("Reporting executor: %s." % executor)
 
         # Refresh or add the information of the executor
         result = self.mongodb_executor.find_one_and_update(
@@ -251,14 +255,16 @@ class RPCService:
             {"$set": {"report_time": datetime.datetime.now()}}
         )
         if not result:
-            self.mongodb_executor.insert({"hostname": executor, "report_time": datetime.datetime.now()})
+            self.mongodb_executor.insert_one({"hostname": executor, "report_time": datetime.datetime.now()})
+        self.logger.info("Executor %s updated." % executor)
 
         delete_list, assign_list = [], []
         # Update all completed tasks, if the task indeed belong to the executor, and request the executor to delete it
         for t in complete:
             task = extract(t)
-            self.mongodb_task.find_one_and_update(
-                {"id": ObjectId(task["id"]), "executor": executor},
+            self.logger.debug("Complete task: %s" % task)
+            result = self.mongodb_task.find_one_and_update(
+                {"_id": ObjectId(task["id"]), "executor": executor},
                 {
                     "$set": {
                         "done": True,
@@ -269,17 +275,25 @@ class RPCService:
                     }
                 }
             )
+            if not result:
+                self.logger.warning("Complete task %s not found, delete it." % task["id"])
+            else:
+                self.logger.info("Successfully update complete task %s." % task["id"])
             # Complete task is going to be deleted, no matter whether there is such a task record
             delete_list.append(generate(task, brief=True))
         # Update all executing tasks, and request the executor to delete it if the task does not belong to it
         for t in executing:
             task = extract(t, brief=True)
+            self.logger.debug("Executing task %s." % task)
             result = self.mongodb_task.find_one_and_update(
-                {"id": ObjectId(task["id"]), "executor": executor},
+                {"_id": ObjectId(task["id"]), "executor": executor},
                 {"$set": {"status": task["status"], "report_time": datetime.datetime.now()}}
             )
             if not result:
                 delete_list.append(generate(task, brief=True))
+                self.logger.warning("Executing task %s not found, delete it." % task["id"])
+            else:
+                self.logger.info("Successfully update executing task %s." % task["id"])
 
         # While there is still vacant position in the executor
         while vacant:
@@ -290,10 +304,12 @@ class RPCService:
                 return_document=pymongo.ReturnDocument.AFTER
             )
             if not task:
+                self.logger.info("No more task to assign for executor %s." % executor)
                 break
             transform_id(task)
             assign_list.append(generate(task))
             vacant = vacant - 1
+            self.logger.info("Task %s assigned to executor %s." % (task, executor))
 
         return ReportReturn(ReturnCode.OK, delete_list, assign_list)
 
@@ -313,6 +329,7 @@ if __name__ == "__main__":
         )
     else:
         logger = get_logger("main", None, None)
+    logger.info("Judicator main program started.")
 
     # Generate proxy for etcd and mongodb
     with open("config/etcd.json", "r") as f:

@@ -98,6 +98,7 @@ if __name__ == "__main__":
         )
     else:
         daemon_logger = get_logger("mongodb_daemon", None, None)
+    daemon_logger.info("Judicator mongodb_daemon program started.")
 
     # Generate logger for mongodb forwarding raw log output to designated place
     if "log_mongodb" in config["daemon"]:

@@ -35,6 +35,7 @@ if __name__ == "__main__":
         )
     else:
         logger = get_logger("boot", None, None)
+    logger.info("Executor boot program started.")
 
     services = {}
     # TODO: Modify configuration of etcd and main
@@ -48,7 +49,6 @@ if __name__ == "__main__":
         "process": None
     }
 
-    """
     with open("config/templates/main.json", "r") as f:
         config_sub = json_comment.load(f)
     with open("config/main.json", "w") as f:
@@ -58,7 +58,6 @@ if __name__ == "__main__":
         "command": config_sub["exe"],
         "process": None
     }
-    """
 
     # Generate pid files for service daemons
     for s in services:

@@ -53,6 +53,7 @@ if __name__ == "__main__":
         )
     else:
         daemon_logger = get_logger("etcd_daemon", None, None)
+    daemon_logger.info("Executor etcd_daemon program started.")
 
     # Generate etcd logger forwarding etcd log to designated location
     if "log_etcd" in config["daemon"]:

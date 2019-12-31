@@ -35,6 +35,7 @@ if __name__ == "__main__":
         )
     else:
         logger = get_logger("boot", None, None)
+    logger.info("Judicator boot program started.")
 
     services = {}
     # TODO: Modify configuration of etcd, mongodb and main
