@@ -1,0 +1,39 @@
+{
+    "daemon":
+    {
+        "exe": ["python3", "uwsgi_daemon.py"],
+        "pid_file": "data/uwsgi.pid"
+        /*
+        "log_daemon":
+        {
+            "info": "log/uwsgi/daemon_info.log",
+            "error": "log/uwsgi/daemon_error.log"
+        },
+        "log_uwsgi":
+        {
+            "info": "log/uwsgi/etcd_info.log",
+            "error": "log/uwsgi/etcd_error.log"
+        }
+        */
+    },
+    "uwsgi":
+    {
+        "exe": ["uwsgi", "--ini", "config/uwsgi.ini"],
+        "host": "0.0.0.0",
+        "port": "7000",
+        "module": "server:server",
+        "master": true,
+        "process": 3
+    },
+    "server":
+    {
+        "judicator_etcd_path": "judicator/service"
+        /*
+        "log_daemon":
+        {
+            "info": "log/server/info.log",
+            "error": "log/server/error.log"
+        }
+        */
+    }
+}

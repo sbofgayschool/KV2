@@ -29,7 +29,7 @@ if __name__ == "__main__":
     # Generate a logger
     if "log" in config:
         logger = get_logger(
-            "main",
+            "boot",
             config["log"]["info"],
             config["log"]["error"]
         )

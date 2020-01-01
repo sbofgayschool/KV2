@@ -26,20 +26,22 @@ struct Task {
     2: i32 user,
     3: Compile compile,
     4: Execute execute,
-    5: bool done,
-    6: i32 status,
-    7: string executor,
-    8: string report_time,
-    9: Result result
+    5: string add_time,
+    6: bool done,
+    7: i32 status,
+    8: string executor,
+    9: string report_time,
+    10: Result result
 }
 
 struct TaskBrief {
     1: string id,
     2: i32 user,
-    3: bool done,
-    4: i32 status,
-    5: string executor,
-    6: string report_time
+    3: string add_time,
+    4: bool done,
+    5: i32 status,
+    6: string executor,
+    7: string report_time
 }
 
 struct Executor {
@@ -75,11 +77,18 @@ struct ReportReturn {
     3: list<Task> assign
 }
 
+struct ExecutorsReturn {
+    1: ReturnCode result,
+    2: list<Executor> executors
+}
+
 service Judicator {
     ReturnCode ping();
     AddReturn add(Task task);
     ReturnCode cancel(string id);
-    SearchReturn search(string id, i32 user, string start_time, string end_time, bool old_to_new, i32 limit);
+    SearchReturn search(string id, i32 user, string start_time, string end_time, bool old_to_new, i32 limit, i32 page);
     GetReturn get(string id);
     ReportReturn report(string executor, list<Task> complete, list<TaskBrief> executing, i32 vacant);
+
+    ExecutorsReturn executors();
 }

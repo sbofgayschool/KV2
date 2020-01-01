@@ -193,7 +193,7 @@ class EtcdProxy:
         # Return dictionary containing key-value pairs inside it, and no subdir information is included
         # Else, simply return the value of the key
         if res["node"].get("dir", False):
-            return dict([(x["key"], x["value"]) for x in res["node"]["nodes"] if "value" in x])
+            return dict([(x["key"], x["value"]) for x in res["node"].get("nodes", []) if "value" in x])
         return res["node"]["value"]
 
 def generate_local_etcd_proxy(etcd_config, logger):

@@ -49,6 +49,7 @@ if __name__ == "__main__":
             "timeout": 3,
             "standard": b""
         },
+        "add_time": None,
         "done": False,
         "status": 0,
         "executor": None,

@@ -8,22 +8,18 @@ json = JsonComment()
 import os
 from os.path import join
 import shutil
-import random
 import threading
 import time
 import zipfile
 import zlib
 import subprocess
 
-from utility.function import get_logger, try_with_times
-from utility.etcd import generate_local_etcd_proxy
-from utility.rpc import extract, generate
-from utility.define import TASK_STATUS
-
-from rpc.judicator_rpc import Judicator
 from rpc.judicator_rpc.ttypes import ReturnCode
-from thrift.transport import TSocket, TTransport
-from thrift.protocol import TBinaryProtocol
+
+from utility.function import get_logger, try_with_times, check_empty_dir
+from utility.etcd import generate_local_etcd_proxy
+from utility.rpc import extract, generate, select_from_etcd_and_call
+from utility.define import TASK_STATUS
 
 
 def execute(id):
@@ -34,7 +30,6 @@ def execute(id):
     :return: None
     """
     logger.info("Working thread for task %s started." % id)
-
     # Get the specified task
     task = tasks[id]
     task["result"] = {
@@ -43,68 +38,72 @@ def execute(id):
         "execute_output": b"",
         "execute_error": b""
     }
+    cancel = False
 
-    # Create all necessary dirs and unzip sources
     work_dir = join(config["data_dir"], task["id"])
     download_dir = join(work_dir, config["task"]["dir"]["download"])
     source_dir = join(work_dir, config["task"]["dir"]["source"])
     data_dir = join(work_dir, config["task"]["dir"]["data"])
     result_dir = join(work_dir, config["task"]["dir"]["result"])
 
-    os.mkdir(work_dir)
-    os.mkdir(download_dir)
-    os.mkdir(source_dir)
-    os.mkdir(data_dir)
-    os.mkdir(result_dir)
-
-    logger.info("Task %s generating dirs complete." % task["id"])
-
-    # Generate all files for compilation
-    # Compile source
-    if task["compile"]["source"]:
-        compile_source = join(download_dir, config["task"]["compile"]["source"])
-        with open(compile_source, "wb") as f:
-            f.write(task["compile"]["source"])
-        with zipfile.ZipFile(compile_source, "r") as f:
-            f.extractall(source_dir)
-    # Compile command
+    compile_source = join(download_dir, config["task"]["compile"]["source"])
     compile_command = join(source_dir, config["task"]["compile"]["command"])
-    with open(compile_command, "wb") as f:
-        if task["compile"]["command"]:
-            f.write(zlib.decompress(task["compile"]["command"]))
-    # Compile output
     compile_output = join(result_dir, config["task"]["compile"]["output"])
-    # Compile error
     compile_error = join(result_dir, config["task"]["compile"]["error"])
 
-    # Generate all files for execution
-    # Execute input
     execute_input = join(source_dir, config["task"]["execute"]["input"])
-    with open(execute_input, "wb") as f:
-        if task["execute"]["input"]:
-            f.write(zlib.decompress(task["execute"]["input"]))
-    # Execute data
-    if task["execute"]["data"]:
-        execute_data = join(download_dir, config["task"]["execute"]["data"])
-        with open(execute_data, "wb") as f:
-            f.write(task["execute"]["data"])
-        with zipfile.ZipFile(execute_data, "r") as f:
-            f.extractall(data_dir)
-    # Execute command
+    execute_data = join(download_dir, config["task"]["execute"]["data"])
     execute_command = join(source_dir, config["task"]["execute"]["command"])
-    with open(execute_command, "wb") as f:
-        if task["execute"]["command"]:
-            f.write(zlib.decompress(task["execute"]["command"]))
-    # Execute output
     execute_output = join(result_dir, config["task"]["execute"]["output"])
-    # Execute error
     execute_error = join(result_dir, config["task"]["execute"]["error"])
-    logger.info("Task %s generating needed file complete." % task["id"])
+
+    # Create all dirs and files
+    try:
+        # Create all necessary dirs and unzip sources
+        os.mkdir(work_dir)
+        os.mkdir(download_dir)
+        os.mkdir(source_dir)
+        os.mkdir(data_dir)
+        os.mkdir(result_dir)
+
+        logger.info("Task %s generating dirs complete." % task["id"])
+
+        # Generate all files for compilation
+        # Compile source
+        if task["compile"]["source"]:
+            with open(compile_source, "wb") as f:
+                f.write(task["compile"]["source"])
+            with zipfile.ZipFile(compile_source, "r") as f:
+                f.extractall(source_dir)
+        # Compile command
+        with open(compile_command, "wb") as f:
+            if task["compile"]["command"]:
+                f.write(zlib.decompress(task["compile"]["command"]))
+
+        # Generate all files for execution
+        # Execute input
+        with open(execute_input, "wb") as f:
+            if task["execute"]["input"]:
+                f.write(zlib.decompress(task["execute"]["input"]))
+        # Execute data
+        if task["execute"]["data"]:
+            with open(execute_data, "wb") as f:
+                f.write(task["execute"]["data"])
+            with zipfile.ZipFile(execute_data, "r") as f:
+                f.extractall(data_dir)
+        # Execute command
+        with open(execute_command, "wb") as f:
+            if task["execute"]["command"]:
+                f.write(zlib.decompress(task["execute"]["command"]))
+        logger.info("Task %s generating needed file complete." % task["id"])
+    except:
+        logger.error("Task %s generating dirs and files failed." % task["id"], exc_info=True)
+        cancel = True
 
     # Start to compile
     # Acquire the lock
     lock.acquire()
-    cancel = task["cancel"]
+    cancel = cancel or task["cancel"]
     # If not cancelled, start subprocess to compile it
     # Otherwise, clean and exit
     try:
@@ -233,26 +232,18 @@ def report(complete, executing, vacant):
     :param vacant: Vacant task places
     :return: Tuple contain RPC report return
     """
-    # Get all judicator rpc address and choose one randomly
-    judicator = local_etcd.get(config["judicator_etcd_path"])
-    logger.debug("Get judicator list %s." % str(judicator))
-    if not judicator:
-        raise Exception("No judicator rpc service detected.")
-    name, address = random.choice(tuple(judicator.items()))
-    host, port = address.split(":")
-    logger.debug("Reporting to judicator %s at %s" % (name, address))
-
-    # Start rpc transport
-    transport = TTransport.TBufferedTransport(TSocket.TSocket(host, int(port)))
-    client = Judicator.Client(TBinaryProtocol.TBinaryProtocol(transport))
-    transport.open()
-    # Report
-    res = client.report(config["name"], complete, executing, vacant)
-    transport.close()
-
+    res = select_from_etcd_and_call(
+        "report",
+        local_etcd,
+        config["judicator_etcd_path"],
+        logger,
+        config["name"],
+        complete,
+        executing,
+        vacant
+    )
     if res.result != ReturnCode.OK:
         raise Exception("Return code from judicator is not 0 but %d." % res.result)
-
     return res.cancel, res.assign
 
 if __name__ == "__main__":
@@ -276,6 +267,13 @@ if __name__ == "__main__":
     # Generate proxy for etcd
     with open("config/etcd.json", "r") as f:
         local_etcd = generate_local_etcd_proxy(json.load(f)["etcd"], logger)
+
+    # Check whether the data dir of main is empty
+    # If not, delete it and create a new one
+    if not check_empty_dir(config["data_dir"]):
+        logger.info("Delete previous existing data directory and create a new one.")
+        shutil.rmtree(config["data_dir"])
+        os.mkdir(config["data_dir"])
 
     tasks = {}
     lock = threading.Lock()

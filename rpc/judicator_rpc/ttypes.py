@@ -311,6 +311,7 @@ class Task(object):
      - user
      - compile
      - execute
+     - add_time
      - done
      - status
      - executor
@@ -320,11 +321,12 @@ class Task(object):
     """
 
 
-    def __init__(self, id=None, user=None, compile=None, execute=None, done=None, status=None, executor=None, report_time=None, result=None,):
+    def __init__(self, id=None, user=None, compile=None, execute=None, add_time=None, done=None, status=None, executor=None, report_time=None, result=None,):
         self.id = id
         self.user = user
         self.compile = compile
         self.execute = execute
+        self.add_time = add_time
         self.done = done
         self.status = status
         self.executor = executor
@@ -363,26 +365,31 @@ class Task(object):
                 else:
                     iprot.skip(ftype)
             elif fid == 5:
+                if ftype == TType.STRING:
+                    self.add_time = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 6:
                 if ftype == TType.BOOL:
                     self.done = iprot.readBool()
                 else:
                     iprot.skip(ftype)
-            elif fid == 6:
+            elif fid == 7:
                 if ftype == TType.I32:
                     self.status = iprot.readI32()
                 else:
                     iprot.skip(ftype)
-            elif fid == 7:
+            elif fid == 8:
                 if ftype == TType.STRING:
                     self.executor = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
-            elif fid == 8:
+            elif fid == 9:
                 if ftype == TType.STRING:
                     self.report_time = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
-            elif fid == 9:
+            elif fid == 10:
                 if ftype == TType.STRUCT:
                     self.result = Result()
                     self.result.read(iprot)
@@ -414,24 +421,28 @@ class Task(object):
             oprot.writeFieldBegin('execute', TType.STRUCT, 4)
             self.execute.write(oprot)
             oprot.writeFieldEnd()
+        if self.add_time is not None:
+            oprot.writeFieldBegin('add_time', TType.STRING, 5)
+            oprot.writeString(self.add_time.encode('utf-8') if sys.version_info[0] == 2 else self.add_time)
+            oprot.writeFieldEnd()
         if self.done is not None:
-            oprot.writeFieldBegin('done', TType.BOOL, 5)
+            oprot.writeFieldBegin('done', TType.BOOL, 6)
             oprot.writeBool(self.done)
             oprot.writeFieldEnd()
         if self.status is not None:
-            oprot.writeFieldBegin('status', TType.I32, 6)
+            oprot.writeFieldBegin('status', TType.I32, 7)
             oprot.writeI32(self.status)
             oprot.writeFieldEnd()
         if self.executor is not None:
-            oprot.writeFieldBegin('executor', TType.STRING, 7)
+            oprot.writeFieldBegin('executor', TType.STRING, 8)
             oprot.writeString(self.executor.encode('utf-8') if sys.version_info[0] == 2 else self.executor)
             oprot.writeFieldEnd()
         if self.report_time is not None:
-            oprot.writeFieldBegin('report_time', TType.STRING, 8)
+            oprot.writeFieldBegin('report_time', TType.STRING, 9)
             oprot.writeString(self.report_time.encode('utf-8') if sys.version_info[0] == 2 else self.report_time)
             oprot.writeFieldEnd()
         if self.result is not None:
-            oprot.writeFieldBegin('result', TType.STRUCT, 9)
+            oprot.writeFieldBegin('result', TType.STRUCT, 10)
             self.result.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -457,6 +468,7 @@ class TaskBrief(object):
     Attributes:
      - id
      - user
+     - add_time
      - done
      - status
      - executor
@@ -465,9 +477,10 @@ class TaskBrief(object):
     """
 
 
-    def __init__(self, id=None, user=None, done=None, status=None, executor=None, report_time=None,):
+    def __init__(self, id=None, user=None, add_time=None, done=None, status=None, executor=None, report_time=None,):
         self.id = id
         self.user = user
+        self.add_time = add_time
         self.done = done
         self.status = status
         self.executor = executor
@@ -493,21 +506,26 @@ class TaskBrief(object):
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
+                if ftype == TType.STRING:
+                    self.add_time = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 4:
                 if ftype == TType.BOOL:
                     self.done = iprot.readBool()
                 else:
                     iprot.skip(ftype)
-            elif fid == 4:
+            elif fid == 5:
                 if ftype == TType.I32:
                     self.status = iprot.readI32()
                 else:
                     iprot.skip(ftype)
-            elif fid == 5:
+            elif fid == 6:
                 if ftype == TType.STRING:
                     self.executor = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
-            elif fid == 6:
+            elif fid == 7:
                 if ftype == TType.STRING:
                     self.report_time = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
@@ -530,20 +548,24 @@ class TaskBrief(object):
             oprot.writeFieldBegin('user', TType.I32, 2)
             oprot.writeI32(self.user)
             oprot.writeFieldEnd()
+        if self.add_time is not None:
+            oprot.writeFieldBegin('add_time', TType.STRING, 3)
+            oprot.writeString(self.add_time.encode('utf-8') if sys.version_info[0] == 2 else self.add_time)
+            oprot.writeFieldEnd()
         if self.done is not None:
-            oprot.writeFieldBegin('done', TType.BOOL, 3)
+            oprot.writeFieldBegin('done', TType.BOOL, 4)
             oprot.writeBool(self.done)
             oprot.writeFieldEnd()
         if self.status is not None:
-            oprot.writeFieldBegin('status', TType.I32, 4)
+            oprot.writeFieldBegin('status', TType.I32, 5)
             oprot.writeI32(self.status)
             oprot.writeFieldEnd()
         if self.executor is not None:
-            oprot.writeFieldBegin('executor', TType.STRING, 5)
+            oprot.writeFieldBegin('executor', TType.STRING, 6)
             oprot.writeString(self.executor.encode('utf-8') if sys.version_info[0] == 2 else self.executor)
             oprot.writeFieldEnd()
         if self.report_time is not None:
-            oprot.writeFieldBegin('report_time', TType.STRING, 6)
+            oprot.writeFieldBegin('report_time', TType.STRING, 7)
             oprot.writeString(self.report_time.encode('utf-8') if sys.version_info[0] == 2 else self.report_time)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -952,6 +974,83 @@ class ReportReturn(object):
 
     def __ne__(self, other):
         return not (self == other)
+
+
+class ExecutorsReturn(object):
+    """
+    Attributes:
+     - result
+     - executors
+
+    """
+
+
+    def __init__(self, result=None, executors=None,):
+        self.result = result
+        self.executors = executors
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.I32:
+                    self.result = iprot.readI32()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.LIST:
+                    self.executors = []
+                    (_etype24, _size21) = iprot.readListBegin()
+                    for _i25 in range(_size21):
+                        _elem26 = Executor()
+                        _elem26.read(iprot)
+                        self.executors.append(_elem26)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('ExecutorsReturn')
+        if self.result is not None:
+            oprot.writeFieldBegin('result', TType.I32, 1)
+            oprot.writeI32(self.result)
+            oprot.writeFieldEnd()
+        if self.executors is not None:
+            oprot.writeFieldBegin('executors', TType.LIST, 2)
+            oprot.writeListBegin(TType.STRUCT, len(self.executors))
+            for iter27 in self.executors:
+                iter27.write(oprot)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
 all_structs.append(Compile)
 Compile.thrift_spec = (
     None,  # 0
@@ -983,21 +1082,23 @@ Task.thrift_spec = (
     (2, TType.I32, 'user', None, None, ),  # 2
     (3, TType.STRUCT, 'compile', [Compile, None], None, ),  # 3
     (4, TType.STRUCT, 'execute', [Execute, None], None, ),  # 4
-    (5, TType.BOOL, 'done', None, None, ),  # 5
-    (6, TType.I32, 'status', None, None, ),  # 6
-    (7, TType.STRING, 'executor', 'UTF8', None, ),  # 7
-    (8, TType.STRING, 'report_time', 'UTF8', None, ),  # 8
-    (9, TType.STRUCT, 'result', [Result, None], None, ),  # 9
+    (5, TType.STRING, 'add_time', 'UTF8', None, ),  # 5
+    (6, TType.BOOL, 'done', None, None, ),  # 6
+    (7, TType.I32, 'status', None, None, ),  # 7
+    (8, TType.STRING, 'executor', 'UTF8', None, ),  # 8
+    (9, TType.STRING, 'report_time', 'UTF8', None, ),  # 9
+    (10, TType.STRUCT, 'result', [Result, None], None, ),  # 10
 )
 all_structs.append(TaskBrief)
 TaskBrief.thrift_spec = (
     None,  # 0
     (1, TType.STRING, 'id', 'UTF8', None, ),  # 1
     (2, TType.I32, 'user', None, None, ),  # 2
-    (3, TType.BOOL, 'done', None, None, ),  # 3
-    (4, TType.I32, 'status', None, None, ),  # 4
-    (5, TType.STRING, 'executor', 'UTF8', None, ),  # 5
-    (6, TType.STRING, 'report_time', 'UTF8', None, ),  # 6
+    (3, TType.STRING, 'add_time', 'UTF8', None, ),  # 3
+    (4, TType.BOOL, 'done', None, None, ),  # 4
+    (5, TType.I32, 'status', None, None, ),  # 5
+    (6, TType.STRING, 'executor', 'UTF8', None, ),  # 6
+    (7, TType.STRING, 'report_time', 'UTF8', None, ),  # 7
 )
 all_structs.append(Executor)
 Executor.thrift_spec = (
@@ -1030,6 +1131,12 @@ ReportReturn.thrift_spec = (
     (1, TType.I32, 'result', None, None, ),  # 1
     (2, TType.LIST, 'cancel', (TType.STRUCT, [TaskBrief, None], False), None, ),  # 2
     (3, TType.LIST, 'assign', (TType.STRUCT, [Task, None], False), None, ),  # 3
+)
+all_structs.append(ExecutorsReturn)
+ExecutorsReturn.thrift_spec = (
+    None,  # 0
+    (1, TType.I32, 'result', None, None, ),  # 1
+    (2, TType.LIST, 'executors', (TType.STRUCT, [Executor, None], False), None, ),  # 2
 )
 fix_spec(all_structs)
 del all_structs

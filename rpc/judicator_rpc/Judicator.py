@@ -38,7 +38,7 @@ class Iface(object):
         """
         pass
 
-    def search(self, id, user, start_time, end_time, old_to_new, limit):
+    def search(self, id, user, start_time, end_time, old_to_new, limit, page):
         """
         Parameters:
          - id
@@ -47,6 +47,7 @@ class Iface(object):
          - end_time
          - old_to_new
          - limit
+         - page
 
         """
         pass
@@ -68,6 +69,9 @@ class Iface(object):
          - vacant
 
         """
+        pass
+
+    def executors(self):
         pass
 
 
@@ -168,7 +172,7 @@ class Client(Iface):
             return result.success
         raise TApplicationException(TApplicationException.MISSING_RESULT, "cancel failed: unknown result")
 
-    def search(self, id, user, start_time, end_time, old_to_new, limit):
+    def search(self, id, user, start_time, end_time, old_to_new, limit, page):
         """
         Parameters:
          - id
@@ -177,12 +181,13 @@ class Client(Iface):
          - end_time
          - old_to_new
          - limit
+         - page
 
         """
-        self.send_search(id, user, start_time, end_time, old_to_new, limit)
+        self.send_search(id, user, start_time, end_time, old_to_new, limit, page)
         return self.recv_search()
 
-    def send_search(self, id, user, start_time, end_time, old_to_new, limit):
+    def send_search(self, id, user, start_time, end_time, old_to_new, limit, page):
         self._oprot.writeMessageBegin('search', TMessageType.CALL, self._seqid)
         args = search_args()
         args.id = id
@@ -191,6 +196,7 @@ class Client(Iface):
         args.end_time = end_time
         args.old_to_new = old_to_new
         args.limit = limit
+        args.page = page
         args.write(self._oprot)
         self._oprot.writeMessageEnd()
         self._oprot.trans.flush()
@@ -280,6 +286,32 @@ class Client(Iface):
             return result.success
         raise TApplicationException(TApplicationException.MISSING_RESULT, "report failed: unknown result")
 
+    def executors(self):
+        self.send_executors()
+        return self.recv_executors()
+
+    def send_executors(self):
+        self._oprot.writeMessageBegin('executors', TMessageType.CALL, self._seqid)
+        args = executors_args()
+        args.write(self._oprot)
+        self._oprot.writeMessageEnd()
+        self._oprot.trans.flush()
+
+    def recv_executors(self):
+        iprot = self._iprot
+        (fname, mtype, rseqid) = iprot.readMessageBegin()
+        if mtype == TMessageType.EXCEPTION:
+            x = TApplicationException()
+            x.read(iprot)
+            iprot.readMessageEnd()
+            raise x
+        result = executors_result()
+        result.read(iprot)
+        iprot.readMessageEnd()
+        if result.success is not None:
+            return result.success
+        raise TApplicationException(TApplicationException.MISSING_RESULT, "executors failed: unknown result")
+
 
 class Processor(Iface, TProcessor):
     def __init__(self, handler):
@@ -291,6 +323,7 @@ class Processor(Iface, TProcessor):
         self._processMap["search"] = Processor.process_search
         self._processMap["get"] = Processor.process_get
         self._processMap["report"] = Processor.process_report
+        self._processMap["executors"] = Processor.process_executors
         self._on_message_begin = None
 
     def on_message_begin(self, func):
@@ -388,7 +421,7 @@ class Processor(Iface, TProcessor):
         iprot.readMessageEnd()
         result = search_result()
         try:
-            result.success = self._handler.search(args.id, args.user, args.start_time, args.end_time, args.old_to_new, args.limit)
+            result.success = self._handler.search(args.id, args.user, args.start_time, args.end_time, args.old_to_new, args.limit, args.page)
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
@@ -447,6 +480,29 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.EXCEPTION
             result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
         oprot.writeMessageBegin("report", msg_type, seqid)
+        result.write(oprot)
+        oprot.writeMessageEnd()
+        oprot.trans.flush()
+
+    def process_executors(self, seqid, iprot, oprot):
+        args = executors_args()
+        args.read(iprot)
+        iprot.readMessageEnd()
+        result = executors_result()
+        try:
+            result.success = self._handler.executors()
+            msg_type = TMessageType.REPLY
+        except TTransport.TTransportException:
+            raise
+        except TApplicationException as ex:
+            logging.exception('TApplication exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = ex
+        except Exception:
+            logging.exception('Unexpected exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+        oprot.writeMessageBegin("executors", msg_type, seqid)
         result.write(oprot)
         oprot.writeMessageEnd()
         oprot.trans.flush()
@@ -809,17 +865,19 @@ class search_args(object):
      - end_time
      - old_to_new
      - limit
+     - page
 
     """
 
 
-    def __init__(self, id=None, user=None, start_time=None, end_time=None, old_to_new=None, limit=None,):
+    def __init__(self, id=None, user=None, start_time=None, end_time=None, old_to_new=None, limit=None, page=None,):
         self.id = id
         self.user = user
         self.start_time = start_time
         self.end_time = end_time
         self.old_to_new = old_to_new
         self.limit = limit
+        self.page = page
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -860,6 +918,11 @@ class search_args(object):
                     self.limit = iprot.readI32()
                 else:
                     iprot.skip(ftype)
+            elif fid == -7:
+                if ftype == TType.I32:
+                    self.page = iprot.readI32()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -870,6 +933,10 @@ class search_args(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('search_args')
+        if self.page is not None:
+            oprot.writeFieldBegin('page', TType.I32, -7)
+            oprot.writeI32(self.page)
+            oprot.writeFieldEnd()
         if self.limit is not None:
             oprot.writeFieldBegin('limit', TType.I32, -6)
             oprot.writeI32(self.limit)
@@ -1131,22 +1198,22 @@ class report_args(object):
             elif fid == -2:
                 if ftype == TType.LIST:
                     self.complete = []
-                    (_etype24, _size21) = iprot.readListBegin()
-                    for _i25 in range(_size21):
-                        _elem26 = Task()
-                        _elem26.read(iprot)
-                        self.complete.append(_elem26)
+                    (_etype31, _size28) = iprot.readListBegin()
+                    for _i32 in range(_size28):
+                        _elem33 = Task()
+                        _elem33.read(iprot)
+                        self.complete.append(_elem33)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == -3:
                 if ftype == TType.LIST:
                     self.executing = []
-                    (_etype30, _size27) = iprot.readListBegin()
-                    for _i31 in range(_size27):
-                        _elem32 = TaskBrief()
-                        _elem32.read(iprot)
-                        self.executing.append(_elem32)
+                    (_etype37, _size34) = iprot.readListBegin()
+                    for _i38 in range(_size34):
+                        _elem39 = TaskBrief()
+                        _elem39.read(iprot)
+                        self.executing.append(_elem39)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -1172,15 +1239,15 @@ class report_args(object):
         if self.executing is not None:
             oprot.writeFieldBegin('executing', TType.LIST, -3)
             oprot.writeListBegin(TType.STRUCT, len(self.executing))
-            for iter33 in self.executing:
-                iter33.write(oprot)
+            for iter40 in self.executing:
+                iter40.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.complete is not None:
             oprot.writeFieldBegin('complete', TType.LIST, -2)
             oprot.writeListBegin(TType.STRUCT, len(self.complete))
-            for iter34 in self.complete:
-                iter34.write(oprot)
+            for iter41 in self.complete:
+                iter41.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.executor is not None:
@@ -1266,6 +1333,111 @@ class report_result(object):
 all_structs.append(report_result)
 report_result.thrift_spec = (
     (0, TType.STRUCT, 'success', [ReportReturn, None], None, ),  # 0
+)
+
+
+class executors_args(object):
+
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('executors_args')
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(executors_args)
+executors_args.thrift_spec = (
+)
+
+
+class executors_result(object):
+    """
+    Attributes:
+     - success
+
+    """
+
+
+    def __init__(self, success=None,):
+        self.success = success
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 0:
+                if ftype == TType.STRUCT:
+                    self.success = ExecutorsReturn()
+                    self.success.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('executors_result')
+        if self.success is not None:
+            oprot.writeFieldBegin('success', TType.STRUCT, 0)
+            self.success.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(executors_result)
+executors_result.thrift_spec = (
+    (0, TType.STRUCT, 'success', [ExecutorsReturn, None], None, ),  # 0
 )
 fix_spec(all_structs)
 del all_structs

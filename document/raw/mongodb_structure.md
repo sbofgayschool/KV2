@@ -17,6 +17,7 @@
         "timeout": Int -> Execute timeout,
         "standard": Binary -> Zipped standard output
     },
+    "add_time": Date -> Time when this task being added,
     "done": Boolean -> If the task has been done,
     "status": Int -> Current status,
     "executor": String -> Executor hostname,

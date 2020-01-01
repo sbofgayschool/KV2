@@ -27,9 +27,10 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
     print('  ReturnCode ping()')
     print('  AddReturn add(Task task)')
     print('  ReturnCode cancel(string id)')
-    print('  SearchReturn search(string id, i32 user, string start_time, string end_time, bool old_to_new, i32 limit)')
+    print('  SearchReturn search(string id, i32 user, string start_time, string end_time, bool old_to_new, i32 limit, i32 page)')
     print('  GetReturn get(string id)')
     print('  ReportReturn report(string executor,  complete,  executing, i32 vacant)')
+    print('  ExecutorsReturn executors()')
     print('')
     sys.exit(0)
 
@@ -128,10 +129,10 @@ elif cmd == 'cancel':
     pp.pprint(client.cancel(args[0],))
 
 elif cmd == 'search':
-    if len(args) != 6:
-        print('search requires 6 args')
+    if len(args) != 7:
+        print('search requires 7 args')
         sys.exit(1)
-    pp.pprint(client.search(args[0], eval(args[1]), args[2], args[3], eval(args[4]), eval(args[5]),))
+    pp.pprint(client.search(args[0], eval(args[1]), args[2], args[3], eval(args[4]), eval(args[5]), eval(args[6]),))
 
 elif cmd == 'get':
     if len(args) != 1:
@@ -144,6 +145,12 @@ elif cmd == 'report':
         print('report requires 4 args')
         sys.exit(1)
     pp.pprint(client.report(args[0], eval(args[1]), eval(args[2]), eval(args[3]),))
+
+elif cmd == 'executors':
+    if len(args) != 0:
+        print('executors requires 0 args')
+        sys.exit(1)
+    pp.pprint(client.executors())
 
 else:
     print('Unrecognized method %s' % cmd)

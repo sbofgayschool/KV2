@@ -111,6 +111,11 @@ Report(e, complete, executing, vacant):
         result = this.mongodb.tasks.find_and_set(id==t.id, executor==e, report_time=current_time)
         IF result == NULL:
             delete_list.append(t)
+    WHILE true:
+        result = this.mongodb.tasks.find_and_set(id NOT IN executing, executor==e, done=false, executor=NULL, status=retrying)
+        IF NOT result:
+            BREAK
+        delete_list.append(result)
     WHILE vacant:
         t = this.mongodb.tasks.find_and_set(executor==NULL, done==false, executor=e, report_time=current_time)
         IF t == NULL:

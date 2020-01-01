@@ -21,8 +21,11 @@ def get_logger(name, info_file, error_file, raw=False):
     :param raw: If the output should be log in raw format
     :return: Generated logger
     """
-    # Generate logger object
-    logger = logging.getLogger(name)
+    # Generate or get the logger object
+    if isinstance(name, str):
+        logger = logging.getLogger(name)
+    else:
+        logger = name
     logger.setLevel(logging.DEBUG)
 
     # Config info level logger handler
@@ -65,7 +68,10 @@ def log_output(logger, output, bit):
         # Judge the level of the information by the bit
         try:
             message = message[: -1].decode(encoding="utf-8")
-            error = message[bit] == 'E' or message[bit] == 'F' or message[bit] == 'C'
+            if bit is None:
+                error = False
+            else:
+                error = message[bit] == 'E' or message[bit] == 'F' or message[bit] == 'C'
         except:
             error = True
 

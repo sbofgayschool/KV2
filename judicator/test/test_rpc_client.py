@@ -43,31 +43,38 @@ if __name__ == "__main__":
             "timeout": 2,
             "standard": b"execute_standard"
         },
+        "add_time": None,
         "done": False,
         "status": 0,
         "executor": None,
-        "report_time": datetime.datetime.now(),
+        "report_time": None,
         "result": None
     }
     res = client.add(generate(data))
     print(res.result)
     print(res.id)
     print("=============\n")
+    """
 
+    """
     print("==== CANCEL ====")
     res = client.cancel("5e0897a0c17b388b35f2f310")
     print(res)
     print("================\n")
+    """
 
+    """
     print("==== GET ====")
     res = client.get("5e08f35dd6c57a942b9c2a31")
     print(res.result)
     print(extract(res.task))
     print(extract(res.task, brief=True))
     print("=============\n")
+    """
 
+    """
     print("==== SEARCH ====")
-    res = client.search(None, 1, datetime.datetime(2019, 12, 29, 12, 10, 8, 426000).isoformat(), None, True, 2)
+    res = client.search(None, 1, None, None, False, 2, 0)
     print(res.result)
     for x in res.tasks:
         print(extract(x, brief=True))
@@ -93,6 +100,7 @@ if __name__ == "__main__":
             "timeout": 3,
             "standard": b""
         },
+        "add_time": None,
         "done": False,
         "status": 0,
         "executor": None,
@@ -103,9 +111,11 @@ if __name__ == "__main__":
     print(res.result)
     print(res.id)
     print("===================\n")
+    """
 
+    """
     print("==== GET REAL ====")
-    res = client.get("5e0b375f75b6518f66dac105")
+    res = client.get("5e0c8830b88731cc928c0666")
     print(res.result)
     print(extract(res.task))
     print(extract(res.task, brief=True))
@@ -130,6 +140,7 @@ if __name__ == "__main__":
                 "timeout": 3,
                 "standard": b""
             },
+            "add_time": None,
             "done": False,
             "status": 0,
             "executor": None,
@@ -142,7 +153,7 @@ if __name__ == "__main__":
         print("===================\n")
     """
 
-
+    """
     print("==== GET REAL ====")
     res = client.get("5e0b4bae2dd620088752f83c")
     print(res.result)
@@ -167,6 +178,15 @@ if __name__ == "__main__":
     print(extract(res.task))
     print(extract(res.task, brief=True))
     print("==================\n")
+    """
 
+    # """
+    print("==== GET EXECUTOR ====")
+    res = client.executors()
+    print(res.result)
+    for e in res.executors:
+        print(e.id, e.hostname, e.report_time)
+    print("======================\n")
+    # """
 
     transport.close()

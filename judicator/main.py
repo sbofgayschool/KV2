@@ -12,6 +12,7 @@ import urllib.parse
 import dateutil
 import pymongo
 from bson.objectid import ObjectId
+import dateutil.parser
 
 from rpc.judicator_rpc import Judicator
 from rpc.judicator_rpc.ttypes import *
@@ -102,7 +103,7 @@ def lead():
                     res = mongodb_executor.find_one_and_delete({"report_time": {"$lt": expire_time}})
                     if not res:
                         break
-                    logger.warning("Delete expired executor %s from records." % str(res["name"]))
+                    logger.warning("Delete expired executor %s from records." % res["hostname"])
 
                 logger.info("Finished routine check.")
         except:
@@ -143,6 +144,7 @@ class RPCService:
         # Extract and clean the task
         task = extract(task, result=False)
         del task["id"]
+        task["add_time"] = datetime.datetime.now()
         task["done"] = False
         task["status"] = TASK_STATUS["PENDING"]
         task["report_time"] = datetime.datetime.now()
@@ -175,7 +177,7 @@ class RPCService:
             return ReturnCode.OK
         return ReturnCode.NOT_EXIST
 
-    def search(self, id, user, start_time, end_time, old_to_new, limit):
+    def search(self, id, user, start_time, end_time, old_to_new, limit, page):
         """
         Interface: Search
         Search tasks according to conditions
@@ -185,6 +187,7 @@ class RPCService:
         :param end_time: End time of tasks
         :param old_to_new: If the result should be sorted in old-to-new order
         :param limit: Limitation of the total amount
+        :param page: Page number of the search
         :return: A SearchReturn structure containing the result and all
         """
         self.logger.debug("Received RPC request: Search.")
@@ -196,21 +199,23 @@ class RPCService:
         if user:
             filter["user"] = user
         if start_time or end_time:
-            filter["report_time"] = {}
+            filter["add_time"] = {}
             if start_time:
-                filter["report_time"]["$gte"] = dateutil.parser.parse(start_time)
+                filter["add_time"]["$gte"] = dateutil.parser.parse(start_time)
             if end_time:
-                filter["report_time"]["$lte"] = dateutil.parser.parse(end_time)
+                filter["add_time"]["$lte"] = dateutil.parser.parse(end_time)
         self.logger.debug("Filter: %s." % filter)
 
         # Find all result and transform them into TaskBrief structure
         result = self.mongodb_task.find(
             filter=filter,
+            sort=[(
+                "add_time",
+                pymongo.ASCENDING if old_to_new else pymongo.DESCENDING
+            )],
+            skip=(page if page else 0) * (limit if limit else 0),
             limit=(limit if limit else 0)
-        ).sort([(
-            "report_time",
-            pymongo.ASCENDING if old_to_new else pymongo.DESCENDING
-        )])
+        )
         # Convert Cursor object to a list
         result = [x for x in result]
         for r in result:
@@ -259,6 +264,7 @@ class RPCService:
         self.logger.info("Executor %s updated." % executor)
 
         delete_list, assign_list = [], []
+        executing_list = []
         # Update all completed tasks, if the task indeed belong to the executor, and request the executor to delete it
         for t in complete:
             task = extract(t)
@@ -281,9 +287,11 @@ class RPCService:
                 self.logger.info("Successfully update complete task %s." % task["id"])
             # Complete task is going to be deleted, no matter whether there is such a task record
             delete_list.append(generate(task, brief=True))
+
         # Update all executing tasks, and request the executor to delete it if the task does not belong to it
         for t in executing:
             task = extract(t, brief=True)
+            executing_list.append(ObjectId(task["id"]))
             self.logger.debug("Executing task %s." % task)
             result = self.mongodb_task.find_one_and_update(
                 {"_id": ObjectId(task["id"]), "executor": executor},
@@ -294,6 +302,22 @@ class RPCService:
                 self.logger.warning("Executing task %s not found, delete it." % task["id"])
             else:
                 self.logger.info("Successfully update executing task %s." % task["id"])
+
+        # Find all tasks which should be executed by this executor but not appear in executing list
+        # And set them to retry
+        self.logger.debug("Checking for unreported tasks.")
+        while True:
+            task = mongodb_task.find_one_and_update(
+                {"_id": {"$nin": executing_list}, "done": False, "executor": executor},
+                {"$set": {"executor": None, "status": TASK_STATUS["RETRYING"]}}
+            )
+            if not task:
+                break
+            transform_id(task)
+            self.logger.warning(
+                "Task %s should be executed by executor %s but not reported. Delete it." % (task["id"], executor)
+            )
+            delete_list.append(generate(task, True))
 
         # While there is still vacant position in the executor
         while vacant:
@@ -312,6 +336,22 @@ class RPCService:
             self.logger.info("Task %s assigned to executor %s." % (task, executor))
 
         return ReportReturn(ReturnCode.OK, delete_list, assign_list)
+
+    def executors(self):
+        """
+        Interface: Executors
+        Get a list of all executors
+        :return: The list of all executors
+        """
+        self.logger.debug("Received RPC request: Executors.")
+
+        # Find all executors and reformat the response.
+        result = self.mongodb_executor.find()
+        result = [x for x in result]
+        executors = [
+            Executor(str(x["_id"]), x["hostname"], x["report_time"].isoformat()) for x in result
+        ]
+        return ExecutorsReturn(ReturnCode.OK, executors)
 
 if __name__ == "__main__":
     # Load configuration

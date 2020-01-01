@@ -5,7 +5,7 @@ mkdir ./data
 mkdir ./data/etcd
 mkdir ./data/mongodb
 
-rm -f config/*.json
+rm -f config/*.*
 
 rm -rf ./log
 mkdir ./log

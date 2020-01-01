@@ -3,8 +3,12 @@
 __author__ = "chenty"
 
 import dateutil.parser
+import random
 
+from rpc.judicator_rpc import Judicator
 from rpc.judicator_rpc.ttypes import *
+from thrift.transport import TSocket, TTransport
+from thrift.protocol import TBinaryProtocol
 
 
 def extract(task, brief=False, compile=True, execute=True, result=True):
@@ -22,13 +26,13 @@ def extract(task, brief=False, compile=True, execute=True, result=True):
     res = {
         "id": task.id,
         "user": task.user,
+        "add_time": dateutil.parser.parse(task.add_time) if task.add_time else None,
         "done": task.done,
         "status": task.status,
         "executor": task.executor,
         # Parse the time string to a datetime object
         "report_time": dateutil.parser.parse(task.report_time) if task.report_time else None
     }
-
     if brief:
         return res
 
@@ -77,21 +81,28 @@ def generate(task, brief=False, compile=True, execute=True, result=True):
     :param result: Same to compile, but result information
     :return: Generated Task structure
     """
-    # The report_time must be converted into a string, if necessary
-    if isinstance(task["report_time"], str):
-        t = task["report_time"]
+    # The add_time must be converted into a string, if necessary
+    if task["add_time"] is None or isinstance(task["add_time"], str):
+        add_time = task["add_time"]
     else:
-        t = task["report_time"].isoformat()
+        add_time = task["add_time"].isoformat()
+
+    # Same to the report_time
+    if task["report_time"] is None or isinstance(task["report_time"], str):
+        report_time = task["report_time"]
+    else:
+        report_time = task["report_time"].isoformat()
 
     # If BriefTask should be generated, just return fundamental fields
     if brief:
         return TaskBrief(
             task["id"],
             task["user"],
+            add_time,
             task["done"],
             task["status"],
             task["executor"],
-            t
+            report_time
         )
 
     # Generate compile information
@@ -132,9 +143,38 @@ def generate(task, brief=False, compile=True, execute=True, result=True):
             task["user"],
             c,
             e,
+            add_time,
             task["done"],
             task["status"],
             task["executor"],
-            t,
+            report_time,
             r
         )
+
+def select_from_etcd_and_call(func, local_etcd, judicator_path, logger, *args, **kwargs):
+    """
+    Select a judicator from etcd and call rpc process.
+    :param func: Name of the function
+    :param local_etcd: Etcd proxy
+    :param judicator_path: Path to judicator services on etcd
+    :param logger: Logger object.
+    :return: Return of the rpc call.
+    """
+    # Get all judicator rpc address and choose one randomly
+    judicator = local_etcd.get(judicator_path)
+    logger.debug("Get judicator list %s." % str(judicator))
+    if not judicator:
+        raise Exception("No judicator rpc service detected.")
+    name, address = random.choice(tuple(judicator.items()))
+    host, port = address.split(":")
+    logger.debug("Making %s call to judicator %s at %s" % (func, name, address))
+
+    # Start rpc transport
+    transport = TTransport.TBufferedTransport(TSocket.TSocket(host, int(port)))
+    client = Judicator.Client(TBinaryProtocol.TBinaryProtocol(transport))
+    transport.open()
+    # Call and return
+    res = client.__getattribute__(func)(*args, **kwargs)
+    transport.close()
+
+    return res
