@@ -737,13 +737,15 @@ class SearchReturn(object):
     """
     Attributes:
      - result
+     - pages
      - tasks
 
     """
 
 
-    def __init__(self, result=None, tasks=None,):
+    def __init__(self, result=None, pages=None, tasks=None,):
         self.result = result
+        self.pages = pages
         self.tasks = tasks
 
     def read(self, iprot):
@@ -761,6 +763,11 @@ class SearchReturn(object):
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
+                if ftype == TType.I32:
+                    self.pages = iprot.readI32()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 3:
                 if ftype == TType.LIST:
                     self.tasks = []
                     (_etype3, _size0) = iprot.readListBegin()
@@ -785,8 +792,12 @@ class SearchReturn(object):
             oprot.writeFieldBegin('result', TType.I32, 1)
             oprot.writeI32(self.result)
             oprot.writeFieldEnd()
+        if self.pages is not None:
+            oprot.writeFieldBegin('pages', TType.I32, 2)
+            oprot.writeI32(self.pages)
+            oprot.writeFieldEnd()
         if self.tasks is not None:
-            oprot.writeFieldBegin('tasks', TType.LIST, 2)
+            oprot.writeFieldBegin('tasks', TType.LIST, 3)
             oprot.writeListBegin(TType.STRUCT, len(self.tasks))
             for iter6 in self.tasks:
                 iter6.write(oprot)
@@ -1117,7 +1128,8 @@ all_structs.append(SearchReturn)
 SearchReturn.thrift_spec = (
     None,  # 0
     (1, TType.I32, 'result', None, None, ),  # 1
-    (2, TType.LIST, 'tasks', (TType.STRUCT, [TaskBrief, None], False), None, ),  # 2
+    (2, TType.I32, 'pages', None, None, ),  # 2
+    (3, TType.LIST, 'tasks', (TType.STRUCT, [TaskBrief, None], False), None, ),  # 3
 )
 all_structs.append(GetReturn)
 GetReturn.thrift_spec = (

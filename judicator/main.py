@@ -206,6 +206,13 @@ class RPCService:
                 filter["add_time"]["$lte"] = dateutil.parser.parse(end_time)
         self.logger.debug("Filter: %s." % filter)
 
+        # Count result first for page calculation later
+        cnt = self.mongodb_task.count(filter=filter)
+        # If nothing found, return directly
+        if cnt == 0:
+            self.logger.info("Find nothing.")
+            return SearchReturn(ReturnCode.OK, 0, [])
+
         # Find all result and transform them into TaskBrief structure
         result = self.mongodb_task.find(
             filter=filter,
@@ -221,7 +228,11 @@ class RPCService:
         for r in result:
             transform_id(r)
         self.logger.debug("Search result: %s." % result)
-        return SearchReturn(ReturnCode.OK, [generate(r, brief=True) for r in result])
+        return SearchReturn(
+            ReturnCode.OK,
+            1 if not limit else (cnt // limit + (1 if cnt % limit else 0)),
+            [generate(r, brief=True) for r in result]
+        )
 
     def get(self, id):
         """

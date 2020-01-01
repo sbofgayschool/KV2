@@ -26,7 +26,7 @@ if __name__ == "__main__":
     print(client.ping())
     print("==============\n")
 
-    """
+    # """
     print("==== ADD ====")
     data = {
         "id": None,
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     print(res.result)
     print(res.id)
     print("=============\n")
-    """
+    # """
 
     """
     print("==== CANCEL ====")
@@ -72,14 +72,15 @@ if __name__ == "__main__":
     print("=============\n")
     """
 
-    """
+    # """
     print("==== SEARCH ====")
-    res = client.search(None, 1, None, None, False, 2, 0)
+    res = client.search(None, 1, None, None, True, 2, 0)
     print(res.result)
+    print(res.pages)
     for x in res.tasks:
         print(extract(x, brief=True))
     print("================\n")
-    """
+    # """
 
     """
     print("==== ADD: REAL ====")

@@ -63,7 +63,8 @@ struct AddReturn {
 
 struct SearchReturn {
     1: ReturnCode result,
-    2: list<TaskBrief> tasks
+    2: i32 pages,
+    3: list<TaskBrief> tasks
 }
 
 struct GetReturn {
