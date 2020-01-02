@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Don't Starve!</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="res/plugins/fontawesome-free/css/all.min.css">
+    <!-- Ionicons -->
+    <link rel="stylesheet" href="res/plugins/ionicons/ionicons.css">
+    <!-- Vue-multiselect -->
+    <link rel="stylesheet" href="res/plugins/vue/vue-multiselect.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="res/plugins/adminlte/css/adminlte.min.css">
+    <!-- Google Font: Source Sans Pro -->
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+</head>
+<body class="hold-transition sidebar-mini">
+<div class="wrapper">
+    <!-- Navbar -->
+    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+        <!-- Left navbar links -->
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a>
+            </li>
+        </ul>
+        <!-- Right navbar links -->
+        <ul class="navbar-nav ml-auto">
+            <!-- Notifications Dropdown Menu -->
+            <li id="cart" class="nav-item dropdown">
+                <a class="nav-link" data-toggle="dropdown" href="#">
+                    <i class="fa fa-shopping-cart"></i>
+                    <span class="badge badge-warning navbar-badge">{{data.length}}</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                    <span class="dropdown-item-text dropdown-header"><b>Restaurant Cart</b></span>
+                    <div class="dropdown-divider"></div>
+                    <span class="dropdown-item-text" v-for="c in data">
+                        <i class="fas fa-hamburger mr-2"></i><b>{{c.name}}</b>&nbsp;&nbsp;&nbsp;{{c.branch}}
+                        <span class="float-right text-muted text-sm">Weight: {{c.weight}}</span>
+                    </span>
+                    <span v-if="!data.length" class="dropdown-item-text" style="text-align: center">OMG! Your cart is empty!</span>
+                    <a href="cart" class="dropdown-item dropdown-footer bg-warning">View All!</a>
+                </div>
+            </li>
+        </ul>
+    </nav>
+    <!-- /.navbar -->
+
+    <!-- Main Sidebar Container -->
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <!-- Brand Logo -->
+        <a href="./" class="brand-link">
+            <img src="res/img/D.jpg"
+                     alt="AdminLTE Logo"
+                     class="brand-image img-circle elevation-3"
+                     style="opacity: .8">
+            <span class="brand-text font-weight-light">Don't Starve!</span>
+        </a>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Sidebar user (optional) -->
+            <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+                <div class="image">
+                    <img src="res/img/QieGuevara.jpeg" class="img-circle elevation-2" alt="User Image">
+                </div>
+                <div class="info">
+                    <a href="http://www.comradestukov.xin" class="d-block">SB of Gay School</a>
+                </div>
+            </div>
+
+            <!-- Sidebar Menu -->
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                    <!-- Add icons to the links using the .nav-icon class
+                             with font-awesome or any other icon font library -->
+                    <li class="nav-header">RESTAURANTS</li>
+                    <li class="nav-item">
+                        <a href="find_restaurants" class="nav-link" id="nav_find_restaurants">
+                            <i class="nav-icon fas fa-search"></i>
+                            <p>Find Restaurants</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="add_restaurant" class="nav-link" id="nav_add_restaurant">
+                            <i class="nav-icon fas fa-plus"></i>
+                            <p>Add Restaurant</p>
+                        </a>
+                    </li>
+                    <li class="nav-header">TAGS</li>
+                    <li class="nav-item">
+                        <a href="find_tags" class="nav-link" id="nav_find_tags">
+                            <i class="nav-icon fas fa-tag"></i>
+                            <p>Manage Tags</p>
+                        </a>
+                    </li>
+                    <li class="nav-header">CART</li>
+                    <li class="nav-item">
+                        <a href="cart" class="nav-link" id="nav_cart">
+                            <i class="nav-icon fas fa-shopping-cart"></i>
+                            <p>Restaurant Cart</p>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <!-- /.sidebar-menu -->
+        </div>
+        <!-- /.sidebar -->
+    </aside>
+
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <div><label></label></div>
+        <div class="col-12">
+            <div id="message" v-if="show" class="alert alert-dismissible" v-bind:class="type">
+                <button type="button" class="close" v-on:click="show = false">×</button>
+                <h5><i class="icon fas fa-info"></i>{{title}}</h5>
+                {{content}}
+            </div>
+        </div>
+        <div id="frame">
+            {%block html%}
+            {%endblock%}
+        </div>
+    </div>
+    <!-- /.content-wrapper -->
+    
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="float-right d-none d-sm-block">
+            <b>Version</b> 0.1
+        </div>
+        <strong>Copyright &copy; 2019 <a href="http://www.comradestukov.xin">Eshttc_Cty</a>.</strong> All rights
+        reserved.
+    </footer>
+    <!-- ./footer -->
+</div>
+<!-- ./wrapper -->
+<!-- jQuery -->
+<script src="res/plugins/jquery/jquery.min.js"></script>
+<!-- Bootstrap 4 -->
+<script src="res/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- Vue -->
+<script src="res/plugins/vue/vue.js"></script>
+<!-- Vue-multiselect -->
+<script src="res/plugins/vue/vue-multiselect.min.js"></script>
+<!-- AdminLTE App -->
+<script src="res/plugins/adminlte/js/adminlte.min.js"></script>
+<script src="res/js/utility.js"></script>
+<script>
+$(
+function ()
+{
+    // $("#frame").load("[[frame]]");
+    $('html,body').animate({scrollTop: 0}, 500);
+    get_cart();
+}
+);
+var message = new Vue({
+    el: "#message",
+    data: {
+        "show": false,
+        "type": "",
+        "title": "",
+        "content": ""
+    }
+});
+var cart = new Vue({
+    el: "#cart",
+    data: {
+        data: []
+    }
+});
+function show_message(show, type, title, content)
+{
+    message.$data["show"] = show;
+    message.$data["type"] = type;
+    message.$data["title"] = title;
+    message.$data["content"] = content;
+    if (show)
+        $('html,body').animate({scrollTop: 0}, 500);
+}
+function get_cart()
+{
+    ajax(
+        "api/get_cart",
+        {},
+        function(res) {cart.$data.data = res;}
+    );
+}
+</script>
+{%block script%}
+{%endblock%}
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Don't Starve!</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!--<link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800" rel="stylesheet">-->
+    <!--<link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">-->
+    <link rel="stylesheet" href="res/plugins/bootstrap/css/bootstrap.css">
+    <link rel="stylesheet" href="res/plugins/bootstrap/css/bootstrap-theme.css">
+    <link rel="stylesheet" href="res/plugins/fontawesome-free/css/fontawesome.css">
+    <link rel="stylesheet" href="res/plugins/single_page/css/hero-slider.css">
+    <link rel="stylesheet" href="res/plugins/single_page/css/owl-carousel.css">
+    <link rel="stylesheet" href="res/plugins/single_page/css/templatemo-style.css">
+    <link rel="stylesheet" href="res/plugins/single_page/css/lightbox.css">
+    <link rel="stylesheet" href="res/plugins/fonts/longcang.css">
+    <script src="res/plugins/single_page/js/modernizr-2.8.3-respond-1.4.2.min.js"></script>
+</head>
+<body>
+<div class="header">
+    <div class="container">
+        <nav class="navbar navbar-inverse" role="navigation">
+            <div class="navbar-header">
+                <button type="button" id="nav-toggle" class="navbar-toggle" data-toggle="collapse" data-target="#main-nav">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a href="#" class="navbar-brand scroll-top">Don't <em>Starve!</em></a>
+            </div>
+            <!--/.navbar-header-->
+            <div id="main-nav" class="collapse navbar-collapse">
+                <ul class="nav navbar-nav">
+                    <li><a href="http://www.comradestukov.xin">Powered By Eshttc_Cty</a></li>
+                </ul>
+            </div>
+            <!--/.navbar-collapse-->
+        </nav>
+        <!--/.navbar-->
+    </div>
+    <!--/.container-->
+</div>
+<!--/.header-->
+<div class="parallax-content baner-content" id="home">
+    <div class="container">
+        <div class="text-content">
+            <h2 style="font-size:600%;"><span>Don't</span> <em>Starve!</em></h2>
+            <h3 style="color:#FFFFFF; font-size:300%; font-family:'Long Cang', cursive;">"Say pal, you don't look so good. You better find something to eat before night comes!"</h3>
+            <p>
+                <br>
+                <div class="primary-white-button">
+                    <a href="find_restaurants" style="font-size:150%;">Go & Find Food!</a>
+                </div>
+            </p>
+        </div>
+    </div>
+</div>
+<script src="res/plugins/jquery/jquery.js"></script>
+<script src="res/plugins/bootstrap/js/bootstrap.js"></script>
+<script src="res/plugins/single_page/js/plugins.js"></script>
+<script src="res/plugins/single_page/js/main.js"></script>
+<script type="text/javascript">
+$(document).ready(
+function()
+{
+    // navigation click actions
+    $('.scroll-link').on(
+        'click',
+        function(event)
+        {
+            event.preventDefault();
+            var sectionID = $(this).attr("data-id");
+            scrollToID('#' + sectionID, 750);
+        }
+    );
+    // scroll to top action
+    $('.scroll-top').on(
+        'click',
+        function(event)
+        {
+            event.preventDefault();
+            $('html, body').animate({scrollTop:0}, 'slow');
+        }
+    );
+    // mobile nav toggle
+    $('#nav-toggle').on(
+        'click',
+        function (event)
+        {
+            event.preventDefault();
+            $('#main-nav').toggleClass("open");
+        }
+    );
+}
+);
+// scroll function
+function scrollToID(id, speed)
+{
+    var offSet = 50;
+    var targetOffset = $(id).offset().top - offSet;
+    var mainNav = $('#main-nav');
+    $('html,body').animate({scrollTop:targetOffset}, speed);
+    if (mainNav.hasClass("open"))
+    {
+        mainNav.css("height", "1px").removeClass("in").addClass("collapse");
+        mainNav.removeClass("open");
+    }
+}
+if (typeof console === "undefined")
+{
+    console = {log: function() {}};
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+{%extends "frame.html"%}
+{%block html%}
+<!-- Content Header (Page header) -->
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Restaurant Cart</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                </ol>
+            </div>
+        </div>
+    </div><!-- /.container-fluid -->
+</section>
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- column -->
+            <div class="col-md-12">
+                <!-- Horizontal Form -->
+                <div class="card card-warning">
+                    <div class="card-header">
+                        <h3 class="card-title"> "It makes me hungry just to look at it."</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body">
+                        <table id="restaurant" class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th style="width: 5%">Id</th>
+                                    <th style="width: 12.5%">Name</th>
+                                    <th style="width: 12.5%">Branch</th>
+                                    <th style="width: 10%">Postcode</th>
+                                    <th style="width: 5%">Price</th>
+                                    <th style="width: 20%">Tags</th>
+                                    <th style="width: 5%">Weight</th>
+                                    <th style="width: 15%">Adjust Weight</th>
+                                    <th style="width: 15%">Remove from Cart</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="x in cart.data">
+                                    <td><a v-bind:href="'get_restaurant?id='+x.id">{{x.id}}</a></td>
+                                    <td>{{x.name}}</td>
+                                    <td>{{x.branch}}</td>
+                                    <td>{{x.postcode}}</td>
+                                    <td>{{x.price}}</td>
+                                    <td><span v-for="tag in x.tags"><span class="badge bg-success">{{tag.name}}</span>&nbsp;</span></td>
+                                    <td>{{x.weight}}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-warning" v-on:click="adjust_weight(x.id,-1);"><i class="fa fa-minus"></i></button>
+                                            <button class="btn btn-sm btn-warning" v-on:click="adjust_weight(x.id,1);"><i class="fa fa-plus"></i></button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-danger" data-toggle="dropdown">Remove!</button>
+                                        <!-- Notifications Dropdown Menu -->
+                                        <div class="dropdown-menu dropdown-menu-lg">
+                                            <span class="dropdown-header dropdown-item-text"><b>Sure?</b></span>
+                                            <div class="dropdown-divider"></div>
+                                            <a href="javascript:void(0);" class="bg-danger dropdown-footer dropdown-item" v-on:click="remove_from_cart(x.id);">I said Remove!</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="!cart.data.length"><td colspan="9" style="text-align: center">OMG! Your cart is empty!</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- /.card-body -->
+                    <div class="card-footer btn-group">
+                        <button class="btn btn-warning" onclick="result();">GO!</button>
+                        <div class="dropdown-menu dropdown-menu-lg">
+                            <span class="dropdown-header dropdown-item-text"><b>Sure?</b></span>
+                            <div class="dropdown-divider"></div>
+                            <a href="javascript:void(0);" class="bg-danger dropdown-footer dropdown-item" onclick="remove_all();">I said Remove!</a>
+                        </div>
+                        <button class="btn btn-danger" data-toggle="dropdown">Remove All</button>
+                    </div>
+                    <!-- /.card-footer -->
+                </div>
+                <!-- /.card -->
+
+            </div>
+            <!--/.col -->
+        </div>
+        <!-- /.row -->
+    </div><!-- /.container-fluid -->
+</section>
+<!-- /.content -->
+{%endblock%}
+{%block script%}
+<script>
+$(
+function ()
+{
+    document.title = "Don't Starve! - Restaurant Cart";
+    $("body").css({"min-width": "800px"});
+    $("#nav_cart").addClass("active");
+}
+);
+var restaurant = new Vue(
+    {
+        el: "#restaurant",
+        components: {
+            Multiselect: window.VueMultiselect.default
+        },
+        data: {
+            cart: cart.$data
+        },
+        methods: {
+            adjust_weight: function(x, delta)
+            {
+                ajax(
+                    "api/edit_cart",
+                    {"id": x, "delta": delta},
+                    function(res) {get_cart();}
+                );
+            },
+            remove_from_cart: function(x)
+            {
+                ajax(
+                    "api/delete_cart",
+                    {"id": x},
+                    function(res)
+                    {
+                        show_message(true, "alert-success", "Restaurant Removed from Cart!", "You have a simpler cart !");
+                        get_cart();
+                    }
+                );
+            }
+        }
+    }
+);
+function remove_all()
+{
+    ajax(
+        "api/clean_cart",
+        {},
+        function(res)
+        {
+            show_message(true, "alert-success", "All Removed!", "Your cart is now empty!");
+            get_cart();
+        }
+    );
+}
+function result()
+{
+    ajax(
+        "api/clean_result",
+        {},
+        function(res) {window.location.href = "result"}
+    );
+}
+</script>
+{%endblock%}

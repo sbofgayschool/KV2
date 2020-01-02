@@ -196,7 +196,7 @@ class RPCService:
         filter = {}
         if id:
             filter["_id"] = ObjectId(id)
-        if user:
+        if user is not None:
             filter["user"] = user
         if start_time or end_time:
             filter["add_time"] = {}

@@ -1,0 +1,218 @@
+{%extends "frame.html"%}
+{%block html%}
+<!-- Content Header (Page header) -->
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Find Restaurants</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                </ol>
+            </div>
+        </div>
+    </div><!-- /.container-fluid -->
+</section>
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- column -->
+            <div class="col-md-12">
+                <!-- Horizontal Form -->
+                <div class="card card-secondary">
+                    <div class="card-header">
+                        <h3 class="card-title">"Now I shall eat for a day."</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body">
+                        <div id="search">
+                            <div class="row">
+                                <div class="col-3"><label for="search_name_query">Search Name</label></div>
+                                <div class="col-3"><label for="search_postcode_prefix">Search Postcode Prefix</label></div>
+                                <div class="col-3"><label for="search_min_price">Search Price Min.</label></div>
+                                <div class="col-3"><label for="search_max_price">Search Price Max.</label></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-3"><input class="form-control" id="search_name_query" placeholder="Name" v-model="data.name_query"></div>
+                                <div class="col-3"><input class="form-control" id="search_postcode_prefix" placeholder="PostCode Prefix" v-model="data.postcode_prefix"></div>
+                                <div class="col-3"><input type="number" class="form-control" id="search_min_price" placeholder="Price Min" v-model="data.min_price"></div>
+                                <div class="col-3"><input type="number" class="form-control" id="search_max_price" placeholder="Price Max" v-model="data.max_price"></div>
+                            </div>
+                            <div class="row"><label></label></div>
+                            <div class="row">
+                                <div class="col-9"><label>Search Tags</label></div>
+                                <div class="col-3"><label>Go Search!</label></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-9">
+                                    <multiselect v-model="tags_with_name" placeholder="Search a tag" label="name" track-by="id" :options="all_tags" :multiple="true" :taggable="false"></multiselect>
+                                </div>
+                                <button class="col-3 btn btn-secondary" onclick="go_search();">Search!</button>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <label></label>
+                        </div>
+                        <table class="table table-bordered" style="/*word-wrap:break-word; word-break:break-all;*/">
+                            <thead>
+                                <tr>
+                                    <th style="width: 7.5%">Id</th>
+                                    <th style="width: 15%">Name</th>
+                                    <th style="width: 15%">Branch</th>
+                                    <th style="width: 15%">Postcode</th>
+                                    <th style="width: 10%">Price</th>
+                                    <th style="width: 22.5%">Tags</th>
+                                    <th style="width: 15%">Add to Cart</th>
+                                </tr>
+                            </thead>
+                            <tbody id="restaurant">
+                                <tr v-for="x in data">
+                                    <td><a v-bind:href="'get_restaurant?id='+x.id">{{x.id}}</a></td>
+                                    <td>{{x.name}}</td>
+                                    <td>{{x.branch}}</td>
+                                    <td>{{x.postcode}}</td>
+                                    <td>{{x.price}}</td>
+                                    <td><span v-for="tag in x.tags"><span class="badge bg-success">{{tag.name}}</span>&nbsp;</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-secondary" v-on:click="add_to_cart(x.id);">Add!</button>
+                                    </td>
+                                </tr>
+                                <tr v-if="!data.length"><td colspan="7" style="text-align: center">What? No results found!</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- /.card-body -->
+                    <div class="card-footer" id="page">
+                        <div class="row" v-if="total_page">
+                            <div class="col-9" style="text-align: right">
+                                <label for="page">Pages:&nbsp&nbsp</label>
+                            </div>
+                            <div class="col-3">
+                                <select class="form-control float-right" v-model="select_page" @change="go_to_page();">
+                                    <option v-for="i in Array.from(Array(total_page).keys())" v-bind:value="i+1">{{i+1}}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- /.card-footer -->
+                </div>
+                <!-- /.card -->
+
+            </div>
+            <!--/.col -->
+        </div>
+        <!-- /.row -->
+    </div><!-- /.container-fluid -->
+</section>
+<!-- /.content -->
+{%endblock%}
+{%block script%}
+<script>
+$(
+function ()
+{
+    document.title = "Don't Starve! - Find Restaurants";
+    $("body").css({"min-width": "600px"});
+    $("#nav_find_restaurants").addClass("active");
+    ajax(
+        "api/find_restaurants",
+        search.$data.data,
+        function(res)
+        {
+            page.$data.page = page.$data.select_page = res["page"];
+            page.$data.total_page = res["total_page"];
+            restaurant.$data.data = res["restaurants"];
+        }
+    );
+    ajax(
+        "api/find_tags",
+        {},
+        function(res){search.$data.all_tags = res;}
+    );
+    ajax(
+        "api/get_tags",
+        {"ids": search.$data.data.tags},
+        function(res) {search.$data.tags_with_name = res;}
+    );
+}
+);
+var search = new Vue(
+    {
+        el: "#search",
+        components: {
+            Multiselect: window.VueMultiselect.default
+        },
+        data: {
+            data: {
+                name_query: "{%if "name_query" in search%}[[search["name_query"] ]]{%else%}{%endif%}",
+                postcode_prefix: "{%if "postcode_prefix" in search%}[[search["postcode_prefix"] ]]{%else%}{%endif%}",
+                max_price: {%if "max_price" in search and search["max_price"] != None%}[[search["max_price"] ]]{%else%}null{%endif%},
+                min_price: {%if "min_price" in search and search["min_price"] != None%}[[search["min_price"] ]]{%else%}null{%endif%},
+                tags: {%if "tags" in search%}[[search["tags"] ]]{%else%}[]{%endif%},
+                page: [[page]]
+            },
+            tags_with_name: [],
+            all_tags: []
+        }
+    }
+);
+var page = new Vue(
+    {
+        el: "#page",
+        data: {
+            page: [[page]],
+            total_page: 0,
+            select_page: 0
+        },
+        methods: {
+            go_to_page: function()
+            {
+                window.location.href = 'find_restaurants?search=' + encodeURIComponent(original_search) + "&page=" + this.$data.select_page;
+            }
+        }
+    }
+);
+var original_search = JSON.stringify(search.$data.data);
+var restaurant = new Vue(
+    {
+        el: "#restaurant",
+        data: {
+            data:[]
+        },
+        methods: {
+            add_to_cart: function(x)
+            {
+                ajax(
+                    "api/add_cart",
+                    {"id": x},
+                    function(res)
+                    {
+                        show_message(true, "alert-success", "Restaurant Added to Cart!", "Find it in your cart!");
+                        get_cart();
+                    }
+                );
+            }
+        }
+    }
+);
+function go_search()
+{
+    if (search.$data.data["min_price"] === "")
+        search.$data.data["min_price"] = null;
+    else
+        search.$data.data["min_price"] = parseInt(search.$data.data["min_price"]);
+    if (search.$data.data["max_price"] === "")
+        search.$data.data["max_price"] = null;
+    else
+        search.$data.data["max_price"] = parseInt(search.$data.data["max_price"]);
+    search.$data.data.tags = Array();
+    for (var x of search.$data.tags_with_name)
+        search.$data.data.tags.push(x["id"]);
+    var new_search = JSON.stringify(search.$data.data);
+    window.location.href = 'find_restaurants?search=' + encodeURIComponent(new_search) + "&page=1";
+}
+</script>
+{%endblock%}

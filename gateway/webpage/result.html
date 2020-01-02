@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Don't Starve! - Result</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!--<link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800" rel="stylesheet">-->
+    <!--<link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">-->
+    <link rel="stylesheet" href="res/plugins/bootstrap/css/bootstrap.css">
+    <link rel="stylesheet" href="res/plugins/bootstrap/css/bootstrap-theme.css">
+    <link rel="stylesheet" href="res/plugins/fontawesome-free/css/fontawesome.css">
+    <link rel="stylesheet" href="res/plugins/single_page/css/hero-slider.css">
+    <link rel="stylesheet" href="res/plugins/single_page/css/owl-carousel.css">
+    <link rel="stylesheet" href="res/plugins/single_page/css/templatemo-style.css">
+    <link rel="stylesheet" href="res/plugins/single_page/css/lightbox.css">
+    <link rel="stylesheet" href="res/plugins/fonts/longcang.css">
+    <script src="res/plugins/single_page/js/modernizr-2.8.3-respond-1.4.2.min.js"></script>
+</head>
+<body>
+<div class="parallax-content baner-content result-content" id="restaurant">
+    <div class="container">
+        <div class="text-content" v-if="done">
+            <h3 style="color:#FFFFFF; font-size:300%; font-family:'Long Cang', cursive;">"Mmmmm! It's ready to eat!"</h3>
+            <h2 style="font-size:450%;"><span>{{data.name}}</span> - <em>{{data.branch}}</em></h2>
+            <p>
+                <br>
+                <div style="display: inline-block" class="primary-blue-button">
+                    <a href="#" onclick="window.location.href='get_restaurant?id='+restaurant.$data.data.id;" style="font-size:150%;">That's it!</a>
+                </div>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <div style="display: inline-block" class="primary-white-button">
+                    <a href="#" onclick="again();" style="font-size:150%;">Again!</a>
+                </div>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <div style="display: inline-block" class="primary-white-button">
+                    <a href="cart" style="font-size:150%;">Back to cart!</a>
+                </div>
+            </p>
+        </div>
+        <div class="text-content" v-if="!done">
+            <h3 style="color:#FFFFFF; font-size:300%; font-family:'Long Cang', cursive;">"That looks like an experiment gone wrong!"</h3>
+            <p>
+                <br>
+                <div style="display: inline-block" class="primary-white-button">
+                    <a href="cart" style="font-size:150%;">Go back to cart</a>
+                </div>
+            </p>
+        </div>
+    </div>
+</div>
+<script src="res/plugins/jquery/jquery.js"></script>
+<script src="res/plugins/bootstrap/js/bootstrap.js"></script>
+<script src="res/plugins/single_page/js/plugins.js"></script>
+<script src="res/plugins/single_page/js/main.js"></script>
+<!-- Vue -->
+<script src="res/plugins/vue/vue.js"></script>
+<script src="res/js/utility.js"></script>
+<script type="text/javascript">
+$(
+function ()
+{
+    $.ajax({
+        url: "api/get_result",
+        type: "POST",
+        contentType: "application/json;charset=utf-8;",
+        data: JSON.stringify({id: restaurant.$data.data.id}),
+        dataType: "json",
+        success: function (data)
+        {
+            if (!data["code"])
+            {
+                restaurant.$data.data = data["res"];
+                restaurant.$data.done = true;
+            }
+            else
+                restaurant.$data.done = false;
+        },
+        error: function (error) {restaurant.$data.done = false;},
+        xhrFields: {withCredentials: test},
+        crossDomain: test
+    });
+}
+);
+function again()
+{
+    $.ajax({
+        url: "api/clean_result",
+        type: "POST",
+        contentType: "application/json;charset=utf-8;",
+        data: JSON.stringify({}),
+        dataType: "json",
+        success: function (data)
+        {
+            if (!data["code"])
+                window.location.href = "result";
+            else
+                restaurant.$data.done = false;
+        },
+        error: function (error) {restaurant.$data.done = false;},
+        xhrFields: {withCredentials: test},
+        crossDomain: test
+    });
+}
+var restaurant = new Vue(
+    {
+        el: "#restaurant",
+        data: {
+            data: {
+                // "id": [[id]],
+                "id": 100,
+                "name": "",
+                "branch": "",
+                "postcode": "",
+                "note": "",
+                "tags": [],
+                "update_time": ""
+            },
+            done: false
+        }
+    }
+);
+</script>
+</body>
+</html>

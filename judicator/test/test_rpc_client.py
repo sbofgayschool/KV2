@@ -26,7 +26,7 @@ if __name__ == "__main__":
     print(client.ping())
     print("==============\n")
 
-    # """
+    """
     print("==== ADD ====")
     data = {
         "id": None,
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     print(res.result)
     print(res.id)
     print("=============\n")
-    # """
+    """
 
     """
     print("==== CANCEL ====")
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     print("=============\n")
     """
 
-    # """
+    """
     print("==== SEARCH ====")
     res = client.search(None, 1, None, None, True, 2, 0)
     print(res.result)
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     for x in res.tasks:
         print(extract(x, brief=True))
     print("================\n")
-    # """
+    """
 
     """
     print("==== ADD: REAL ====")
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     print("==================\n")
     """
 
-    """
+    # """
     for i in range(4):
         print("==== ADD: REAL ====")
         data = {
@@ -152,7 +152,7 @@ if __name__ == "__main__":
         print(res.result)
         print(res.id)
         print("===================\n")
-    """
+    # """
 
     """
     print("==== GET REAL ====")
@@ -181,13 +181,13 @@ if __name__ == "__main__":
     print("==================\n")
     """
 
-    # """
+    """
     print("==== GET EXECUTOR ====")
     res = client.executors()
     print(res.result)
     for e in res.executors:
         print(e.id, e.hostname, e.report_time)
     print("======================\n")
-    # """
+    """
 
     transport.close()

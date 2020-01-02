@@ -1,0 +1,184 @@
+{%extends "frame.html"%}
+{%block html%}
+<!-- Content Header (Page header) -->
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>New Restaurant</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                </ol>
+            </div>
+        </div>
+    </div><!-- /.container-fluid -->
+</section>
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- column -->
+            <div class="col-md-12">
+                <!-- Horizontal Form -->
+                <div class="card card-purple">
+                    <div class="card-header">
+                        <h3 class="card-title">"These turned out pretty good."</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <!-- form start -->
+                    <form id="restaurant" class="form-horizontal">
+                        <div class="card-body">
+                            <div class="form-group row">
+                                <label for="name" class="col-sm-2 col-form-label">Id</label>
+                                <div class="col-sm-10">
+                                    <span id="id" >{{data.id}}</span>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="name" class="col-sm-2 col-form-label">Name</label>
+                                <div class="col-sm-10">
+                                    <input type="text" class="form-control" id="name" placeholder="Name" v-model="data.name">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="branch" class="col-sm-2 col-form-label">Branch</label>
+                                <div class="col-sm-10">
+                                    <input type="text" class="form-control" id="branch" placeholder="Branch" v-model="data.branch">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="postcode" class="col-sm-2 col-form-label">Postcode</label>
+                                <div class="col-sm-10">
+                                    <input type="text" class="form-control" id="postcode" placeholder="Postcode" v-model="data.postcode">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="price" class="col-sm-2 col-form-label">Price</label>
+                                <div class="col-sm-10">
+                                    <input type="number" class="form-control" id="price" placeholder="Price" v-model="data.price">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="note" class="col-sm-2 col-form-label">Note</label>
+                                <div class="col-sm-10">
+                                    <textarea class="form-control" rows="3" id="note" placeholder="Note" v-model="data.note"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="tags" class="col-sm-2 col-form-label">Tags</label>
+                                <div id="tags" class="col-sm-10">
+                                    <multiselect v-model="tags_with_name" placeholder="Search a tag" label="name" track-by="id" :options="all_tags" :multiple="true" :taggable="false"></multiselect>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="btn_add_tag" class="col-sm-2 col-form-label"></label>
+                                <div class="col-sm-1">
+                                    <button type="button" id="btn_add_tag" data-toggle="dropdown" class="btn btn-block bg-success btn-sm"><span class="fa fa-plus-circle"> Tag</span></button>
+                                    <!-- Notifications Dropdown Menu -->
+                                    <div class="dropdown-menu dropdown-menu-lg">
+                                        <span class="dropdown-header dropdown-item-text"><b>Add Tag</b></span>
+                                        <div class="dropdown-item-text">
+                                            <input  class="form-control" id="tag_name" placeholder="Tag Name">
+                                        </div>
+                                        <a href="javascript:void(0);" class="dropdown-footer dropdown-item bg-success" onclick="add_tag();">Add</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <!-- /.card-body -->
+                    <div class="card-footer btn-group">
+                        <button class="btn bg-purple" onclick="edit_restaurant();">Edit</button>
+                        <button class="btn btn-default" onclick="go_back();">Cancel</button>
+                    </div>
+                    <!-- /.card-footer -->
+
+                </div>
+                <!-- /.card -->
+            </div>
+            <!--/.col -->
+        </div>
+        <!-- /.row -->
+    </div><!-- /.container-fluid -->
+</section>
+<!-- /.content -->
+{%endblock%}
+{%block script%}
+<script>
+$(
+function ()
+{
+    document.title = "Don't Starve! - Edit Restaurant";
+    ajax(
+        "api/get_restaurant",
+        {"id": restaurant.$data.data.id},
+        function(res)
+        {
+            restaurant.$data.data = res;
+            restaurant.$data.tags_with_name = restaurant.$data.data.tags;
+            restaurant.$data.data.tags = [];
+            for (var x of restaurant.$data.tags_with_name)
+                restaurant.$data.data.tags.push(x["id"]);
+        }
+    );
+    get_all_tags();
+}
+);
+var restaurant = new Vue(
+    {
+        el: "#restaurant",
+        components: {
+            Multiselect: window.VueMultiselect.default
+        },
+        data: {
+            data:{
+                id: [[id]],
+                name: "",
+                branch: "",
+                postcode: "",
+                price: 0,
+                note: "",
+                tags: []
+            },
+            tags_with_name: [],
+            all_tags: []
+        }
+    }
+);
+function get_all_tags()
+{
+    ajax(
+        "api/find_tags",
+        {},
+        function(res){restaurant.$data.all_tags = res;}
+    );
+}
+function edit_restaurant()
+{
+    restaurant.$data.data.price = parseInt(restaurant.$data.data.price);
+    restaurant.$data.data.tags = Array();
+    for (var x of restaurant.$data.tags_with_name)
+        restaurant.$data.data.tags.push(x["id"]);
+    ajax(
+        "api/edit_restaurant",
+        restaurant.$data.data,
+        function(res) {go_back();}
+    );
+}
+function add_tag()
+{
+    ajax(
+        "api/add_tag",
+        {"name": $("#tag_name").val()},
+        function(res)
+        {
+            $("#tag_name").val("");
+            show_message(true, "alert-success", "Tag Added!", "You now have a new tag!");
+            get_all_tags();
+        }
+    );
+}
+</script>
+{%endblock%}
