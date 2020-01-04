@@ -1,0 +1,160 @@
+{%extends "frame.html"%}
+{%block html%}
+<!-- Content Header (Page header) -->
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>New Task</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                </ol>
+            </div>
+        </div>
+    </div><!-- /.container-fluid -->
+</section>
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- column -->
+            <div class="col-md-12">
+                <!-- Horizontal Form -->
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">"We feel your presence."</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <!-- form start -->
+                    <form id="task" class="form-horizontal">
+                        <div class="card-body">
+                            <div class="form-group row">
+                                <label for="user" class="col-sm-2 col-form-label">User</label>
+                                <div class="col-sm-10">
+                                    <input type="number" class="form-control" id="user" name="user" placeholder="User">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="compile_source" class="col-sm-2 col-form-label">Compile Source</label>
+                                <div class="col-sm-10">
+                                    <input type="file" id="compile_source" name="compile_source">
+                                    <p class="help-block" style="color: grey;">Upload a zip file here. You can also use following widgets to create a zip file containing only one text file.</p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="compile_source_name" class="col-sm-2 col-form-label">Compile Source Name</label>
+                                <div class="col-sm-10">
+                                    <input class="form-control" id="compile_source_name" name="compile_source_name" placeholder="Compile Source Name">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="compile_source_str" class="col-sm-2 col-form-label">Compile Source Text</label>
+                                <div class="col-sm-10">
+                                    <textarea rows="5" class="form-control" id="compile_source_str" name="compile_source_str" placeholder="Compile Source Text"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="compile_command" class="col-sm-2 col-form-label">Compile Command</label>
+                                <div class="col-sm-10">
+                                    <textarea rows="5" class="form-control" id="compile_command" name="compile_command" placeholder="Compile Command"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="compile_timeout" class="col-sm-2 col-form-label">Compile Timeout</label>
+                                <div class="col-sm-10">
+                                    <input type="number" class="form-control" id="compile_timeout" name="compile_timeout" placeholder="Compile Timeout">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="execute_input" class="col-sm-2 col-form-label">Execute Input</label>
+                                <div class="col-sm-10">
+                                    <textarea rows="5" class="form-control" id="execute_input" name="execute_input" placeholder="Execute Input"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="execute_data" class="col-sm-2 col-form-label">Execute Data</label>
+                                <div class="col-sm-10">
+                                    <input type="file" id="execute_data" name="execute_data">
+                                    <p class="help-block" style="color: grey;">Upload a zip file here. You can also use following widgets to create a zip file containing only one text file.</p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="execute_data_name" class="col-sm-2 col-form-label">Execute Data Name</label>
+                                <div class="col-sm-10">
+                                    <input class="form-control" id="execute_data_name" name="execute_data_name" placeholder="Execute Data Name">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="execute_data_str" class="col-sm-2 col-form-label">Execute Data Text</label>
+                                <div class="col-sm-10">
+                                    <textarea rows="5" class="form-control" id="execute_data_str" name="execute_data_str" placeholder="Execute Data Text"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="execute_command" class="col-sm-2 col-form-label">Execute Command</label>
+                                <div class="col-sm-10">
+                                    <textarea rows="5" class="form-control" id="execute_command" name="execute_command" placeholder="Execute Command"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="execute_timeout" class="col-sm-2 col-form-label">Execute Timeout</label>
+                                <div class="col-sm-10">
+                                    <input type="number" class="form-control" id="execute_timeout" name="execute_timeout" placeholder="Execute Timeout">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="execute_standard" class="col-sm-2 col-form-label">Execute Standard</label>
+                                <div class="col-sm-10">
+                                    <textarea rows="5" class="form-control" id="execute_standard" name="execute_standard" placeholder="Execute Standard"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <!-- /.card-body -->
+                    <div class="card-footer btn-group">
+                        <button class="btn btn-primary" onclick="add_task();">Add</button>
+                        <button class="btn btn-default" onclick="window.location.href='search'">Cancel</button>
+                    </div>
+                    <!-- /.card-footer -->
+                </div>
+                <!-- /.card -->
+            </div>
+            <!--/.col -->
+        </div>
+        <!-- /.row -->
+    </div><!-- /.container-fluid -->
+</section>
+<!-- /.content -->
+{%endblock%}
+{%block script%}
+<script>
+$(
+function ()
+{
+    document.title = "Khala - Add Task";
+    $("#nav_add").addClass("active");
+}
+);
+function add_task()
+{
+    ajax(
+        "api/task",
+        {},
+        new FormData($('#task')[0]),
+        "POST",
+        function(res)
+        {
+            window.location.href="get?" + $.param({
+                "id": res.id,
+                "message_type": "alert-success",
+                "message_title": "Success!",
+                "message_content": "Task " + res.id + " added successfully!"
+            })
+        },
+        false
+    )
+}
+</script>
+{%endblock%}

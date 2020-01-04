@@ -20,10 +20,12 @@ from utility.rpc import select_from_etcd_and_call, extract, generate
 
 # Load configuration
 with open("config/templates/uwsgi.json", "r") as f:
-    config = json.load(f)
+    config = json.load(f)["server"]
 
 # Get the Flask object
-server = flask.Flask(__name__)
+server = flask.Flask(__name__, template_folder=config["template"])
+server.jinja_env.variable_start_string = '[['
+server.jinja_env.variable_end_string = ']]'
 
 # Generate a logger
 if "log" in config:
@@ -40,14 +42,14 @@ logger.info("Gateway server program started.")
 with open("config/etcd.json", "r") as f:
     local_etcd = generate_local_etcd_proxy(json.load(f)["etcd"], logger)
 
-@server.route("/test", methods=["GET"])
+@server.route("/api/test", methods=["GET"])
 def test():
     """
     Flask Handler: API Interface: Test if the gateway is working
     :return:
     """
     return flask.make_response(
-        "KV2 gateway server is working. Etcd path: %s." % config["server"]["judicator_etcd_path"]
+        "KV2 gateway server is working. Etcd path: %s." % config["judicator_etcd_path"]
     )
 
 @server.route("/api/task", methods=["POST"])
@@ -69,7 +71,7 @@ def api_task_add():
             "input": zlib.compress(flask.request.form.get("execute_input").encode("utf-8")),
             "data": b"",
             "command": zlib.compress(flask.request.form.get("execute_command").encode("utf-8")),
-            "timeout": int(flask.request.form.get("compile_timeout")),
+            "timeout": int(flask.request.form.get("execute_timeout")),
             "standard": zlib.compress(flask.request.form.get("execute_standard").encode("utf-8"))
         },
         "add_time": None,
@@ -92,15 +94,15 @@ def api_task_add():
     elif compile_source_str and compile_source_name:
         logger.info("Compile source text detected.")
         # Create a temp dir
-        temp_dir = tempfile.TemporaryDirectory(dir=config["server"]["data_dir"])
+        temp_dir = tempfile.TemporaryDirectory(dir=config["data_dir"])
         # Write the text in the file with specified name
-        file_path = join(join(config["server"]["data_dir"], temp_dir.name), compile_source_name)
+        file_path = join(temp_dir.name, compile_source_name)
         with open(file_path, "w") as f:
             f.write(compile_source_str)
         # Create the zip file
-        zip_path = join(join(config["server"]["data_dir"], temp_dir.name), "source.zip")
+        zip_path = join(temp_dir.name, "source.zip")
         with zipfile.ZipFile(zip_path, "w") as f:
-            f.write(file_path)
+            f.write(file_path, compile_source_name)
         # Read the binary
         with open(zip_path, "rb") as f:
             data["compile"]["source"] = f.read()
@@ -117,21 +119,21 @@ def api_task_add():
     elif execute_data_str and execute_data_name:
         logger.info("Execute data text detected.")
         # Create a temp dir
-        temp_dir = tempfile.TemporaryDirectory(dir=config["server"]["data_dir"])
+        temp_dir = tempfile.TemporaryDirectory(dir=config["data_dir"])
         # Write the text in the file with specified name
-        file_path = join(join(config["server"]["data_dir"], temp_dir.name), execute_data_name)
+        file_path = join(temp_dir.name, execute_data_name)
         with open(file_path, "w") as f:
             f.write(execute_data_str)
         # Create the zip file
-        zip_path = join(join(config["server"]["data_dir"], temp_dir.name), "data.zip")
+        zip_path = join(temp_dir.name, "data.zip")
         with zipfile.ZipFile(zip_path, "w") as f:
-            f.write(file_path)
+            f.write(file_path, execute_data_name)
         # Read the binary
         with open(zip_path, "rb") as f:
             data["execute"]["data"] = f.read()
 
     # Add through rpc and return
-    res = select_from_etcd_and_call("add", local_etcd, config["server"]["judicator_etcd_path"], logger, generate(data))
+    res = select_from_etcd_and_call("add", local_etcd, config["judicator_etcd_path"], logger, generate(data))
     return flask.jsonify({"result": res.result, "id": res.id})
 
 @server.route("/api/task", methods=["DELETE"])
@@ -146,7 +148,7 @@ def api_task_cancel():
         return flask.jsonify({"result": ReturnCode.ERROR})
 
     # Cancel and return the result
-    res = select_from_etcd_and_call("cancel", local_etcd, config["server"]["judicator_etcd_path"], logger, id)
+    res = select_from_etcd_and_call("cancel", local_etcd, config["judicator_etcd_path"], logger, id)
     return flask.jsonify({"result": res})
 
 @server.route("/api/task/list", methods=["GET"])
@@ -168,7 +170,7 @@ def api_task_search():
     res = select_from_etcd_and_call(
         "search",
         local_etcd,
-        config["server"]["judicator_etcd_path"],
+        config["judicator_etcd_path"],
         logger,
         id,
         int(user) if user is not None else user,
@@ -201,7 +203,7 @@ def api_task_get():
         return flask.jsonify({"result": ReturnCode.ERROR, "task": None})
 
     # Get the task
-    res = select_from_etcd_and_call("get", local_etcd, config["server"]["judicator_etcd_path"], logger, id)
+    res = select_from_etcd_and_call("get", local_etcd, config["judicator_etcd_path"], logger, id)
     # If not found, return
     # Otherwise return required data.
     if res.result != ReturnCode.OK:
@@ -212,13 +214,16 @@ def api_task_get():
     task = extract(res.task)
 
     # Decompress compile source and return if it is required
-    if task["compile"]["source"]:
-        task["compile"]["source"] = zlib.decompress(task["compile"]["source"])
     if file == "compile_source":
         if not task["compile"]["source"]:
             flask.abort(404)
+        temp_file = tempfile.TemporaryFile(dir=config["data_dir"])
+        temp_file.write(task["compile"]["source"])
+        temp_file.seek(0)
         return flask.send_file(
-            task["compile"]["source"],
+            temp_file,
+            cache_timeout=-1,
+            as_attachment=True,
             attachment_filename=id + "_compile_source.zip",
             mimetype="application/zip"
         )
@@ -226,13 +231,16 @@ def api_task_get():
     task["compile"]["source"] = bool(task["compile"]["source"])
 
     # Decompress execute data and return if it is required
-    if task["execute"]["data"]:
-        task["execute"]["data"] = zlib.decompress(task["execute"]["data"])
     if file == "execute_data":
         if not task["execute"]["data"]:
             flask.abort(404)
+        temp_file = tempfile.TemporaryFile(dir=config["data_dir"])
+        temp_file.write(task["execute"]["data"])
+        temp_file.seek(0)
         return flask.send_file(
-            task["execute"]["data"],
+            temp_file,
+            cache_timeout=-1,
+            as_attachment=True,
             attachment_filename=id + "_execute_data.zip",
             mimetype="application/zip"
         )
@@ -269,11 +277,6 @@ def api_task_get():
         task["result"]["execute_error"] = zlib.decompress(
             task["result"]["execute_error"]
         ).decode("utf-8") if task["result"]["execute_error"] else ""
-    else:
-        task["result"]["compile_output"] = ""
-        task["result"]["compile_error"] = ""
-        task["result"]["execute_output"] = ""
-        task["result"]["execute_error"] = ""
 
     # Deal with time section
     task["add_time"] = "" if not task["add_time"] else task["add_time"].isoformat()
@@ -291,7 +294,7 @@ def api_executors():
     :return: Json containing executor list
     """
     # Fetch all executors from rpc and return
-    res = select_from_etcd_and_call("executors", local_etcd, config["server"]["judicator_etcd_path"], logger)
+    res = select_from_etcd_and_call("executors", local_etcd, config["judicator_etcd_path"], logger)
     return flask.jsonify({
         "result": res.result,
         "executors": [{"id": x.id, "hostname": x.hostname, "report_time": x.report_time} for x in res.executors]
@@ -304,8 +307,43 @@ def api_judicators():
     :return: Json containing judicator list
     """
     # Get from etcd and return
-    judicator = local_etcd.get(config["server"]["judicator_etcd_path"])
+    judicator = local_etcd.get(config["judicator_etcd_path"])
     return flask.jsonify({
         "result": ReturnCode.OK,
         "judicators": [{"name": k, "address": v} for k, v in judicator.items()]
     })
+
+@server.route("/res/<path:path>", methods=["GET"])
+def res(path):
+    """
+    Flask Handler: Serve a resource file
+    :param path: Path to the file
+    :return: The file
+    """
+    return flask.send_from_directory("webpage/res", path)
+
+@server.route("/<path:page>", methods=["GET"])
+def webpage(page):
+    """
+    Flask Handler: Serve a html template
+    :param page: Name of the webpage
+    :return: Rendered webpage
+    """
+    if page == "favicon.ico":
+        return flask.send_from_directory("webpage/res", "icon/pylon.ico")
+    args = dict(flask.request.args)
+    msg = {
+        "message_title": args.get("message_title", ""),
+        "message_content": args.get("message_content", ""),
+        "message_type": args.get("message_type", "")
+    }
+    args.update(msg)
+    return flask.render_template(page + ".html", **args)
+
+@server.route("/", methods=["GET"])
+def index():
+    """
+    Flask Handler: Serve the index
+    :return: Rendered index
+    """
+    return flask.render_template("index.html", **flask.request.args)

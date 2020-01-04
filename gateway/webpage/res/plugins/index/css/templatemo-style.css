@@ -211,15 +211,7 @@ bootstrap.min.css:5
 	width: 100%;
   	padding-top: 25vh;
   	text-align: center;
-  	background-image: url(../../../img/banner_bg.jpg);
-  	vertical-align: middle;
-}
-
-.result-content {
-	width: 100%;
-  	padding-top: 35vh;
-  	text-align: center;
-  	background-image: url(../../../img/result_bg.jpg);
+  	background-image: url(../../../img/index.jpg);
   	vertical-align: middle;
 }
 

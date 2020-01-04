@@ -1,0 +1,198 @@
+{%extends "frame.html"%}
+{%block html%}
+<!-- Content Header (Page header) -->
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>View Tast</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                </ol>
+            </div>
+        </div>
+    </div><!-- /.container-fluid -->
+</section>
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- column -->
+            <div class="col-md-12" id="task">
+                <!-- Horizontal Form -->
+                <div class="card card-info">
+                    <div class="card-header">
+                        <h3 class="card-title">"May I be of service?"</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th style="width: 25%">Attribute</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Id</td>
+                                    <td>{{data.id}}</td>
+                                </tr>
+                                <tr>
+                                    <td>User</td>
+                                    <td>{{data.user}}</td>
+                                </tr>
+                                <tr v-if="data.compile.source">
+                                    <td>Compile Source</td>
+                                    <td><a v-bind:href="'api/task?id='+data.id+'&file=compile_source'">Download</a></td>
+                                </tr>
+                                <tr>
+                                    <td>Compile Command</td>
+                                    <td style="white-space: pre-wrap;">{{data.compile.command}}</td>
+                                </tr>
+                                <tr>
+                                    <td>Compile Timeout</td>
+                                    <td>{{data.compile.timeout}}</td>
+                                </tr>
+                                <tr>
+                                    <td>Execute Input</td>
+                                    <td style="white-space: pre-wrap;">{{data.execute.input}}</td>
+                                </tr>
+                                <tr v-if="data.execute.data">
+                                    <td>Execute Data</td>
+                                    <td><a v-bind:href="'api/task?id='+data.id+'&file=execute_data'">Download</a></td>
+                                </tr>
+                                <tr>
+                                    <td>Execute Command</td>
+                                    <td style="white-space: pre-wrap;">{{data.execute.command}}</td>
+                                </tr>
+                                <tr>
+                                    <td>Execute Timeout</td>
+                                    <td>{{data.execute.timeout}}</td>
+                                </tr>
+                                <tr>
+                                    <td>Execute Standard</td>
+                                    <td style="white-space: pre-wrap;">{{data.execute.standard}}</td>
+                                </tr>
+                                <tr>
+                                    <td>Add time</td>
+                                    <td>{{data.add_time}}</td>
+                                </tr>
+                                <tr>
+                                    <td>Done</td>
+                                    <td>{{data.done}}</td>
+                                </tr>
+                                <tr>
+                                    <td>Status</td>
+                                    <td>{{data.status}}</td>
+                                </tr>
+                                <tr>
+                                    <td>Executor</td>
+                                    <td>{{data.executor}}</td>
+                                </tr>
+                                <tr>
+                                    <td>Done</td>
+                                    <td>{{data.done}}</td>
+                                </tr>
+                                <tr v-if="data.result">
+                                    <td>Compile Output</td>
+                                    <td style="white-space: pre-wrap;">{{data.result.compile_output}}</td>
+                                </tr>
+                                <tr v-if="data.result">
+                                    <td>Compile Error</td>
+                                    <td style="white-space: pre-wrap;">{{data.result.compile_error}}</td>
+                                </tr>
+                                <tr v-if="data.result">
+                                    <td>Execute Output</td>
+                                    <td style="white-space: pre-wrap;">{{data.result.execute_output}}</td>
+                                </tr>
+                                <tr v-if="data.result">
+                                    <td>Execute Error</td>
+                                    <td style="white-space: pre-wrap;">{{data.result.execute_error}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- /.card-body -->
+                    <div class="card-footer btn-group">
+                        <button class="btn btn-info" onclick="window.location.href='search'">OK</button>
+                        <button v-if="!data.done" class="btn btn-danger" onclick="cancel_task(task.$data.data.id, cancel_success, true);">Cancel</button>
+                    </div>
+                    <!-- /.card-footer -->
+                </div>
+                <!-- /.card -->
+            </div>
+            <!--/.col -->
+        </div>
+        <!-- /.row -->
+    </div><!-- /.container-fluid -->
+</section>
+<!-- /.content -->
+{%endblock%}
+{%block script%}
+<script>
+$(
+function ()
+{
+    document.title = "Khala - View Task";
+    ajax(
+        "api/task",
+        {"id": task.$data.data.id},
+        null,
+        "GET",
+        function(res)
+        {
+            task.$data.data = res.task;
+            task.$data.data.status = task_status[task.$data.data.status];
+        }
+    );
+}
+);
+var task = new Vue(
+    {
+        el: "#task",
+        data: {
+            data: {
+                "id": "[[id]]",
+                "user": "",
+                "compile": {
+                    "source": false,
+                    "command": "",
+                    "timeout": 0
+                },
+                "execute": {
+                    "input": "",
+                    "data": false,
+                    "command": "",
+                    "timeout": 0,
+                    "standard": ""
+                },
+                "add_time": "",
+                "done": "",
+                "status": "",
+                "executor": "",
+                "report_time": "",
+                "result": null
+            }
+        }
+    }
+);
+
+function cancel_success()
+{
+    show_message(true, "alert-success", "Cancelled!", "Task successfully cancelled!");
+    ajax(
+        "api/task",
+        {"id": task.$data.data.id},
+        null,
+        "GET",
+        function(res)
+        {
+            task.$data.data = res.task;
+            task.$data.data.status = task_status[task.$data.data.status];
+        }
+    );
+}
+</script>
+{%endblock%}

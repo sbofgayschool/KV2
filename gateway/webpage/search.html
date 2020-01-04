@@ -1,0 +1,199 @@
+{%extends "frame.html"%}
+{%block html%}
+<!-- Content Header (Page header) -->
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Search Task</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                </ol>
+            </div>
+        </div>
+    </div><!-- /.container-fluid -->
+</section>
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- column -->
+            <div class="col-md-12">
+                <!-- Horizontal Form -->
+                <div class="card card-secondary">
+                    <div class="card-header">
+                        <h3 class="card-title">"Teleport successful."</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body">
+                        <div id="search">
+                            <div class="row">
+                                <div class="col-3"><label for="search_id">Task Id</label></div>
+                                <div class="col-2"><label for="search_user">User Id</label></div>
+                                <div class="col-3"><label for="search_start_time">Start Time</label></div>
+                                <div class="col-3"><label for="search_end_time">End Time</label></div>
+                                <div class="col-1"><label>Go Search!</label></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-3"><input class="form-control" id="search_id" placeholder="Task Id" v-model="id"></div>
+                                <div class="col-2"><input class="form-control" id="search_user" placeholder="User Id" v-model="user"></div>
+                                <div class="col-3"><input class="form-control" id="search_start_time" placeholder="Start Time" v-model="start_time"></div>
+                                <div class="col-3"><input class="form-control" id="search_end_time" placeholder="End Time" v-model="end_time"></div>
+                                <div class="col-1"><button class="btn btn-secondary" onclick="go_search(true, true);">Search!</button></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <label></label>
+                        </div>
+                        <table class="table table-bordered" style="/*word-wrap:break-word; word-break:break-all;*/">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%">Id</th>
+                                    <th style="width: 10%">User</th>
+                                    <th style="width: 17.5%">Add Time</th>
+                                    <th style="width: 10%">Done</th>
+                                    <th style="width: 10%">Status</th>
+                                    <th style="width: 10%">Executor</th>
+                                    <th style="width: 17.5%">Report Time</th>
+                                    <th style="width: 10%">Cancel</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tasks">
+                                <tr v-for="x in data">
+                                    <td><a v-bind:href="'get?id='+x.id">{{x.id}}</a></td>
+                                    <td>{{x.user}}</td>
+                                    <td>{{x.add_time}}</td>
+                                    <td>{{x.done}}</td>
+                                    <td>{{x.status}}</td>
+                                    <td>{{x.executor}}</td>
+                                    <td>{{x.report_time}}</td>
+                                    <td>
+                                        <button v-if="!x.done" class="btn btn-sm btn-danger" v-on:click="cancel_task(x.id, cancel_success, true);">Cancel</button>
+                                    </td>
+                                </tr>
+                                <tr v-if="!data.length"><td colspan="8" style="text-align: center">What? No results found!</td></tr>
+                            </tbody>
+                        </table>
+                        <div class="row">
+                            <label></label>
+                        </div>
+                        <div id="page" v-if="pages">
+                            <div class="row">
+                                <div class="col-10"></div>
+                                <div class="col-1" style="text-align: right;"><label for="select_page" style="text-align: right;">Page</label></div>
+                                <div class="col-1">
+                                    <select id="select_page" class="form-control" v-model="page" @change="go_search(false, true);">
+                                        <option v-for="i in Array.from(Array(pages).keys())" v-bind:value="i+1">{{i+1}}</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- /.card-body -->
+                    <div class="card-footer">
+                    </div>
+                    <!-- /.card-footer -->
+                </div>
+                <!-- /.card -->
+            </div>
+            <!--/.col -->
+        </div>
+        <!-- /.row -->
+    </div><!-- /.container-fluid -->
+</section>
+<!-- /.content -->
+{%endblock%}
+{%block script%}
+<script>
+$(
+function ()
+{
+    document.title = "Task List";
+    $("body").css({"min-width": "1100px"});
+    $("#nav_search").addClass("active");
+    go_search();
+}
+);
+
+var search = new Vue(
+    {
+        el: "#search",
+        data: {
+            id: "",
+            user: "",
+            start_time: "",
+            end_time: ""
+        }
+    }
+);
+
+var tasks = new Vue(
+    {
+        el: "#tasks",
+        data: {
+            data:[]
+        },
+        "methods": {
+            "cancel_task": cancel_task,
+            "cancel_success": cancel_success
+        }
+    }
+);
+
+var page = new Vue(
+    {
+        el: "#page",
+        data: {
+            page: 1,
+            pages: 0
+        },
+        "methods": {
+            "go_search": go_search
+        }
+    }
+);
+
+function go_search(reset_page, clean_message)
+{
+    if (clean_message)
+        show_message(false);
+    var data = JSON.parse(JSON.stringify(search.$data));
+    var keys = JSON.parse(JSON.stringify(Object.keys(data)));
+    for (var k in keys)
+    {
+        var key = keys[k];
+        if (data[key] === null || (typeof(data[key]) === "string" && data[key].trim() === ""))
+            delete data[key];
+    }
+    data["limit"] = page_limit;
+    if (reset_page)
+        page.$data.page = 1;
+    data["page"] = page.$data.page - 1;
+    console.log(data);
+    ajax(
+        "api/task/list",
+        data,
+        null,
+        "GET",
+        function(res)
+        {
+            page.$data.pages = res["pages"];
+            tasks.$data.data = res["tasks"];
+            for (var i in tasks.$data.data)
+            {
+                var obj = tasks.$data.data[i];
+                obj["status"] = task_status[obj["status"]];
+            }
+        }
+    );
+}
+
+function cancel_success()
+{
+    show_message(true, "alert-success", "Cancelled!", "Task successfully cancelled!");
+    go_search(false, false);
+}
+</script>
+{%endblock%}

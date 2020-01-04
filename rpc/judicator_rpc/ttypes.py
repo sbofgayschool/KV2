@@ -18,19 +18,19 @@ all_structs = []
 
 class ReturnCode(object):
     OK = 0
-    ERROR = -1
-    NOT_EXIST = 1
+    ERROR = 1
+    NOT_EXIST = 2
 
     _VALUES_TO_NAMES = {
         0: "OK",
-        -1: "ERROR",
-        1: "NOT_EXIST",
+        1: "ERROR",
+        2: "NOT_EXIST",
     }
 
     _NAMES_TO_VALUES = {
         "OK": 0,
-        "ERROR": -1,
-        "NOT_EXIST": 1,
+        "ERROR": 1,
+        "NOT_EXIST": 2,
     }
 
 

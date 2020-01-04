@@ -1,0 +1,89 @@
+{%extends "frame.html"%}
+{%block html%}
+<!-- Content Header (Page header) -->
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Executor List</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                </ol>
+            </div>
+        </div>
+    </div><!-- /.container-fluid -->
+</section>
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- column -->
+            <div class="col-md-12">
+                <!-- Horizontal Form -->
+                <div class="card card-purple">
+                    <div class="card-header">
+                        <h3 class="card-title">"You think as I do."</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body">
+                        <table class="table table-bordered" style="/*word-wrap:break-word; word-break:break-all;*/">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30%">Id</th>
+                                    <th style="width: 30%">Hostname</th>
+                                    <th style="width: 40%">Report Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="executors">
+                                <tr v-for="x in data">
+                                    <td>{{x.id}}</td>
+                                    <td>{{x.hostname}}</td>
+                                    <td>{{x.report_time}}</td>
+                                </tr>
+                                <tr v-if="!data.length"><td colspan="3" style="text-align: center">What? No results found!</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- /.card-body -->
+                    <div class="card-footer">
+                    </div>
+                    <!-- /.card-footer -->
+                </div>
+                <!-- /.card -->
+            </div>
+            <!--/.col -->
+        </div>
+        <!-- /.row -->
+    </div><!-- /.container-fluid -->
+</section>
+<!-- /.content -->
+{%endblock%}
+{%block script%}
+<script>
+$(
+function ()
+{
+    document.title = "Executor List";
+    $("#nav_executors").addClass("active");
+    ajax(
+        "api/executors",
+        null,
+        null,
+        "GET",
+        function(res) {executors.$data.data = res.executors;}
+    );
+}
+);
+
+var executors = new Vue(
+    {
+        el: "#executors",
+        data: {
+            data:[]
+        }
+    }
+);
+</script>
+{%endblock%}

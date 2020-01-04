@@ -27,7 +27,9 @@
     },
     "server":
     {
-        "judicator_etcd_path": "judicator/service"
+        "judicator_etcd_path": "judicator/service",
+        "template": "webpage",
+        "data_dir": "data/server"
         /*
         "log_daemon":
         {

@@ -1,0 +1,87 @@
+{%extends "frame.html"%}
+{%block html%}
+<!-- Content Header (Page header) -->
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Judicator List</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                </ol>
+            </div>
+        </div>
+    </div><!-- /.container-fluid -->
+</section>
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- column -->
+            <div class="col-md-12">
+                <!-- Horizontal Form -->
+                <div class="card card-warning">
+                    <div class="card-header">
+                        <h3 class="card-title">"It shall be done."</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body">
+                        <table class="table table-bordered" style="/*word-wrap:break-word; word-break:break-all;*/">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50%">Name</th>
+                                    <th style="width: 50%">Address</th>
+                                </tr>
+                            </thead>
+                            <tbody id="judicators">
+                                <tr v-for="x in data">
+                                    <td>{{x.name}}</td>
+                                    <td>{{x.address}}</td>
+                                </tr>
+                                <tr v-if="!data.length"><td colspan="2" style="text-align: center">What? No results found!</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- /.card-body -->
+                    <div class="card-footer">
+                    </div>
+                    <!-- /.card-footer -->
+                </div>
+                <!-- /.card -->
+            </div>
+            <!--/.col -->
+        </div>
+        <!-- /.row -->
+    </div><!-- /.container-fluid -->
+</section>
+<!-- /.content -->
+{%endblock%}
+{%block script%}
+<script>
+$(
+function ()
+{
+    document.title = "Judicator List";
+    $("#nav_judicators").addClass("active");
+    ajax(
+        "api/judicators",
+        null,
+        null,
+        "GET",
+        function(res) {judicators.$data.data = res.judicators;}
+    );
+}
+);
+
+var judicators = new Vue(
+    {
+        el: "#judicators",
+        data: {
+            data:[]
+        }
+    }
+);
+</script>
+{%endblock%}
