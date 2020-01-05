@@ -40,12 +40,10 @@
         "database": "judicator",
         "collection": "executor",
         "expiration": 40
-    }
-    /*
+    },
     "log":
     {
         "info": "log/main/info.log",
         "error": "log/main/error.log"
     }
-    */
 }

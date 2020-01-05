@@ -15,16 +15,45 @@ import time
 import fcntl
 import errno
 import subprocess
+import argparse
+import socket
 
 from utility.function import get_logger
 
 
 if __name__ == "__main__":
-    # TODO: Read arguments from the command line
+    parser = argparse.ArgumentParser(description='Executor of Khala system. Execute tasks and report to judicators.')
+    parser.add_argument("--docker-sock", dest="docker_sock", default=None)
+    parser.add_argument("--retry-times", type=int, dest="retry_times", default=None)
+    parser.add_argument("--retry-interval", type=int, dest="retry_interval", default=None)
+
+    parser.add_argument("--boot-check-interval", type=int, dest="boot_check_interval", default=None)
+    parser.add_argument("--boot-print-log", dest="boot_print_log", action="store_const", const=True, default=False)
+
+    parser.add_argument("--etcd-exe", dest="etcd_exe", default=None)
+    parser.add_argument("--etcd-name", dest="etcd_name", default=None)
+    parser.add_argument("--etcd-listen-address", dest="etcd_listen_address", default=None)
+    parser.add_argument("--etcd-advertise-address", dest="etcd_advertise_address", default=None)
+    parser.add_argument("--etcd-peer-port", type=int, dest="etcd_peer_port", default=None)
+    parser.add_argument("--etcd-client-port", type=int, dest="etcd_client_port", default=None)
+    parser.add_argument("--etcd-cluster-init-discovery", dest="etcd_cluster_init_discovery", default=None)
+    parser.add_argument("--etcd-cluster-join-member", dest="etcd_cluster_join_member", default=None)
+    parser.add_argument("--etcd-print-log", dest="etcd_print_log", action="store_const", const=True, default=False)
+
+    parser.add_argument("--main-name", dest="main_name", default=None)
+    parser.add_argument("--main-task-vacant", type=int, dest="main_task_vacant", default=None)
+    parser.add_argument("--main-report-interval", type=int, dest="main_report_interval", default=None)
+    parser.add_argument("--main-print-log", dest="main_print_log", action="store_const", const=True, default=False)
+
+    args = parser.parse_args()
 
     # Load configuration
     with open("config/templates/boot.json", "r") as f:
         config = json_comment.load(f)
+    if args.boot_check_interval is not None:
+        config["check_interval"] = args.boot_check_interval
+    if args.boot_print_log:
+        config.pop("log", None)
 
     # Generate a logger
     if "log" in config:
@@ -37,10 +66,44 @@ if __name__ == "__main__":
         logger = get_logger("boot", None, None)
     logger.info("Executor boot program started.")
 
+    # Generate services
     services = {}
-    # TODO: Modify configuration of etcd and main
+
+    # Load and modify config for etcd
     with open("config/templates/etcd.json", "r") as f:
         config_sub = json_comment.load(f)
+
+    if args.retry_times is not None:
+        config_sub["daemon"]["retry"]["times"] = args.retry_times
+    if args.retry_interval is not None:
+        config_sub["daemon"]["retry"]["interval"] = args.retry_interval
+    if args.etcd_exe is not None:
+        config_sub["etcd"]["exe"] = args.etcd_exe
+    if args.etcd_name is not None:
+        config_sub["etcd"]["name"] = args.etcd_name
+    if args.etcd_listen_address is not None:
+        config_sub["etcd"]["listen"]["address"] = args.etcd_listen_address
+    if args.etcd_advertise_address is not None:
+        config_sub["etcd"]["advertise"]["address"] = args.etcd_advertise_address
+    if args.etcd_peer_port is not None:
+        config_sub["etcd"]["listen"]["peer_port"] = str(args.etcd_peer_port)
+        config_sub["etcd"]["advertise"]["peer_port"] = str(args.etcd_peer_port)
+    if args.etcd_client_port is not None:
+        config_sub["etcd"]["listen"]["client_port"] = str(args.etcd_client_port)
+        config_sub["etcd"]["advertise"]["client_port"] = str(args.etcd_client_port)
+    if args.etcd_cluster_init_discovery is not None:
+        config_sub["etcd"]["cluster"] = {"type": "init", "discovery": args.etcd_cluster_init_discovery}
+    if args.etcd_cluster_join_member is not None:
+        config_sub["etcd"]["cluster"] = {"type": "join", "member": args.etcd_cluster_join_member}
+    if args.etcd_print_log:
+        config_sub["daemon"].pop("log_daemon", None)
+        config_sub["daemon"].pop("log_etcd", None)
+    if args.docker_sock is not None:
+        config_sub["etcd"]["exe"] = "bin/etcd"
+        if args.etcd_name is None:
+            config_sub["etcd"]["name"] = socket.gethostname()
+        # TODO: Fetch port mapping here for etcd advertise client port and advertise peer port
+
     with open("config/etcd.json", "w") as f:
         f.write(json.dumps(config_sub))
     services["etcd"] = {
@@ -49,8 +112,24 @@ if __name__ == "__main__":
         "process": None
     }
 
+    # The same thing for main
     with open("config/templates/main.json", "r") as f:
         config_sub = json_comment.load(f)
+
+    if args.retry_times is not None:
+        config_sub["retry"]["times"] = args.retry_times
+    if args.retry_interval is not None:
+        config_sub["retry"]["interval"] = args.retry_interval
+    if args.main_name is not None:
+        config_sub["name"] = args.main_name
+    if args.main_task_vacant is not None:
+        config_sub["task"]["vacant"] = args.main_task_vacant
+    if args.main_report_interval is not None:
+        config_sub["report_interval"] = args.main_report_interval
+    if args.docker_sock is not None:
+        if args.main_name is None:
+            config_sub["name"] = socket.gethostname()
+
     with open("config/main.json", "w") as f:
         f.write(json.dumps(config_sub))
     services["main"] = {

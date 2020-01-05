@@ -8,8 +8,7 @@
             "interval": 5
         },
         "pid_file": "data/etcd.pid",
-        "raw_log_symbol_pos": 27
-        /*
+        "raw_log_symbol_pos": 27,
         "log_daemon":
         {
             "info": "log/etcd/daemon_info.log",
@@ -20,7 +19,6 @@
             "info": "log/etcd/etcd_info.log",
             "error": "log/etcd/etcd_error.log"
         }
-        */
     },
     "etcd":
     {
@@ -45,11 +43,6 @@
         {
             "type": "init",
             "discovery": "https://discovery.etcd.io/9ddd1320b7116daae3847cb3cf5664c9"
-        },
-        "cluster":
-        {
-            "type": "init",
-            "member": "name=url"
         },
         */
         "cluster":

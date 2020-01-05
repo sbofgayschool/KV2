@@ -2,8 +2,7 @@
     "daemon":
     {
         "exe": ["python3", "uwsgi_daemon.py"],
-        "pid_file": "data/uwsgi.pid"
-        /*
+        "pid_file": "data/uwsgi.pid",
         "log_daemon":
         {
             "info": "log/uwsgi/daemon_info.log",
@@ -14,7 +13,6 @@
             "info": "log/uwsgi/etcd_info.log",
             "error": "log/uwsgi/etcd_error.log"
         }
-        */
     },
     "uwsgi":
     {
@@ -29,13 +27,11 @@
     {
         "judicator_etcd_path": "judicator/service",
         "template": "webpage",
-        "data_dir": "data/server"
-        /*
+        "data_dir": "data/server",
         "log_daemon":
         {
             "info": "log/server/info.log",
             "error": "log/server/error.log"
         }
-        */
     }
 }

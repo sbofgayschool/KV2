@@ -13,8 +13,7 @@
             "primary": "mongodb/primary"
         },
         "raw_log_symbol_pos": 29,
-        "register_interval": 5
-        /*
+        "register_interval": 5,
         "log_daemon":
         {
             "info": "log/mongodb/daemon_info.log",
@@ -25,7 +24,6 @@
             "info": "log/mongodb/mongodb_info.log",
             "error": "log/mongodb/mongodb_error.log"
         }
-        */
     },
     "mongodb":
     {

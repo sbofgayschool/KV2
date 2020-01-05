@@ -15,16 +15,56 @@ import time
 import fcntl
 import errno
 import subprocess
+import argparse
+import socket
 
 from utility.function import get_logger
 
 
 if __name__ == "__main__":
-    # TODO: Read arguments from the command line
+    parser = argparse.ArgumentParser(description='Judicator of Khala system. Handle requests and maintain task data.')
+    parser.add_argument("--docker-sock", dest="docker_sock", default=None)
+    parser.add_argument("--retry-times", type=int, dest="retry_times", default=None)
+    parser.add_argument("--retry-interval", type=int, dest="retry_interval", default=None)
+
+    parser.add_argument("--boot-check-interval", type=int, dest="boot_check_interval", default=None)
+    parser.add_argument("--boot-print-log", dest="boot_print_log", action="store_const", const=True, default=False)
+
+    parser.add_argument("--etcd-exe", dest="etcd_exe", default=None)
+    parser.add_argument("--etcd-name", dest="etcd_name", default=None)
+    parser.add_argument("--etcd-listen-address", dest="etcd_listen_address", default=None)
+    parser.add_argument("--etcd-advertise-address", dest="etcd_advertise_address", default=None)
+    parser.add_argument("--etcd-peer-port", type=int, dest="etcd_peer_port", default=None)
+    parser.add_argument("--etcd-client-port", type=int, dest="etcd_client_port", default=None)
+    parser.add_argument("--etcd-cluster-init-discovery", dest="etcd_cluster_init_discovery", default=None)
+    parser.add_argument("--etcd-cluster-init-member", dest="etcd_cluster_init_member", default=None)
+    parser.add_argument("--etcd-cluster-init-independent", dest="etcd_cluster_init_independent", action="store_const", const=True, default=None)
+    parser.add_argument("--etcd-cluster-join-member-client", dest="etcd_cluster_join_member_client", default=None)
+    parser.add_argument("--etcd-print-log", dest="etcd_print_log", action="store_const", const=True, default=False)
+
+    parser.add_argument("--mongodb-exe", dest="mongodb_exe", default=None)
+    parser.add_argument("--mongodb-name", dest="mongodb_name", default=None)
+    parser.add_argument("--mongodb-listen-address", dest="mongodb_listen_address", default=None)
+    parser.add_argument("--mongodb-advertise-address", dest="mongodb_advertise_address", default=None)
+    parser.add_argument("--mongodb-port", type=int, dest="mongodb_port", default=None)
+    parser.add_argument("--mongodb-replica-set", dest="mongodb_replica_set", default=None)
+    parser.add_argument("--mongodb-print-log", dest="mongodb_print_log", action="store_const", const=True, default=False)
+
+    parser.add_argument("--main-name", dest="main_name", default=None)
+    parser.add_argument("--main-listen-address", dest="main_listen_address", default=None)
+    parser.add_argument("--main-advertise-address", dest="main_advertise_address", default=None)
+    parser.add_argument("--main-port", type=int, dest="main_port", default=None)
+    parser.add_argument("--main-print-log", dest="main_print_log", action="store_const", const=True, default=False)
+
+    args = parser.parse_args()
 
     # Load configuration
     with open("config/templates/boot.json", "r") as f:
         config = json_comment.load(f)
+    if args.boot_check_interval is not None:
+        config["check_interval"] = args.boot_check_interval
+    if args.boot_print_log:
+        config.pop("log", None)
 
     # Generate a logger
     if "log" in config:
@@ -37,10 +77,48 @@ if __name__ == "__main__":
         logger = get_logger("boot", None, None)
     logger.info("Judicator boot program started.")
 
+    # Generate services
     services = {}
-    # TODO: Modify configuration of etcd, mongodb and main
+
+    # Load and modify config for etcd
     with open("config/templates/etcd.json", "r") as f:
         config_sub = json_comment.load(f)
+
+    if args.retry_times is not None:
+        config_sub["daemon"]["retry"]["times"] = args.retry_times
+    if args.retry_interval is not None:
+        config_sub["daemon"]["retry"]["interval"] = args.retry_interval
+    if args.etcd_exe is not None:
+        config_sub["etcd"]["exe"] = args.etcd_exe
+    if args.etcd_name is not None:
+        config_sub["etcd"]["name"] = args.etcd_name
+    if args.etcd_listen_address is not None:
+        config_sub["etcd"]["listen"]["address"] = args.etcd_listen_address
+    if args.etcd_advertise_address is not None:
+        config_sub["etcd"]["advertise"]["address"] = args.etcd_advertise_address
+    if args.etcd_peer_port is not None:
+        config_sub["etcd"]["listen"]["peer_port"] = str(args.etcd_peer_port)
+        config_sub["etcd"]["advertise"]["peer_port"] = str(args.etcd_peer_port)
+    if args.etcd_client_port is not None:
+        config_sub["etcd"]["listen"]["client_port"] = str(args.etcd_client_port)
+        config_sub["etcd"]["advertise"]["client_port"] = str(args.etcd_client_port)
+    if args.etcd_cluster_init_discovery is not None:
+        config_sub["etcd"]["cluster"] = {"type": "init", "discovery": args.etcd_cluster_init_discovery}
+    if args.etcd_cluster_init_member is not None:
+        config_sub["etcd"]["cluster"] = {"type": "init", "member": args.etcd_cluster_init_member}
+    if args.etcd_cluster_init_independent is not None:
+        config_sub["etcd"]["cluster"] = {"type": "init"}
+    if args.etcd_cluster_join_member_client is not None:
+        config_sub["etcd"]["cluster"] = {"type": "join", "client": args.etcd_cluster_join_member_client}
+    if args.etcd_print_log:
+        config_sub["daemon"].pop("log_daemon", None)
+        config_sub["daemon"].pop("log_etcd", None)
+    if args.docker_sock is not None:
+        config_sub["etcd"]["exe"] = "bin/etcd"
+        if args.etcd_name is None:
+            config_sub["etcd"]["name"] = socket.gethostname()
+        # TODO: Fetch port mapping here for etcd advertise client port and advertise peer port
+
     with open("config/etcd.json", "w") as f:
         f.write(json.dumps(config_sub))
     services["etcd"] = {
@@ -49,8 +127,36 @@ if __name__ == "__main__":
         "process": None
     }
 
+    # The same thing for mongodb
     with open("config/templates/mongodb.json", "r") as f:
         config_sub = json_comment.load(f)
+
+    if args.retry_times is not None:
+        config_sub["daemon"]["retry"]["times"] = args.retry_times
+    if args.retry_interval is not None:
+        config_sub["daemon"]["retry"]["interval"] = args.retry_interval
+    if args.mongodb_exe is not None:
+        config_sub["mongodb"]["exe"] = args.mongodb_exe
+    if args.mongodb_name is not None:
+        config_sub["mongodb"]["name"] = args.mongodb_name
+    if args.mongodb_listen_address is not None:
+        config_sub["mongodb"]["listen"]["address"] = args.mongodb_listen_address
+    if args.mongodb_advertise_address is not None:
+        config_sub["mongodb"]["advertise"]["address"] = args.mongodb_advertise_address
+    if args.mongodb_port is not None:
+        config_sub["mongodb"]["listen"]["port"] = str(args.mongodb_port)
+        config_sub["mongodb"]["advertise"]["port"] = str(args.mongodb_port)
+    if args.mongodb_replica_set is not None:
+        config_sub["mongodb"]["replica_set"] = args.mongodb_replica_set
+    if args.mongodb_print_log:
+        config_sub["daemon"].pop("log_daemon", None)
+        config_sub["daemon"].pop("log_mongodb", None)
+    if args.docker_sock is not None:
+        config_sub["mongodb"]["exe"] = "bin/mongod"
+        if args.etcd_name is None:
+            config_sub["mongodb"]["name"] = socket.gethostname()
+        # TODO: Fetch port mapping here for mongodb port
+
     with open("config/mongodb.json", "w") as f:
         f.write(json.dumps(config_sub))
     services["mongodb"] = {
@@ -59,8 +165,30 @@ if __name__ == "__main__":
         "process": None
     }
 
+    # The same thing for main
     with open("config/templates/main.json", "r") as f:
         config_sub = json_comment.load(f)
+
+    if args.retry_times is not None:
+        config_sub["retry"]["times"] = args.retry_times
+    if args.retry_interval is not None:
+        config_sub["retry"]["interval"] = args.retry_interval
+    if args.main_name is not None:
+        config_sub["name"] = args.main_name
+    if args.main_listen_address is not None:
+        config_sub["listen"]["address"] = args.main_listen_address
+    if args.main_advertise_address is not None:
+        config_sub["advertise"]["address"] = args.main_advertise_address
+    if args.main_port is not None:
+        config_sub["listen"]["port"] = str(args.main_port)
+        config_sub["advertise"]["port"] = str(args.main_port)
+    if args.main_print_log:
+        config_sub.pop("log", None)
+    if args.docker_sock is not None:
+        if args.etcd_name is None:
+            config_sub["name"] = socket.gethostname()
+        # TODO: Fetch port mapping here for main port
+
     with open("config/main.json", "w") as f:
         f.write(json.dumps(config_sub))
     services["main"] = {

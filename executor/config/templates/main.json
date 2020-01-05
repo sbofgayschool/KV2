@@ -16,7 +16,7 @@
         {
             "download": "download",
             "source": "source",
-            "data": "data",
+            "data": "source/data",
             "result": "result"
         },
         "compile":
@@ -35,13 +35,10 @@
             "error": "execute.err"
         }
     },
-    "vacant": 3,
-    "report_interval": 5
-    /*
+    "report_interval": 5,
     "log":
     {
         "info": "log/main/info.log",
         "error": "log/main/error.log"
     }
-    */
 }
