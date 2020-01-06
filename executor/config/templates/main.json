@@ -11,6 +11,11 @@
     "judicator_etcd_path": "judicator/service",
     "task":
     {
+        "user":
+        {
+            "uid": 501,
+            "gid": 20
+        },
         "vacant": 3,
         "dir":
         {

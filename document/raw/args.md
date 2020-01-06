@@ -56,6 +56,7 @@
 --main-name
 --main-task-vacant
 --main-report-interval
+--main-task-user-group
 --main-print-log
 ```
 

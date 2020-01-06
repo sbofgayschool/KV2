@@ -17,6 +17,7 @@ import errno
 import subprocess
 import argparse
 import socket
+import docker
 
 from utility.function import get_logger
 
@@ -102,7 +103,13 @@ if __name__ == "__main__":
         config_sub["etcd"]["exe"] = "bin/etcd"
         if args.etcd_name is None:
             config_sub["etcd"]["name"] = socket.gethostname()
-        # TODO: Fetch port mapping here for etcd advertise client port and advertise peer port
+        client = docker.APIClient(base_url=args.docker_sock)
+        config_sub["etcd"]["advertise"]["peer_port"] = str(
+            client.port(socket.gethostname(), int(config_sub["etcd"]["listen"]["peer_port"]))
+        )
+        config_sub["etcd"]["advertise"]["client_port"] = str(
+            client.port(socket.gethostname(), int(config_sub["etcd"]["listen"]["client_port"]))
+        )
 
     with open("config/etcd.json", "w") as f:
         f.write(json.dumps(config_sub))

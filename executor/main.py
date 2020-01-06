@@ -274,6 +274,17 @@ if __name__ == "__main__":
         logger.info("Delete previous existing data directory and create a new one.")
         shutil.rmtree(config["data_dir"])
         os.mkdir(config["data_dir"])
+        os.chmod(config["data_dir"], 0o700)
+
+    # If task user id and group id is not specified, use the current user and group
+    if "user" not in config["task"]:
+        config["task"]["user"] = {"uid": os.getuid(), "gid": os.getgid()}
+    logger.info(
+        "Task execution is going to use uid %d and gid %d" % (
+            config["task"]["user"]["uid"],
+            config["task"]["user"]["gid"]
+        )
+    )
 
     tasks = {}
     lock = threading.Lock()
