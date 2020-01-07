@@ -9,6 +9,7 @@ RUN requirement='libc6-dev make wget libcurl3 gcc build-essential python3 python
     && cd /usr/local/bin \
     && ln -s /usr/bin/python3 python \
     && mv /khala/bin/* /usr/local/bin/ \
+    && rmdir /khala/bin \
     && python -m pip install --upgrade pip \
     && cd /khala/ \
     && python -m pip install -r requirements.txt \
