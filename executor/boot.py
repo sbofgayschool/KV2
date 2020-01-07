@@ -18,6 +18,8 @@ import subprocess
 import argparse
 import socket
 import docker
+import pwd
+import grp
 
 from utility.function import get_logger
 
@@ -101,15 +103,15 @@ if __name__ == "__main__":
         config_sub["daemon"].pop("log_daemon", None)
         config_sub["daemon"].pop("log_etcd", None)
     if args.docker_sock is not None:
-        config_sub["etcd"]["exe"] = "bin/etcd"
+        config_sub["etcd"]["exe"] = "etcd"
         if args.etcd_name is None:
             config_sub["etcd"]["name"] = socket.gethostname()
         client = docker.APIClient(base_url=args.docker_sock)
         config_sub["etcd"]["advertise"]["peer_port"] = str(
-            client.port(socket.gethostname(), int(config_sub["etcd"]["listen"]["peer_port"]))
+            client.port(socket.gethostname(), int(config_sub["etcd"]["listen"]["peer_port"]))[0]["HostPort"]
         )
         config_sub["etcd"]["advertise"]["client_port"] = str(
-            client.port(socket.gethostname(), int(config_sub["etcd"]["listen"]["client_port"]))
+            client.port(socket.gethostname(), int(config_sub["etcd"]["listen"]["client_port"]))[0]["HostPort"]
         )
 
     with open("config/etcd.json", "w") as f:
@@ -133,14 +135,15 @@ if __name__ == "__main__":
     if args.main_task_vacant is not None:
         config_sub["task"]["vacant"] = args.main_task_vacant
     if args.main_task_user_group is not None:
-        # TODO: Find uid and gid by given username and groupname
-        config_sub["task"]["user"] = {}
+        user, group = args.main_task_user_group.split(':')
+        config_sub["task"]["user"] = {"uid": pwd.getpwnam(user)[2], "gid": grp.getgrnam(group)[2]}
     if args.main_report_interval is not None:
         config_sub["report_interval"] = args.main_report_interval
+    if args.main_print_log:
+        config_sub.pop("log", None)
     if args.docker_sock is not None:
         config_sub["docker_sock"] = args.docker_sock
-        # TODO: Create a user called executor and find its username and groupname
-        config_sub["task"]["user"] = {}
+        config_sub["task"]["user"] = {"uid": pwd.getpwnam("executor")[2], "gid": grp.getgrnam("executor")[2]}
         if args.main_name is None:
             config_sub["name"] = socket.gethostname()
     with open("config/main.json", "w") as f:

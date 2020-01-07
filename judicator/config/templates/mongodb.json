@@ -28,7 +28,7 @@
     "mongodb":
     {
         "exe": "mongod",
-        "name": "mongodb1",
+        "name": "mongodb",
         "data_dir": "data/mongodb",
         "listen":
         {

@@ -331,13 +331,15 @@ def webpage(page):
     """
     if page == "favicon.ico":
         return flask.send_from_directory("webpage/res", "icon/pylon.ico")
-    args = dict(flask.request.args)
+    args = flask.request.args.to_dict(flat=True)
     msg = {
         "message_title": args.get("message_title", ""),
         "message_content": args.get("message_content", ""),
         "message_type": args.get("message_type", "")
     }
     args.update(msg)
+    print(flask.request.args)
+    print(args)
     return flask.render_template(page + ".html", **args)
 
 @server.route("/", methods=["GET"])

@@ -6,7 +6,7 @@
         "interval": 5
     },
     "pid_file": "data/main.pid",
-    "name": "main1",
+    "name": "main",
     "listen":
     {
         "address": "0.0.0.0",

@@ -22,8 +22,8 @@
     },
     "etcd":
     {
-        "exe": "/Users/chentingyu/Programme/Practice/Etcd/etcd",
-        "name": "etcd1",
+        "exe": "etcd",
+        "name": "etcd",
         "data_dir": "data/etcd",
         "listen":
         {
@@ -41,7 +41,7 @@
         "cluster":
         {
             "type": "init",
-            "discovery": "url"
+            "discovery": "https://discovery.etcd.io/token"
         },
         "cluster":
         {

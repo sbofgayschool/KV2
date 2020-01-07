@@ -100,15 +100,15 @@ if __name__ == "__main__":
         config_sub["daemon"].pop("log_daemon", None)
         config_sub["daemon"].pop("log_etcd", None)
     if args.docker_sock is not None:
-        config_sub["etcd"]["exe"] = "bin/etcd"
+        config_sub["etcd"]["exe"] = "etcd"
         if args.etcd_name is None:
             config_sub["etcd"]["name"] = socket.gethostname()
         client = docker.APIClient(base_url=args.docker_sock)
         config_sub["etcd"]["advertise"]["peer_port"] = str(
-            client.port(socket.gethostname(), int(config_sub["etcd"]["listen"]["peer_port"]))
+            client.port(socket.gethostname(), int(config_sub["etcd"]["listen"]["peer_port"]))[0]["HostPort"]
         )
         config_sub["etcd"]["advertise"]["client_port"] = str(
-            client.port(socket.gethostname(), int(config_sub["etcd"]["listen"]["client_port"]))
+            client.port(socket.gethostname(), int(config_sub["etcd"]["listen"]["client_port"]))[0]["HostPort"]
         )
 
     with open("config/etcd.json", "w") as f:

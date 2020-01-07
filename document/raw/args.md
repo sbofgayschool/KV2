@@ -27,11 +27,11 @@
 --mongodb-replica-set
 --mongodb-print-log
 
---mongodb-name
---mongodb-listen-address
---mongodb-advertise-address
---mongodb-port
---mongodb-print-log
+--main-name
+--main-listen-address
+--main-advertise-address
+--main-port
+--main-print-log
 ```
 
 #### Executor

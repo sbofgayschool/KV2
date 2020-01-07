@@ -22,6 +22,11 @@ from utility.rpc import extract, generate, select_from_etcd_and_call
 from utility.define import TASK_STATUS
 
 
+def change_user():
+    os.setgid(config["task"]["user"]["gid"])
+    os.setuid(config["task"]["user"]["uid"])
+    return
+
 def execute(id):
     """
     Target function for execute daemon threads
@@ -95,6 +100,10 @@ def execute(id):
         with open(execute_command, "wb") as f:
             if task["execute"]["command"]:
                 f.write(zlib.decompress(task["execute"]["command"]))
+        # Changing the owner of source dir
+        subprocess.Popen(
+            ["chown", str(config["task"]["user"]["uid"]) + ":" + str(config["task"]["user"]["gid"]), "-R", source_dir]
+        ).wait()
         logger.info("Task %s generating needed file complete." % task["id"])
     except:
         logger.error("Task %s generating dirs and files failed." % task["id"], exc_info=True)
@@ -115,7 +124,8 @@ def execute(id):
                     ["bash", config["task"]["compile"]["command"]],
                     stdout=ostream,
                     stderr=estream,
-                    cwd=source_dir
+                    cwd=source_dir,
+                    preexec_fn=change_user
                 )
         else:
             task["done"] = True
@@ -165,7 +175,8 @@ def execute(id):
                     stdin=istream,
                     stdout=ostream,
                     stderr=estream,
-                    cwd=source_dir
+                    cwd=source_dir,
+                    preexec_fn=change_user
                 )
     except:
         logger.error(

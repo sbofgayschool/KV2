@@ -4,6 +4,7 @@ rm -rf ./data
 mkdir ./data
 mkdir ./data/etcd
 mkdir ./data/main
+chmod 700 ./data/main
 
 rm -f config/*.*
 

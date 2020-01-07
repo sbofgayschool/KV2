@@ -22,8 +22,8 @@
     },
     "etcd":
     {
-        "exe": "/Users/chentingyu/Programme/Practice/Etcd/etcd",
-        "name": "gateway_etcd1",
+        "exe": "etcd",
+        "name": "gateway_etcd",
         "data_dir": "data/etcd",
         "listen":
         {
@@ -42,13 +42,13 @@
         "cluster":
         {
             "type": "init",
-            "discovery": "https://discovery.etcd.io/9ddd1320b7116daae3847cb3cf5664c9"
+            "discovery": "https://discovery.etcd.io/token"
         },
         */
         "cluster":
         {
             "type": "join",
-            "member": "etcd1=http://127.0.0.1:2000"
+            "member": "name=url"
         }
     }
 }

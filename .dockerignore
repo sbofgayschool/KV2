@@ -1,0 +1,35 @@
+# Mac
+.DS_Store
+
+# Swap
+*.swp
+*.bak
+
+# Pycharm
+.idea
+
+# Python
+*.py[cod]
+__pycache__
+
+# Virtual Env
+venv
+
+# Log
+*.log
+
+# Socket
+*.sock
+
+# Data directory
+judicator/data/*
+executor/data/*
+gateway/data/*
+
+# Pid file
+*.pid
+
+# Config file
+judicator/config/*.json
+executor/config/*.json
+gateway/config/*.json

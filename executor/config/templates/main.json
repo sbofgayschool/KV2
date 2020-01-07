@@ -6,7 +6,7 @@
         "interval": 5
     },
     "pid_file": "data/main.pid",
-    "name": "executor_main1",
+    "name": "executor_main",
     "data_dir": "data/main",
     "judicator_etcd_path": "judicator/service",
     "task":
