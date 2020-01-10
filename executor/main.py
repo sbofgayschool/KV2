@@ -23,6 +23,10 @@ from utility.define import TASK_STATUS
 
 
 def change_user():
+    """
+    Change user of subprocess according to given configuration
+    :return: None
+    """
     os.setgid(config["task"]["user"]["gid"])
     os.setuid(config["task"]["user"]["uid"])
     return

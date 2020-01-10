@@ -128,8 +128,18 @@ def try_with_times(times, interval, sleep_first, logger, tag, func, *args, **kwa
 
 
 def transform_address(addr, docker_client):
+    """
+    Transform a string to valid address
+    :param addr: The original address
+    :param docker_client: The docker API client
+    :return: Valid address
+    """
+    # If the address is not all upper letters, indicating it is a address
     if not addr.isupper():
         return addr
+    # If it is DOCKER, get the name of the docker container
+    # Else if it is ALL, return 0.0.0.0
+    # Else, it is a name of a net interface card, return the address of it
     if addr == "DOCKER":
         return docker_client.inspect_container(socket.gethostname())["Name"][1:]
     elif addr == "ALL":

@@ -10,4 +10,3 @@ if [ "$2" = "clean" ]; then
 else
     exec python boot.py "${@:2}"
 fi
-

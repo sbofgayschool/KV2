@@ -24,7 +24,14 @@ from utility.function import get_logger, transform_address
 
 
 def handler(signum, frame):
+    """
+    Signal handler of SIGTERM. Sending SIGINT to this process
+    :param signum: Unused, signal number
+    :param frame: Unused
+    :return: None
+    """
     logger.info("Received SIGTERM. Sending SIGINT to self.")
+    # Send signal
     os.kill(os.getpid(), signal.SIGINT)
     return
 
@@ -231,7 +238,6 @@ if __name__ == "__main__":
         if args.main_name is None:
             config_sub["name"] = socket.gethostname()
         client = docker.APIClient(base_url=args.docker_sock)
-
 
     with open("config/main.json", "w") as f:
         f.write(json.dumps(config_sub))

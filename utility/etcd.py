@@ -133,6 +133,11 @@ class EtcdProxy:
         return dict((x["name"], x["peerURLs"][0]) for x in resp)
 
     def remove_member(self, name):
+        """
+        Remove a member from etcd cluster
+        :param name: Name of the member
+        :return: None
+        """
         # Get members and find id for self
         resp = requests.get(urllib.parse.urljoin(self.url, "/v2/members"))
         if not resp:

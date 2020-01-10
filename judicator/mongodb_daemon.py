@@ -108,12 +108,16 @@ def register():
     return
 
 def exit_from_replica_set():
+    """
+    Mark local mongodb node as exited on etcd
+    :return: None
+    """
     # Put local mongodb address on etcd removing list
     reg_key = urllib.parse.urljoin(config["daemon"]["etcd_path"]["exit"], config["mongodb"]["name"])
     reg_value = config["mongodb"]["advertise"]["address"] + ":" + config["mongodb"]["advertise"]["port"]
     local_etcd.set(reg_key, reg_value)
     daemon_logger.info("Local mongodb marked as exited on etcd.")
-
+    return
 
 if __name__ == "__main__":
     # Load configuration

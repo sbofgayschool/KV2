@@ -155,6 +155,11 @@ class MongoDBProxy:
         return self.client.admin.command("isMaster").get("primary", "")
 
     def remove_from_replica_set(self, advertise_address):
+        """
+        Remove a node from replica set
+        :param advertise_address: The advertise address from the replica set
+        :return: None
+        """
         if not self.in_replica:
             return
         # Get the config

@@ -25,7 +25,14 @@ from utility.function import get_logger
 
 
 def handler(signum, frame):
+    """
+    Signal handler of SIGTERM. Sending SIGINT to this process
+    :param signum: Unused, signal number
+    :param frame: Unused
+    :return: None
+    """
     logger.info("Received SIGTERM. Sending SIGINT to self.")
+    # Send signal
     os.kill(os.getpid(), signal.SIGINT)
     return
 
