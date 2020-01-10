@@ -411,6 +411,8 @@ if __name__ == "__main__":
     try:
         logger.info("RPC server start to serve.")
         server.serve()
+    except KeyboardInterrupt:
+        logger.info("Received SIGINT.")
     except:
         logger.error("Accidentally terminated.", exc_info=True)
     logger.info("Exiting.")

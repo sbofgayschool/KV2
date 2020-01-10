@@ -97,6 +97,18 @@ class EtcdProxy:
         :param peer_client: Peer url of the new member
         :return: Dictionary containing name and url of cluster members
         """
+        # Get existing members first
+        resp = requests.get(urllib.parse.urljoin(self.url, "/v2/members"))
+        if not resp:
+            raise Exception("Get existing member resulted in %d, not 200." % resp.status_code)
+
+        # If current node already exists
+        resp = json.loads(resp.text)["members"]
+        for x in resp:
+            if x["name"] == name:
+                self.logger.warning("Member %s is already in the cluster." % name)
+                return dict((x["name"], x["peerURLs"][0]) for x in resp)
+
         # Try to add a member
         resp = requests.post(
             urllib.parse.urljoin(self.url, "/v2/members"),
@@ -105,6 +117,7 @@ class EtcdProxy:
         if not resp:
             raise Exception("Add member resulted in %d, not 200." % resp.status_code)
         id = json.loads(resp.text)["id"]
+        self.logger.info("Member %s is added to the cluster." % name)
 
         # Get existing members after adding
         resp = requests.get(urllib.parse.urljoin(self.url, "/v2/members"))
@@ -118,6 +131,33 @@ class EtcdProxy:
                 x["name"] = name
                 break
         return dict((x["name"], x["peerURLs"][0]) for x in resp)
+
+    def remove_member(self, name):
+        # Get members and find id for self
+        resp = requests.get(urllib.parse.urljoin(self.url, "/v2/members"))
+        if not resp:
+            raise Exception("Get member resulted in %d, not 200." % resp.status_code)
+
+        # Extract search the result
+        resp = json.loads(resp.text)["members"]
+        # If more than one node exist, delete the node
+        if len(resp) > 1:
+            id = None
+            for x in resp:
+                if x["name"] == name:
+                    id = x["id"]
+                    break
+            if id:
+                self.logger.info("Trying to delete %s from cluster." % name)
+                url_postfix = urllib.parse.urljoin("/v2/members/", str(id))
+                resp = requests.delete(urllib.parse.urljoin(self.url, url_postfix))
+                if not resp:
+                    raise Exception("Delete member resulted in %d, not 200." % resp.status_code)
+            else:
+                self.logger.warning("Failed to get id for current node. Skipping member deletion.")
+        else:
+            self.logger.info("This is the only node in cluster. Skipping member deletion.")
+        return
 
     def set(self, key, value, ttl=None, insert=False, prev_value=False):
         """
@@ -203,4 +243,4 @@ def generate_local_etcd_proxy(etcd_config, logger):
     :param logger: The logger
     :return: Instance of etcd proxy connected to the etcd instance
     """
-    return EtcdProxy("http://127.0.0.1:" + etcd_config["listen"]["client_port"], logger)
+    return EtcdProxy("http://localhost:" + etcd_config["listen"]["client_port"], logger)

@@ -10,9 +10,11 @@
 --etcd-exe
 --etcd-name
 --etcd-listen-address
+--etcd-listen-peer-port
+--etcd-listen-client-port
 --etcd-advertise-address
---etcd-peer-port
---etcd-client-port
+--etcd-advertise-peer-port
+--etcd-advertise-client-port
 --etcd-cluster-init-discovery
 --etcd-cluster-init-member
 --etcd-cluster-init-independent
@@ -22,15 +24,17 @@
 --mongodb-exe
 --mongodb-name
 --mongodb-listen-address
+--mongodb-listen-port
 --mongodb-advertise-address
---mongodb-port
+--mongodb-advertise-port
 --mongodb-replica-set
 --mongodb-print-log
 
 --main-name
 --main-listen-address
+--main-listen-port
 --main-advertise-address
---main-port
+--main-advertise-port
 --main-print-log
 ```
 
@@ -45,8 +49,6 @@
 
 --etcd-exe
 --etcd-name
---etcd-listen-address
---etcd-advertise-address
 --etcd-peer-port
 --etcd-client-port
 --etcd-cluster-init-discovery
@@ -71,8 +73,6 @@
 
 --etcd-exe
 --etcd-name
---etcd-listen-address
---etcd-advertise-address
 --etcd-peer-port
 --etcd-client-port
 --etcd-cluster-init-discovery

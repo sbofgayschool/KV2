@@ -17,7 +17,7 @@ from utility.rpc import generate, extract
 
 
 if __name__ == "__main__":
-    transport = TTransport.TBufferedTransport(TSocket.TSocket("127.0.0.1", 4000))
+    transport = TTransport.TBufferedTransport(TSocket.TSocket("localhost", 4000))
     client = Judicator.Client(TBinaryProtocol.TBinaryProtocol(transport))
 
     transport.open()

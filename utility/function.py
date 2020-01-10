@@ -5,6 +5,8 @@ __author__ = "chenty"
 import os
 import logging, logging.handlers
 import time
+import netifaces
+import socket
 
 
 # Format for normal logger.
@@ -123,3 +125,13 @@ def try_with_times(times, interval, sleep_first, logger, tag, func, *args, **kwa
     logger.error("Operation %s failed." % tag)
     # Return when finally failed.
     return False, None
+
+
+def transform_address(addr, docker_client):
+    if not addr.isupper():
+        return addr
+    if addr == "DOCKER":
+        return docker_client.inspect_container(socket.gethostname())["Name"][1:]
+    elif addr == "ALL":
+        return "0.0.0.0"
+    return netifaces.ifaddresses(addr.lower())[netifaces.AF_INET][0]["addr"]

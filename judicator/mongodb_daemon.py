@@ -8,6 +8,11 @@ json = JsonComment()
 import subprocess
 import threading
 import time
+import urllib.parse
+import pymongo
+import pymongo.errors
+import os
+import shutil
 
 from utility.function import get_logger, log_output, try_with_times, check_empty_dir
 from utility.etcd import generate_local_etcd_proxy
@@ -66,8 +71,8 @@ def register():
         daemon_logger.error("Failed to switch mongodb proxy from single to replica. Killing mongodb and exiting.")
         return
 
-    # Loop forever to regularly check whether local mongodb has become primary node of the replica set
-    while True:
+    # Loop until termination to regularly check whether local mongodb has become primary node of the replica set
+    while working:
         time.sleep(config["daemon"]["register_interval"])
         try:
             # If it is primary, update the key-value pair in etcd with its own advertise address
@@ -77,10 +82,38 @@ def register():
                     advertise_address
                 )
                 daemon_logger.info("Local mongodb is primary. Updated etcd.")
+
+                # Try to remove all exited mongodb from replica set
+                daemon_logger.info("Trying to remove exited nodes from replica set.")
+                # Get the list from etcd
+                exiting = local_etcd.get(config["daemon"]["etcd_path"]["exit"])
+                if exiting:
+                    for key, address in exiting.items():
+                        # Remove from the replica set and then the list on etcd
+                        try:
+                            local_mongodb.remove_from_replica_set(address)
+                            local_etcd.delete(key[1: ])
+                            daemon_logger.info("Exited node %s removed from replica set." % address)
+                        except:
+                            daemon_logger.error("Failed to remove %s from replica set." % address, exc_info=True)
+                    daemon_logger.info("All exited nodes removed.")
+                else:
+                    daemon_logger.info("No exited nodes on etcd.")
             else:
                 daemon_logger.info("Local mongodb is secondary.")
         except:
             daemon_logger.error("Failed to check and update primary status.", exc_info=True)
+
+    daemon_logger.info("The register thread is going to exit.")
+    return
+
+def exit_from_replica_set():
+    # Put local mongodb address on etcd removing list
+    reg_key = urllib.parse.urljoin(config["daemon"]["etcd_path"]["exit"], config["mongodb"]["name"])
+    reg_value = config["mongodb"]["advertise"]["address"] + ":" + config["mongodb"]["advertise"]["port"]
+    local_etcd.set(reg_key, reg_value)
+    daemon_logger.info("Local mongodb marked as exited on etcd.")
+
 
 if __name__ == "__main__":
     # Load configuration
@@ -117,11 +150,19 @@ if __name__ == "__main__":
     # Get a local mongodb proxy
     local_mongodb = generate_local_mongodb_proxy(config["mongodb"], daemon_logger)
 
-    # If the data dir is not empty, then the node should probably started up before
-    # If not specified, skip the initialization
-    if "skip_init" not in config["daemon"] and not check_empty_dir(config["mongodb"]["data_dir"]):
-        config["daemon"]["skip_init"] = True
-        daemon_logger.info("Found existing data directory. Initialization will be skipped.")
+    # Check whether the data dir of mongodb is empty
+    # If not, delete it and create a new one
+    if not check_empty_dir(config["mongodb"]["data_dir"]):
+        daemon_logger.info("Delete previous existing data directory and create a new one.")
+        shutil.rmtree(config["mongodb"]["data_dir"])
+        os.mkdir(config["mongodb"]["data_dir"])
+
+    # Check whether the init data dir of mongodb is empty
+    # If not, copy it to the data dir
+    if not check_empty_dir(config["mongodb"]["data_init_dir"]):
+        shutil.rmtree(config["mongodb"]["data_dir"])
+        shutil.copytree(config["mongodb"]["init_data_dir"], config["mongodb"]["data_dir"])
+        daemon_logger.info("Found existing data init directory.")
 
     # Generate command and run mongodb instance as a subprocess
     command = mongodb_generate_run_command(config["mongodb"])
@@ -134,6 +175,7 @@ if __name__ == "__main__":
     )
 
     # Create and start register thread
+    working = True
     register_thread = threading.Thread(target=register)
     register_thread.setDaemon(True)
     register_thread.start()
@@ -142,9 +184,32 @@ if __name__ == "__main__":
     try:
         log_output(mongodb_logger, mongodb_proc.stdout, config["daemon"]["raw_log_symbol_pos"])
         daemon_logger.info("Received EOF from mongodb.")
+    except KeyboardInterrupt:
+        daemon_logger.info("SIGINT Received. Start to clean up and exit.", exc_info=True)
+        # Stop the register thread
+        working = False
+        register_thread.join()
+        # Kill the process
+        try:
+            pymongo.MongoClient("localhost", int(config["mongodb"]["listen"]["port"])).admin.command("shutdown", 1)
+        except pymongo.errors.AutoReconnect:
+            daemon_logger.info("Local mongodb shutdown.", exc_info=True)
+        except Exception as e:
+            daemon_logger.error("Failed to shutdown mongodb normally. Killing the process.", exc_info=True)
+            mongodb_proc.kill()
+        mongodb_proc.wait()
+        daemon_logger.info("Mongodb process exited.")
+        # Register this mongodb as exited one
+        try_with_times(
+            retry_times,
+            retry_interval,
+            False,
+            daemon_logger,
+            "mark local mongodb as exited",
+            exit_from_replica_set
+        )
     except:
-        # When a signal is received, kill the subprocess
-        daemon_logger.error("Received signal, killing mongodb process.", exc_info=True)
+        daemon_logger.error("Accidentally terminated. Killing mongodb process.", exc_info=True)
         mongodb_proc.kill()
     # Wait until mongodb process exit
     mongodb_proc.wait()

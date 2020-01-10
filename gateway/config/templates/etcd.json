@@ -27,13 +27,13 @@
         "data_dir": "data/etcd",
         "listen":
         {
-            "address": "0.0.0.0",
+            "address": "localhost",
             "peer_port": "6000",
             "client_port": "6001"
         },
         "advertise":
         {
-            "address": "127.0.0.1",
+            "address": "localhost",
             "peer_port": "6000",
             "client_port": "6001"
         },

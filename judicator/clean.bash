@@ -3,7 +3,9 @@
 rm -rf ./data
 mkdir ./data
 mkdir ./data/etcd
+mkdir ./data/etcd_init
 mkdir ./data/mongodb
+mkdir ./data/mongodb_init
 
 rm -f config/*.*
 

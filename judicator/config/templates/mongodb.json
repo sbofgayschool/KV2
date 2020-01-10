@@ -10,7 +10,8 @@
         "pid_file": "data/mongodb.pid",
         "etcd_path":
         {
-            "primary": "mongodb/primary"
+            "primary": "mongodb/primary",
+            "exit": "mongodb/exit/"
         },
         "raw_log_symbol_pos": 29,
         "register_interval": 5,
@@ -30,6 +31,7 @@
         "exe": "mongod",
         "name": "mongodb",
         "data_dir": "data/mongodb",
+        "data_init_dir": "data/mongodb_init",
         "listen":
         {
             "address": "0.0.0.0",
@@ -37,7 +39,7 @@
         },
         "advertise":
         {
-            "address": "127.0.0.1",
+            "address": "localhost",
             "port": "3000"
         },
         "replica_set": "rs"

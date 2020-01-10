@@ -302,102 +302,109 @@ if __name__ == "__main__":
 
     # Report tasks execution status regularly
     while True:
-        time.sleep(config["report_interval"])
-
-        # Collect things to report
-        logger.info("Start to collect report contents.")
-        complete, executing = [], []
-        vacant = config["task"]["vacant"]
         try:
-            # Acquire lock first before modifying global variable
-            lock.acquire()
+            time.sleep(config["report_interval"])
+
+            # Collect things to report
+            logger.info("Start to collect report contents.")
+            complete, executing = [], []
+            vacant = config["task"]["vacant"]
             try:
-                for t in tasks:
-                    if not tasks[t]["cancel"]:
-                        if tasks[t]["thread"] and not tasks[t]["thread"].is_alive():
-                            logger.info("Task %s added to complete list." % t)
-                            complete.append(generate(tasks[t], False, False, False))
+                # Acquire lock first before modifying global variable
+                lock.acquire()
+                try:
+                    for t in tasks:
+                        if not tasks[t]["cancel"]:
+                            if tasks[t]["thread"] and not tasks[t]["thread"].is_alive():
+                                logger.info("Task %s added to complete list." % t)
+                                complete.append(generate(tasks[t], False, False, False))
+                            else:
+                                logger.info("Task %s added to executing list." % t)
+                                executing.append(generate(tasks[t], True))
+                                vacant -= 1
+                except:
+                    logger.error("Error during report content collection.", exc_info=True)
+                finally:
+                    # Lock must be released
+                    lock.release()
+            except:
+                logger.error("Fatal exception during report content collection.", exc_info=True)
+
+            # Try to report to judicator and get response
+            logger.info("Reporting to judicator.")
+            success, res = try_with_times(
+                retry_times,
+                retry_interval,
+                False,
+                logger,
+                "report to judicator",
+                report,
+                complete,
+                executing,
+                vacant
+            )
+            if not success:
+                logger.error("Failed to report to judicator, skipping tasks update.")
+                continue
+            cancel, assign = [extract(x, brief=True) for x in res[0]], [extract(x) for x in res[1]]
+            logger.debug("Get cancel list %s." % cancel)
+            logger.debug("Get assign list %s." % assign)
+
+            # Update tasks information
+            logger.info("Try to update tasks information.")
+            try:
+                # Acquire lock first before modifying global variable
+                lock.acquire()
+                try:
+                    # Cancel tasks
+                    for t in cancel:
+                        logger.info("Task %s is going to be cancelled." % t)
+                        if not t["id"] in tasks:
+                            continue
+                        tasks[t["id"]]["cancel"] = True
+                        # If the subprocess is still running, kill it
+                        if tasks[t["id"]]["process"] and tasks[t["id"]]["process"].poll() is None:
+                            logger.info("Killing subprocess of task %s." % t["id"])
+                            tasks[t["id"]]["process"].kill()
                         else:
-                            logger.info("Task %s added to executing list." % t)
-                            executing.append(generate(tasks[t], True))
-                            vacant -= 1
+                            logger.info("No subprocess to kill for task %s." % t["id"])
+
+                    # Clean all tasks
+                    # A list ot tasks index must be built beforehand, as the tasks is going to change
+                    tasks_list = tuple(tasks.keys())
+                    for t in tasks_list:
+                        if tasks[t]["thread"] and not tasks[t]["thread"].is_alive():
+                            # A task is can only be considered as all done (thus can be deleted)
+                            # when thread.is_alive() is False (indicating the daemon thread has finished)
+                            # and cancel (indicating the judicator has received the result) is True
+                            if tasks[t]["cancel"]:
+                                logger.info("Delete task %s." % t)
+                                del tasks[t]
+
+                    # Handle newly assigned
+                    for t in assign:
+                        logger.info("Newly assigned task %s." % t)
+
+                        tasks[t["id"]] = t
+                        tasks[t["id"]]["process"] = None
+                        tasks[t["id"]]["cancel"] = False
+
+                        # Generate a thread and start it
+                        tasks[t["id"]]["thread"] = threading.Thread(target=execute, args=(t["id"], ))
+                        tasks[t["id"]]["thread"].setDaemon(True)
+                        tasks[t["id"]]["thread"].start()
+                except:
+                    logger.error("Error during task update.", exc_info=True)
+                finally:
+                    # Lock must be released
+                    lock.release()
             except:
-                logger.error("Error during report content collection.", exc_info=True)
-            finally:
-                # Lock must be released
-                lock.release()
-        except:
-            logger.error("Fatal exception during report content collection.", exc_info=True)
+                logger.error("Fatal exception during task update.", exc_info=True)
 
-        # Try to report to judicator and get response
-        logger.info("Reporting to judicator.")
-        success, res = try_with_times(
-            retry_times,
-            retry_interval,
-            False,
-            logger,
-            "report to judicator",
-            report,
-            complete,
-            executing,
-            vacant
-        )
-        if not success:
-            logger.error("Failed to report to judicator, skipping tasks update.")
-            continue
-        cancel, assign = [extract(x, brief=True) for x in res[0]], [extract(x) for x in res[1]]
-        logger.debug("Get cancel list %s." % cancel)
-        logger.debug("Get assign list %s." % assign)
+            logger.info("Routine work finished.")
 
-        # Update tasks information
-        logger.info("Try to update tasks information.")
-        try:
-            # Acquire lock first before modifying global variable
-            lock.acquire()
-            try:
-                # Cancel tasks
-                for t in cancel:
-                    logger.info("Task %s is going to be cancelled." % t)
-                    if not t["id"] in tasks:
-                        continue
-                    tasks[t["id"]]["cancel"] = True
-                    # If the subprocess is still running, kill it
-                    if tasks[t["id"]]["process"] and tasks[t["id"]]["process"].poll() is None:
-                        logger.info("Killing subprocess of task %s." % t["id"])
-                        tasks[t["id"]]["process"].kill()
-                    else:
-                        logger.info("No subprocess to kill for task %s." % t["id"])
+        except KeyboardInterrupt:
+            logger.info("Received SIGINT.")
+            break
 
-                # Clean all tasks
-                # A list ot tasks index must be built beforehand, as the tasks is going to change
-                tasks_list = tuple(tasks.keys())
-                for t in tasks_list:
-                    if tasks[t]["thread"] and not tasks[t]["thread"].is_alive():
-                        # A task is can only be considered as all done (thus can be deleted)
-                        # when thread.is_alive() is False (indicating the daemon thread has finished)
-                        # and cancel (indicating the judicator has received the result) is True
-                        if tasks[t]["cancel"]:
-                            logger.info("Delete task %s." % t)
-                            del tasks[t]
-
-                # Handle newly assigned
-                for t in assign:
-                    logger.info("Newly assigned task %s." % t)
-
-                    tasks[t["id"]] = t
-                    tasks[t["id"]]["process"] = None
-                    tasks[t["id"]]["cancel"] = False
-
-                    # Generate a thread and start it
-                    tasks[t["id"]]["thread"] = threading.Thread(target=execute, args=(t["id"], ))
-                    tasks[t["id"]]["thread"].setDaemon(True)
-                    tasks[t["id"]]["thread"].start()
-            except:
-                logger.error("Error during task update.", exc_info=True)
-            finally:
-                # Lock must be released
-                lock.release()
-        except:
-            logger.error("Fatal exception during task update.", exc_info=True)
-
-        logger.info("Routine work finished.")
+    logger.info("Exiting.")

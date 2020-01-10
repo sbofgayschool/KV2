@@ -98,6 +98,9 @@ if __name__ == "__main__":
     try:
         log_output(etcd_logger, etcd_proc.stdout, config["daemon"]["raw_log_symbol_pos"])
         daemon_logger.info("Received EOF from etcd.")
+    except KeyboardInterrupt:
+        daemon_logger.info("SIGINT Received. Killing etcd process.", exc_info=True)
+        etcd_proc.kill()
     except:
         daemon_logger.error("Accidentally terminated. Killing etcd process.", exc_info=True)
         etcd_proc.kill()

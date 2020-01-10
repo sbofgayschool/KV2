@@ -39,8 +39,8 @@
                             <div class="row">
                                 <div class="col-3"><input class="form-control" id="search_id" placeholder="Task Id" v-model="id"></div>
                                 <div class="col-2"><input class="form-control" id="search_user" placeholder="User Id" v-model="user"></div>
-                                <div class="col-3"><input class="form-control" id="search_start_time" placeholder="Start Time" v-model="start_time"></div>
-                                <div class="col-3"><input class="form-control" id="search_end_time" placeholder="End Time" v-model="end_time"></div>
+                                <div class="col-3"><datetime input-class="form-control" type="datetime" id="search_start_time" v-model="start_time"></datetime></div>
+                                <div class="col-3"><datetime input-class="form-control" type="datetime" id="search_end_time" v-model="end_time"></datetime></div>
                                 <div class="col-1"><button class="btn btn-secondary" onclick="go_search(true, true);">Search!</button></div>
                             </div>
                         </div>
@@ -171,7 +171,6 @@ function go_search(reset_page, clean_message)
     if (reset_page)
         page.$data.page = 1;
     data["page"] = page.$data.page - 1;
-    console.log(data);
     ajax(
         "api/task/list",
         data,

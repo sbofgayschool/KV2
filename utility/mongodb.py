@@ -44,6 +44,7 @@ class MongoDBProxy:
 
         # Generate a pymongo client, which can be accessed by others
         self.client = None
+        self.in_replica = False
         self.reconnect(replica)
 
         return
@@ -64,6 +65,7 @@ class MongoDBProxy:
             self.client = pymongo.MongoClient(self.address, self.port, replicaSet=self.replica_name)
         else:
             self.client = pymongo.MongoClient(self.address, self.port)
+        self.in_replica = replica
         return
 
     def check_self_running(self):
@@ -108,18 +110,19 @@ class MongoDBProxy:
         # Else, join the replica set
         if primary == advertise_address:
             # Initialize the set
-            self.client.admin.command({
-                "replSetInitiate": {
+            self.client.admin.command(
+                "replSetInitiate", {
                     "_id": self.replica_name,
                     "members": [{"_id": 0, "host": advertise_address}]
                 }
-            })
+            )
+            self.logger.info("Replica set intialized.")
         else:
             # Create a client connected to the current primary node of mongodb replica set
             client = pymongo.MongoClient(primary.split(":")[0], int(primary.split(":")[1]))
 
             # Get the config
-            conf = client.admin.command({"replSetGetConfig": 1})
+            conf = client.admin.command("replSetGetConfig", 1)
             # If the instance is already inside the replica set, do nothing
             # This can happen when a instance is down unexpectedly and then reboot
             # Else, add it to the set
@@ -135,9 +138,12 @@ class MongoDBProxy:
                     "priority": 1 if votes < 7 else 0,
                     "votes": 1 if votes < 7 else 0
                 })
-                conf['config']['version'] += 1
+                conf["config"]["version"] += 1
                 # Reconfig the replica set
-                client.admin.command({'replSetReconfig': conf['config']})
+                client.admin.command("replSetReconfig", conf["config"])
+                self.logger.info("Added member %s to the replica set." % advertise_address)
+            else:
+                self.logger.warning("Member %s is alread in the replica set." % advertise_address)
         return
 
     def get_primary(self):
@@ -148,6 +154,31 @@ class MongoDBProxy:
         # Done by executing the isMaster command
         return self.client.admin.command("isMaster").get("primary", "")
 
+    def remove_from_replica_set(self, advertise_address):
+        if not self.in_replica:
+            return
+        # Get the config
+        conf = self.client.admin.command("replSetGetConfig", 1)
+        # If more than one nodes exist in the replica set, find current node and delete it
+        if len(conf["config"]["members"]) > 1:
+            removed = False
+            for i in range(len(conf["config"]["members"])):
+                if conf["config"]["members"][i]["host"] == advertise_address:
+                    # Deletion
+                    del conf["config"]["members"][i]
+                    conf["config"]["version"] += 1
+                    # Force is added here to prevent some incomplete configure
+                    # Warning: the parameter force actually should not be added here
+                    self.client.admin.command("replSetReconfig", conf["config"], force=True)
+                    removed = True
+                    self.logger.info("Removed %s from replica set." % advertise_address)
+                    break
+            if not removed:
+                self.logger.warning("Failed to find the node %s in replica set." % advertise_address)
+        else:
+            self.logger.warning("Skipped removing the only mongodb from the replica set.")
+        return
+
 def generate_local_mongodb_proxy(mongodb_config, logger, replica=False):
     """
     Generate a mongodb proxy instance from mongodb configuration
@@ -157,7 +188,7 @@ def generate_local_mongodb_proxy(mongodb_config, logger, replica=False):
     :return: Instance of mongodb proxy class
     """
     return MongoDBProxy(
-        "127.0.0.1",
+        "localhost",
         int(mongodb_config["listen"]["port"]),
         mongodb_config["replica_set"],
         logger,

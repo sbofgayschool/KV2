@@ -7,6 +7,8 @@ json = JsonComment()
 
 import subprocess
 import threading
+import os
+import shutil
 
 from utility.function import get_logger, log_output, check_empty_dir, try_with_times
 from utility.etcd import etcd_generate_run_command, generate_local_etcd_proxy, EtcdProxy
@@ -70,10 +72,19 @@ if __name__ == "__main__":
     local_etcd = generate_local_etcd_proxy(config["etcd"], daemon_logger)
 
     # Check whether the data dir of etcd is empty
-    # If not, etcd has been configured before, and the cluster initialization information should be skipped
+    # If not, delete it and create a new one
     if not check_empty_dir(config["etcd"]["data_dir"]):
+        daemon_logger.info("Delete previous existing data directory and create a new one.")
+        shutil.rmtree(config["etcd"]["data_dir"])
+        os.mkdir(config["etcd"]["data_dir"])
+
+    # Check whether the data dir of etcd is empty
+    # If not, copy it to data dir, and the cluster initialization information should be skipped
+    if not check_empty_dir(config["etcd"]["data_init_dir"]):
         del config["etcd"]["cluster"]
-        daemon_logger.info("Found existing data directory. Skipping cluster parameters.")
+        shutil.rmtree(config["etcd"]["data_dir"])
+        shutil.copytree(config["etcd"]["init_data_dir"], config["etcd"]["data_dir"])
+        daemon_logger.info("Found existing data init directory. Skipping cluster parameters.")
 
     # If data dir is empty, this is a new etcd instance
     # It should be either initialized as joining an exist cluster, or initializing a new one
@@ -117,6 +128,18 @@ if __name__ == "__main__":
     try:
         log_output(etcd_logger, etcd_proc.stdout, config["daemon"]["raw_log_symbol_pos"])
         daemon_logger.info("Received EOF from etcd.")
+    except KeyboardInterrupt:
+        daemon_logger.info("SIGINT Received. Start to clean up and exit.", exc_info=True)
+        try_with_times(
+            retry_times,
+            retry_interval,
+            False,
+            daemon_logger,
+            "remove etcd from cluster",
+            local_etcd.remove_member,
+            config["etcd"]["name"]
+        )
+        etcd_proc.kill()
     except:
         daemon_logger.error("Accidentally terminated. Killing etcd process.", exc_info=True)
         etcd_proc.kill()

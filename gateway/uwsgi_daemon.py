@@ -65,6 +65,9 @@ if __name__ == "__main__":
     try:
         log_output(uwsgi_logger, uwsgi_proc.stdout, None)
         daemon_logger.info("Received EOF from uwsgi.")
+    except KeyboardInterrupt:
+        daemon_logger.info("SIGINT Received. Killing uwsgi process.", exc_info=True)
+        uwsgi_proc.kill()
     except:
         daemon_logger.error("Accidentally terminated. Killing uwsgi process.", exc_info=True)
         uwsgi_proc.kill()

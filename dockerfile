@@ -17,10 +17,11 @@ RUN requirement='libc6-dev make wget libcurl3 gcc build-essential python3 python
     && cd executor && bash clean.bash \
     && cd ../gateway && bash clean.bash \
     && cd ../judicator && bash clean.bash \
-    && cd ..
+    && cd .. \
+    && chmod a+x entry.bash
 
 ENV PYTHONPATH "${PYTHONPATH}:/khala/"
 
 WORKDIR /khala/
 
-ENTRYPOINT ["bash", "entry.bash"]
+ENTRYPOINT ["./entry.bash"]

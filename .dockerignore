@@ -8,6 +8,14 @@
 # Pycharm
 .idea
 
+# Git
+.git
+.gitattributes
+.gitignore
+
+# Docker
+.dockerignore
+
 # Python
 *.py[cod]
 __pycache__
