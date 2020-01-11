@@ -42,13 +42,18 @@
         "cluster":
         {
             "type": "init",
-            "discovery": "https://discovery.etcd.io/token"
+            "discovery": "discovery": "https://discovery.etcd.io/token"
+        },
+        "cluster":
+        {
+            "type": "join",
+            "member": "name=url"
         },
         */
         "cluster":
         {
             "type": "join",
-            "member": "name=url"
+            "client": "url"
         }
     }
 }

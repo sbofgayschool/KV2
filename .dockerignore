@@ -8,6 +8,14 @@
 # Pycharm
 .idea
 
+# Document
+document
+README.md
+LICENSE.txt
+
+# Deployment
+deployment
+
 # Git
 .git
 .gitattributes

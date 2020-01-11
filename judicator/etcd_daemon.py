@@ -86,9 +86,11 @@ if __name__ == "__main__":
         shutil.copytree(config["etcd"]["init_data_dir"], config["etcd"]["data_dir"])
         daemon_logger.info("Found existing data init directory. Skipping cluster parameters.")
 
-    # If data dir is empty, this is a new etcd instance
+    # If cluster config exists and proxy config does not exist
     # It should be either initialized as joining an exist cluster, or initializing a new one
-    if "cluster" in config["etcd"] and config["etcd"]["cluster"]["type"] == "join":
+    if "cluster" in config["etcd"] and \
+        config["etcd"]["cluster"]["type"] == "join" and \
+        not "member" in config["etcd"]["cluster"]:
         # Generate a etcd proxy for the remote etcd to be joined
         remote_etcd = EtcdProxy(config["etcd"]["cluster"]["client"], daemon_logger)
         # Join the cluster by adding self information
@@ -97,14 +99,16 @@ if __name__ == "__main__":
             retry_interval,
             True,
             daemon_logger,
-            "add member to etcd cluster status",
+            "add and get member to etcd cluster status",
             remote_etcd.add_and_get_members,
             config["etcd"]["name"],
-            "http://" + config["etcd"]["advertise"]["address"] + ":" + config["etcd"]["advertise"]["peer_port"]
+            "http://" + config["etcd"]["advertise"]["address"] + ":" + config["etcd"]["advertise"]["peer_port"],
+            "proxy" in config["etcd"]
         )
         if not success:
             daemon_logger.error("Failed to add member information to remote client. Exiting.")
             exit()
+        daemon_logger.debug("Found members: %s." % str(res))
         # Generate member argument for the joining command
         config["etcd"]["cluster"]["member"] = ",".join([(k + "=" + v) for k, v in res.items()])
 
@@ -130,15 +134,18 @@ if __name__ == "__main__":
         daemon_logger.info("Received EOF from etcd.")
     except KeyboardInterrupt:
         daemon_logger.info("SIGINT Received. Start to clean up and exit.", exc_info=True)
-        try_with_times(
-            retry_times,
-            retry_interval,
-            False,
-            daemon_logger,
-            "remove etcd from cluster",
-            local_etcd.remove_member,
-            config["etcd"]["name"]
-        )
+        if "proxy" not in config["etcd"]:
+            try_with_times(
+                retry_times,
+                retry_interval,
+                False,
+                daemon_logger,
+                "remove etcd from cluster",
+                local_etcd.remove_member,
+                config["etcd"]["name"]
+            )
+        else:
+            daemon_logger.info("Proxy mode is on. Skip removing.")
         etcd_proc.kill()
     except:
         daemon_logger.error("Accidentally terminated. Killing etcd process.", exc_info=True)

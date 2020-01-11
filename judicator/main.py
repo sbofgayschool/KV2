@@ -20,7 +20,7 @@ from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
-from utility.function import get_logger
+from utility.function import get_logger, try_with_times
 from utility.etcd import generate_local_etcd_proxy
 from utility.mongodb import generate_local_mongodb_proxy, transform_id
 from utility.define import TASK_STATUS
@@ -30,19 +30,31 @@ from utility.rpc import extract, generate
 def register():
     """
     Target function for register thread
-    Regularly register the rpc service address in etcd
+    Regularly register the rpc service address in etcd, and unregister before exiting
     :return: None
     """
     logger.info("Register thread start to work.")
     reg_key = urllib.parse.urljoin(config["register"]["etcd_path"], config["name"])
     reg_value = config["advertise"]["address"] + ":" + config["advertise"]["port"]
-    while True:
+    while working:
         time.sleep(config["register"]["interval"])
         try:
             local_etcd.set(reg_key, reg_value, ttl=config["register"]["ttl"])
             logger.info("Updated judicator service on etcd.")
         except:
             logger.error("Failed to update judicator service on etcd.", exc_info=True)
+
+    try_with_times(
+        retry_times,
+        retry_interval,
+        False,
+        logger,
+        "delete judicator from service list",
+        local_etcd.delete,
+        reg_key
+    )
+    logger.info("Judicator deleted from etcd.")
+    return
 
 def lead():
     """
@@ -391,6 +403,8 @@ if __name__ == "__main__":
     mongodb_task = local_mongodb.client[config["task"]["database"]][config["task"]["collection"]]
     mongodb_executor = local_mongodb.client[config["executor"]["database"]][config["executor"]["collection"]]
 
+    working = True
+
     # Create and start the register thread
     register_thread = threading.Thread(target=register)
     register_thread.setDaemon(True)
@@ -412,7 +426,11 @@ if __name__ == "__main__":
         logger.info("RPC server start to serve.")
         server.serve()
     except KeyboardInterrupt:
-        logger.info("Received SIGINT.")
+        logger.info("Received SIGINT. Unregister judicator on etcd.")
+        # Wait for the register thread to unregister and then stop
+        working = False
+        register_thread.join()
+        logger.info("Register thread stopped.")
     except:
         logger.error("Accidentally terminated.", exc_info=True)
     logger.info("Exiting.")

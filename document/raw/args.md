@@ -9,6 +9,7 @@
 
 --etcd-exe
 --etcd-name
+--etcd-proxy
 --etcd-listen-address
 --etcd-listen-peer-port
 --etcd-listen-client-port
@@ -52,7 +53,7 @@
 --etcd-peer-port
 --etcd-client-port
 --etcd-cluster-init-discovery
---etcd-cluster-join-member
+--etcd-cluster-join-member-client
 --etcd-print-log
 
 --main-name
@@ -76,7 +77,7 @@
 --etcd-peer-port
 --etcd-client-port
 --etcd-cluster-init-discovery
---etcd-cluster-join-member
+--etcd-cluster-join-member-client
 --etcd-print-log
 
 --uwsgi-host

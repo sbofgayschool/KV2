@@ -11,7 +11,7 @@ import shutil
 import os
 
 from utility.function import get_logger, log_output, check_empty_dir, try_with_times
-from utility.etcd import etcd_generate_run_command, generate_local_etcd_proxy
+from utility.etcd import etcd_generate_run_command, generate_local_etcd_proxy, EtcdProxy
 
 
 def check():
@@ -77,6 +77,30 @@ if __name__ == "__main__":
         daemon_logger.info("Delete previous existing data directory and create a new one.")
         shutil.rmtree(config["etcd"]["data_dir"])
         os.mkdir(config["etcd"]["data_dir"])
+
+    # Get existing members first, if required
+    if config["etcd"]["cluster"]["type"] == "join" and \
+        not "member" in config["etcd"]["cluster"]:
+        # Generate a etcd proxy for the remote etcd to be joined
+        remote_etcd = EtcdProxy(config["etcd"]["cluster"]["client"], daemon_logger)
+        # Join the cluster by adding self information
+        success, res = try_with_times(
+            retry_times,
+            retry_interval,
+            True,
+            daemon_logger,
+            "get member to etcd cluster status",
+            remote_etcd.add_and_get_members,
+            config["etcd"]["name"],
+            "http://" + config["etcd"]["advertise"]["address"] + ":" + config["etcd"]["advertise"]["peer_port"],
+            True
+        )
+        if not success:
+            daemon_logger.error("Failed to add member information to remote client. Exiting.")
+            exit()
+        daemon_logger.debug("Found members: %s." % str(res))
+        # Generate member argument for the joining command
+        config["etcd"]["cluster"]["member"] = ",".join([(k + "=" + v) for k, v in res.items()])
 
     # Generate running command
     command = etcd_generate_run_command(config["etcd"])

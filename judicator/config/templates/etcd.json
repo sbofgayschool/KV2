@@ -54,6 +54,11 @@
             "type": "join",
             "client": "url"
         },
+        "cluster":
+        {
+            "type": "join",
+            "member": "name=url"
+        },
         */
         "cluster":
         {

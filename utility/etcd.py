@@ -91,10 +91,12 @@ class EtcdProxy:
             raise Exception("Get self status resulted in %d, not 200." % resp.status_code)
         return json.loads(resp.text)
 
-    def add_and_get_members(self, name, peer_client):
+    def add_and_get_members(self, name, peer_client, add=True):
         """
-        Add a new member and then get members of the cluster from the instance
+        Add a new member (if required) and then get members of the cluster from the instance
+        :param name: Name of adding node
         :param peer_client: Peer url of the new member
+        :param add: If the node is going to be added to the cluster
         :return: Dictionary containing name and url of cluster members
         """
         # Get existing members first
@@ -104,6 +106,8 @@ class EtcdProxy:
 
         # If current node already exists
         resp = json.loads(resp.text)["members"]
+        if add:
+            return dict((x["name"], x["peerURLs"][0]) for x in resp)
         for x in resp:
             if x["name"] == name:
                 self.logger.warning("Member %s is already in the cluster." % name)

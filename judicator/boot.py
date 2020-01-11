@@ -49,6 +49,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--etcd-exe", dest="etcd_exe", default=None)
     parser.add_argument("--etcd-name", dest="etcd_name", default=None)
+    parser.add_argument("--etcd-proxy", dest="etcd_proxy", default=None)
     parser.add_argument("--etcd-listen-address", dest="etcd_listen_address", default=None)
     parser.add_argument("--etcd-listen-peer-port", type=int, dest="etcd_listen_peer_port", default=None)
     parser.add_argument("--etcd-listen-client-port", type=int, dest="etcd_listen_client_port", default=None)
@@ -116,6 +117,8 @@ if __name__ == "__main__":
         config_sub["etcd"]["exe"] = args.etcd_exe
     if args.etcd_name is not None:
         config_sub["etcd"]["name"] = args.etcd_name
+    if args.etcd_proxy is not None:
+        config_sub["etcd"]["proxy"] = args.etcd_proxy
     if args.etcd_listen_address is not None:
         config_sub["etcd"]["listen"]["address"] = transform_address(args.etcd_listen_address, client)
     if args.etcd_listen_peer_port is not None:

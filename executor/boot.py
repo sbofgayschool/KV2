@@ -53,7 +53,7 @@ if __name__ == "__main__":
     parser.add_argument("--etcd-peer-port", type=int, dest="etcd_peer_port", default=None)
     parser.add_argument("--etcd-client-port", type=int, dest="etcd_client_port", default=None)
     parser.add_argument("--etcd-cluster-init-discovery", dest="etcd_cluster_init_discovery", default=None)
-    parser.add_argument("--etcd-cluster-join-member", dest="etcd_cluster_join_member", default=None)
+    parser.add_argument("--etcd-cluster-join-member-client", dest="etcd_cluster_join_member_client", default=None)
     parser.add_argument("--etcd-print-log", dest="etcd_print_log", action="store_const", const=True, default=False)
 
     parser.add_argument("--main-name", dest="main_name", default=None)
@@ -106,8 +106,8 @@ if __name__ == "__main__":
         config_sub["etcd"]["advertise"]["client_port"] = str(args.etcd_client_port)
     if args.etcd_cluster_init_discovery is not None:
         config_sub["etcd"]["cluster"] = {"type": "init", "discovery": args.etcd_cluster_init_discovery}
-    if args.etcd_cluster_join_member is not None:
-        config_sub["etcd"]["cluster"] = {"type": "join", "member": args.etcd_cluster_join_member}
+    if args.etcd_cluster_join_member_client is not None:
+        config_sub["etcd"]["cluster"] = {"type": "join", "client": args.etcd_cluster_join_member_client}
     if args.etcd_print_log:
         config_sub["daemon"].pop("log_daemon", None)
         config_sub["daemon"].pop("log_etcd", None)
