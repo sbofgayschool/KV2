@@ -3,7 +3,7 @@ MAINTAINER sbofgayschoolbupaanything "1532422769@qq.com"
 
 COPY --chown=root:root . /khala/
 
-RUN requirement='libc6-dev make wget libcurl3 gcc build-essential python3 python3-pip python3-dev' \
+RUN requirement='libc6-dev make wget libcurl3 gcc build-essential vim python3 python3-pip python3-dev' \
     && apt-get update \
     && apt-get install -y $requirement \
     && cd /usr/local/bin \

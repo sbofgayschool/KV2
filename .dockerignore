@@ -1,9 +1,9 @@
 # Mac
-.DS_Store
+**/.DS_Store
 
 # Swap
-*.swp
-*.bak
+**/*.swp
+**/*.bak
 
 # Pycharm
 .idea
@@ -25,17 +25,17 @@ deployment
 .dockerignore
 
 # Python
-*.py[cod]
-__pycache__
+**/*.py[cod]
+**/__pycache__
 
 # Virtual Env
 venv
 
 # Log
-*.log
+**/*.log
 
 # Socket
-*.sock
+**/*.sock
 
 # Data directory
 judicator/data/*
@@ -43,7 +43,7 @@ executor/data/*
 gateway/data/*
 
 # Pid file
-*.pid
+**/*.pid
 
 # Config file
 judicator/config/*.json
