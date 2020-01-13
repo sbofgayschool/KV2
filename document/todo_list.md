@@ -14,6 +14,7 @@ including docker (on both local and remote computer), docker service initialize,
 - Add form validation for gateway, both backend and frontend.
 - Add comments on webpage javascript.
 - Add argument helper string in all boot.py.
+- Add **/test to .dockerignore.
 
 ## Long Term
 - <b>Security issue:</b> Find out a way to completely isolate all single tasks

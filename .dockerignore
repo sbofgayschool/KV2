@@ -24,6 +24,9 @@ deployment
 # Docker
 .dockerignore
 
+# Test code
+**/test
+
 # Python
 **/*.py[cod]
 **/__pycache__
