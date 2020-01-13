@@ -13,7 +13,7 @@ import zipfile
 
 from rpc.judicator_rpc.ttypes import *
 
-from utility.function import get_logger
+from utility.function import get_logger, check_task_dict_size, check_id
 from utility.etcd import generate_local_etcd_proxy
 from utility.rpc import select_from_etcd_and_call, extract, generate
 
@@ -26,6 +26,7 @@ with open("config/templates/uwsgi.json", "r") as f:
 server = flask.Flask(__name__, template_folder=config["template"])
 server.jinja_env.variable_start_string = '[['
 server.jinja_env.variable_end_string = ']]'
+server.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
 # Generate a logger
 if "log" in config:
@@ -43,14 +44,12 @@ with open("config/etcd.json", "r") as f:
     local_etcd = generate_local_etcd_proxy(json.load(f)["etcd"], logger)
 
 @server.route("/api/test", methods=["GET"])
-def test():
+def api_test():
     """
     Flask Handler: API Interface: Test if the gateway is working
     :return:
     """
-    return flask.make_response(
-        "KV2 gateway server is working. Etcd path: %s." % config["judicator_etcd_path"]
-    )
+    return flask.make_response("Khala gateway server is working.")
 
 @server.route("/api/task", methods=["POST"])
 def api_task_add():
@@ -59,28 +58,32 @@ def api_task_add():
     :return: Json with result code and id of new task
     """
     # Extract all necessary data
-    data = {
-        "id": None,
-        "user": int(flask.request.form.get("user")),
-        "compile": {
-            "source": b"",
-            "command": zlib.compress(flask.request.form.get("compile_command").encode("utf-8")),
-            "timeout": int(flask.request.form.get("compile_timeout"))
-        },
-        "execute": {
-            "input": zlib.compress(flask.request.form.get("execute_input").encode("utf-8")),
-            "data": b"",
-            "command": zlib.compress(flask.request.form.get("execute_command").encode("utf-8")),
-            "timeout": int(flask.request.form.get("execute_timeout")),
-            "standard": zlib.compress(flask.request.form.get("execute_standard").encode("utf-8"))
-        },
-        "add_time": None,
-        "done": False,
-        "status": 0,
-        "executor": None,
-        "report_time": None,
-        "result": None
-    }
+    try:
+        data = {
+            "id": None,
+            "user": int(flask.request.form.get("user")),
+            "compile": {
+                "source": b"",
+                "command": zlib.compress(flask.request.form.get("compile_command").encode("utf-8")),
+                "timeout": int(flask.request.form.get("compile_timeout"))
+            },
+            "execute": {
+                "input": zlib.compress(flask.request.form.get("execute_input").encode("utf-8")),
+                "data": b"",
+                "command": zlib.compress(flask.request.form.get("execute_command").encode("utf-8")),
+                "timeout": int(flask.request.form.get("execute_timeout")),
+                "standard": zlib.compress(flask.request.form.get("execute_standard").encode("utf-8"))
+            },
+            "add_time": None,
+            "done": False,
+            "status": 0,
+            "executor": None,
+            "report_time": None,
+            "result": None
+        }
+    except:
+        logger.error("Failed to generate task dictionary.", exc_info=True)
+        return flask.jsonify({"result": ReturnCode.INVALID_INPUT, "id": None})
 
     # Deal with compile source
     compile_source = flask.request.files.get("compile_source")
@@ -132,6 +135,10 @@ def api_task_add():
         with open(zip_path, "rb") as f:
             data["execute"]["data"] = f.read()
 
+    # Check the size of the data before submit.
+    if not check_task_dict_size(data):
+        return flask.jsonify({"result": ReturnCode.TOO_LARGE, "id": None})
+
     # Add through rpc and return
     res = select_from_etcd_and_call("add", local_etcd, config["judicator_etcd_path"], logger, generate(data))
     return flask.jsonify({"result": res.result, "id": res.id})
@@ -145,7 +152,7 @@ def api_task_cancel():
     # Get the id, and return directly if no id is specified
     id = flask.request.args.get("id", None)
     if id is None:
-        return flask.jsonify({"result": ReturnCode.ERROR})
+        return flask.jsonify({"result": ReturnCode.INVALID_INPUT})
 
     # Cancel and return the result
     res = select_from_etcd_and_call("cancel", local_etcd, config["judicator_etcd_path"], logger, id)
@@ -157,14 +164,31 @@ def api_task_search():
     Flask Handler: API Interface: Search for tasks with specified conditions
     :return: Json containing the result, including total page number
     """
-    # Get all conditions
-    id = flask.request.args.get("id", None)
-    user = flask.request.args.get("user", None)
-    start_time = flask.request.args.get("start_time", None)
-    end_time = flask.request.args.get("end_time", None)
-    old_to_new = flask.request.args.get("old_to_new", False)
-    limit = flask.request.args.get("limit", 0)
-    page = flask.request.args.get("page", 0)
+    # Check and get all conditions
+    failed_result = {"result": ReturnCode.INVALID_INPUT, "pages": 0, "tasks": []}
+    try:
+        id = flask.request.args.get("id", None)
+        if id is not None and not check_id(id):
+            return flask.jsonify(failed_result)
+        user = flask.request.args.get("user", None)
+        if user is not None:
+            user = int(user)
+            if not 0 <= user:
+                return flask.jsonify(failed_result)
+        start_time = flask.request.args.get("start_time", None)
+        end_time = flask.request.args.get("end_time", None)
+        old_to_new = flask.request.args.get("old_to_new", None)
+        if old_to_new is not None:
+            old_to_new = True
+        limit = int(flask.request.args.get("limit", 0))
+        if not limit >= 0:
+            return flask.jsonify(failed_result)
+        page = int(flask.request.args.get("page", 0))
+        if not page >= 0:
+            return flask.jsonify(failed_result)
+    except:
+        logger.error("Failed to get all search conditions.", exc_info=True)
+        return flask.jsonify(failed_result)
 
     # Search
     res = select_from_etcd_and_call(
@@ -173,12 +197,12 @@ def api_task_search():
         config["judicator_etcd_path"],
         logger,
         id,
-        int(user) if user is not None else user,
+        user,
         start_time,
         end_time,
-        bool(old_to_new),
-        int(limit) if limit is not None else limit,
-        int(page) if page is not None else page
+        old_to_new,
+        limit,
+        page
     )
 
     # Handle the result and return
@@ -200,7 +224,7 @@ def api_task_get():
     file = flask.request.args.get("file", None)
     # Return directly if no id is specified
     if id is None:
-        return flask.jsonify({"result": ReturnCode.ERROR, "task": None})
+        return flask.jsonify({"result": ReturnCode.INVALID_INPUT, "task": None})
 
     # Get the task
     res = select_from_etcd_and_call("get", local_etcd, config["judicator_etcd_path"], logger, id)

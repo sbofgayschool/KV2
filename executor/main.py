@@ -16,7 +16,7 @@ import subprocess
 
 from rpc.judicator_rpc.ttypes import ReturnCode
 
-from utility.function import get_logger, try_with_times, check_empty_dir
+from utility.function import get_logger, try_with_times, check_empty_dir, check_task_dict_size
 from utility.etcd import generate_local_etcd_proxy
 from utility.rpc import extract, generate, select_from_etcd_and_call
 from utility.define import TASK_STATUS
@@ -153,6 +153,7 @@ def execute(id):
         logger.warning("Task %s failed to compile." % task["id"], exc_info=True)
         # If timeout, kill and wait for the subprocess
         success = False
+        task["result"]["compile_error"] = b"Compile time out."
         task["process"].kill()
         task["process"].wait()
 
@@ -165,8 +166,14 @@ def execute(id):
         # Add compile result
         with open(compile_output, "rb") as f:
             task["result"]["compile_output"] = zlib.compress(f.read())
-        with open(compile_error, "rb") as f:
-            task["result"]["compile_error"] = zlib.compress(f.read())
+        if not compile_error:
+            with open(compile_error, "rb") as f:
+                task["result"]["compile_error"] = zlib.compress(f.read())
+        # If the compilation output goes beyond the limitation
+        if not check_task_dict_size(task):
+            task["result"]["compile_output"] = b""
+            task["result"]["compile_error"] = b"Compile output limitation exceeded."
+            success = False
         # If compilation is successful, execute it
         if success:
             logger.info("Task %s start to run." % task["id"])
@@ -211,6 +218,7 @@ def execute(id):
         logger.warning("Task %s failed to run." % task["id"], exc_info=True)
         # If timeout, kill and wait for the subprocess
         success = False
+        task["result"]["execute_error"] = b"Execution time out."
         task["process"].kill()
         task["process"].wait()
 
@@ -221,8 +229,14 @@ def execute(id):
         # Add execution result
         with open(execute_output, "rb") as f:
             task["result"]["execute_output"] = zlib.compress(f.read())
-        with open(execute_error, "rb") as f:
-            task["result"]["execute_error"] = zlib.compress(f.read())
+        if not task["result"]["execute_error"]:
+            with open(execute_error, "rb") as f:
+                task["result"]["execute_error"] = zlib.compress(f.read())
+        # If the execution output goes beyond the limitation
+        if not check_task_dict_size(task):
+            task["result"]["execute_output"] = b""
+            task["result"]["execute_error"] = b"Execution output limitation exceeded."
+            success = False
         task["status"] = TASK_STATUS["SUCCESS"] if success else TASK_STATUS["RUN_FAILED"]
     except:
         logger.error("Error occurs when trying to collect execution result of task %s." % task["id"], exc_info=True)

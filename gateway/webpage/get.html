@@ -135,7 +135,9 @@
 $(
 function ()
 {
+    // Set title
     document.title = "Khala - View Task";
+    // Get task through http api
     ajax(
         "api/task",
         {"id": task.$data.data.id},
@@ -149,6 +151,8 @@ function ()
     );
 }
 );
+
+// Vue object of the task
 var task = new Vue(
     {
         el: "#task",
@@ -179,9 +183,13 @@ var task = new Vue(
     }
 );
 
+/**
+ * Callback function when a task is successfully cancelled
+ */
 function cancel_success()
 {
     show_message(true, "alert-success", "Cancelled!", "Task successfully cancelled!");
+    // Get the task again
     ajax(
         "api/task",
         {"id": task.$data.data.id},

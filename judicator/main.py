@@ -11,6 +11,7 @@ import time
 import urllib.parse
 import dateutil
 import pymongo
+import pymongo.errors
 from bson.objectid import ObjectId
 import dateutil.parser
 
@@ -20,7 +21,7 @@ from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
-from utility.function import get_logger, try_with_times
+from utility.function import get_logger, try_with_times, check_id
 from utility.etcd import generate_local_etcd_proxy
 from utility.mongodb import generate_local_mongodb_proxy, transform_id
 from utility.define import TASK_STATUS
@@ -154,7 +155,12 @@ class RPCService:
         self.logger.debug("Received RPC request: Add.")
 
         # Extract and clean the task
-        task = extract(task, result=False)
+        # The task is assumed to be valid if no error occurs during extraction
+        try:
+            task = extract(task, result=False)
+        except:
+            self.logger.error("Failed to extract task.", exc_info=True)
+            return AddReturn(ReturnCode.INVALID_INPUT, None)
         del task["id"]
         task["add_time"] = datetime.datetime.now()
         task["done"] = False
@@ -166,6 +172,14 @@ class RPCService:
         try:
             result = self.mongodb_task.insert_one(task)
             return AddReturn(ReturnCode.OK, str(result.inserted_id))
+        except pymongo.errors.WriteError as e:
+            if "large" in str(e):
+                self.logger.error("Task is too large.", exc_info=True)
+                return AddReturn(ReturnCode.TOO_LARGE, None)
+            raise e
+        except pymongo.errors.DocumentTooLarge:
+            self.logger.error("Task is too large.", exc_info=True)
+            return AddReturn(ReturnCode.TOO_LARGE, None)
         except:
             self.logger.error("Failed to insert task.", exc_info=True)
             return AddReturn(ReturnCode.ERROR, None)
@@ -178,6 +192,9 @@ class RPCService:
         :return: Whether the cancellation is successful
         """
         self.logger.debug("Received RPC request: Cancel.")
+        # Input check
+        if not check_id(id):
+            return ReturnCode.INVALID_INPUT
         self.logger.info("Task %s is going to be cancelled." % id)
 
         # Try to update the status and executor of a undone task
@@ -204,18 +221,24 @@ class RPCService:
         """
         self.logger.debug("Received RPC request: Search.")
 
-        # Add conditions to the filter
+        # Check and add conditions to the filter
         filter = {}
-        if id:
-            filter["_id"] = ObjectId(id)
-        if user is not None:
-            filter["user"] = user
-        if start_time or end_time:
-            filter["add_time"] = {}
-            if start_time:
-                filter["add_time"]["$gte"] = dateutil.parser.parse(start_time)
-            if end_time:
-                filter["add_time"]["$lte"] = dateutil.parser.parse(end_time)
+        try:
+            if id:
+                if not check_id(id):
+                    raise Exception("Invalid id.")
+                filter["_id"] = ObjectId(id)
+            if user is not None:
+                filter["user"] = user
+            if start_time or end_time:
+                filter["add_time"] = {}
+                if start_time:
+                    filter["add_time"]["$gte"] = dateutil.parser.parse(start_time)
+                if end_time:
+                    filter["add_time"]["$lte"] = dateutil.parser.parse(end_time)
+        except:
+            self.logger.error("Invalid data.", exc_info=True)
+            return SearchReturn(ReturnCode.INVALID_INPUT, 0, [])
         self.logger.debug("Filter: %s." % filter)
 
         # Count result first for page calculation later
@@ -254,6 +277,9 @@ class RPCService:
         :return: A GetResult structure containing return code and the task
         """
         self.logger.debug("Received RPC request: Get.")
+        # Input check
+        if not check_id(id):
+            return ReturnCode.INVALID_INPUT
         self.logger.info("Search for task %s." % id)
 
         # Find and transform the result
@@ -275,6 +301,12 @@ class RPCService:
         :return: A ReportResult structure containing return code, tasks needed to be deleted, and assigned tasks
         """
         self.logger.debug("Received RPC request: Report.")
+        # Input check
+        if not (isinstance(executor, str) and executor and
+                isinstance(complete, list) and
+                isinstance(executing, list) and
+                isinstance(vacant, int) and vacant >= 0):
+            return ReportReturn(ReturnCode.INVALID_INPUT, [], [])
         self.logger.info("Reporting executor: %s." % executor)
 
         # Refresh or add the information of the executor
@@ -290,44 +322,91 @@ class RPCService:
         executing_list = []
         # Update all completed tasks, if the task indeed belong to the executor, and request the executor to delete it
         for t in complete:
-            task = extract(t)
-            self.logger.debug("Complete task: %s" % task)
-            result = self.mongodb_task.find_one_and_update(
-                {"_id": ObjectId(task["id"]), "executor": executor},
-                {
-                    "$set": {
-                        "done": True,
-                        "status": task["status"],
-                        "executor": None,
-                        "report_time": datetime.datetime.now(),
-                        "result": task["result"]
-                    }
-                }
-            )
-            if not result:
-                self.logger.warning("Complete task %s not found, delete it." % task["id"])
-            else:
-                self.logger.info("Successfully update complete task %s." % task["id"])
-            # Complete task is going to be deleted, no matter whether there is such a task record
-            delete_list.append(generate(task, brief=True))
+            try:
+                task = extract(t)
+                self.logger.debug("Complete task: %s" % task)
+                result = False
+                try:
+                    result = self.mongodb_task.find_one_and_update(
+                        {"_id": ObjectId(task["id"]), "executor": executor},
+                        {
+                            "$set": {
+                                "done": True,
+                                "status": task["status"],
+                                "executor": None,
+                                "report_time": datetime.datetime.now(),
+                                "result": task["result"]
+                            }
+                        }
+                    )
+                except pymongo.errors.OperationFailure as e:
+                    # If the reported task is too big (this should not happened), set the status to error
+                    if "large" in str(e):
+                        self.logger.error("Reported task is too large.", exc_info=True)
+                        result = self.mongodb_task.find_one_and_update(
+                            {"_id": ObjectId(task["id"]), "executor": executor},
+                            {
+                                "$set": {
+                                    "done": True,
+                                    "status": TASK_STATUS["UNKNOWN_ERROR"],
+                                    "executor": None,
+                                    "report_time": datetime.datetime.now(),
+                                    "result": None
+                                }
+                            }
+                        )
+                    else:
+                        raise e
+                except pymongo.errors.DocumentTooLarge:
+                    self.logger.error("Reported task is too large.", exc_info=True)
+                    result = self.mongodb_task.find_one_and_update(
+                        {"_id": ObjectId(task["id"]), "executor": executor},
+                        {
+                            "$set": {
+                                "done": True,
+                                "status": TASK_STATUS["UNKNOWN_ERROR"],
+                                "executor": None,
+                                "report_time": datetime.datetime.now(),
+                                "result": None
+                            }
+                        }
+                    )
+                except:
+                    self.logger.error("Failed to update task %s." % task, exc_info=True)
+                if not result:
+                    self.logger.warning("Complete task %s not found, delete it." % task["id"])
+                else:
+                    self.logger.info("Successfully update complete task %s." % task["id"])
+                # Complete task is going to be deleted, no matter whether there is such a task record
+                delete_list.append(generate(task, brief=True))
+            except:
+                # If errors occur during updating, the report_time should not be updated
+                # and the task is going to cancelled (due to expiration) if it fails to be updated for several times
+                self.logger.error("Failed to update complete task.", exc_info=True)
+                continue
 
         # Update all executing tasks, and request the executor to delete it if the task does not belong to it
         for t in executing:
-            task = extract(t, brief=True)
-            executing_list.append(ObjectId(task["id"]))
-            self.logger.debug("Executing task %s." % task)
-            result = self.mongodb_task.find_one_and_update(
-                {"_id": ObjectId(task["id"]), "executor": executor},
-                {"$set": {"status": task["status"], "report_time": datetime.datetime.now()}}
-            )
-            if not result:
-                delete_list.append(generate(task, brief=True))
-                self.logger.warning("Executing task %s not found, delete it." % task["id"])
-            else:
-                self.logger.info("Successfully update executing task %s." % task["id"])
+            try:
+                task = extract(t, brief=True)
+                self.logger.debug("Executing task %s." % task)
+                # Put the id of the task to executing_list for unreported task check up
+                executing_list.append(ObjectId(task["id"]))
+                result = self.mongodb_task.find_one_and_update(
+                    {"_id": ObjectId(task["id"]), "executor": executor},
+                    {"$set": {"status": task["status"], "report_time": datetime.datetime.now()}}
+                )
+                if not result:
+                    delete_list.append(generate(task, brief=True))
+                    self.logger.warning("Executing task %s not found, delete it." % task["id"])
+                else:
+                    self.logger.info("Successfully update executing task %s." % task["id"])
+            except:
+                # The same thing when handling complete task failure
+                self.logger.error("Failed to update executing task.", exc_info=True)
 
         # Find all tasks which should be executed by this executor but not appear in executing list
-        # And set them to retry
+        # And set their status to retry
         self.logger.debug("Checking for unreported tasks.")
         while True:
             task = mongodb_task.find_one_and_update(

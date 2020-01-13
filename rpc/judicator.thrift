@@ -53,7 +53,9 @@ struct Executor {
 enum ReturnCode {
     OK = 0,
     ERROR = 1,
-    NOT_EXIST = 2
+    NOT_EXIST = 2,
+    TOO_LARGE = 3,
+    INVALID_INPUT = 4
 }
 
 struct AddReturn {

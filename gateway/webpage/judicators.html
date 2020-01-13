@@ -63,8 +63,10 @@
 $(
 function ()
 {
+    // Set title and selected nav-bar item
     document.title = "Khala - Judicator List";
     $("#nav_judicators").addClass("active");
+    // Get judicators through http api
     ajax(
         "api/judicators",
         null,
@@ -75,6 +77,7 @@ function ()
 }
 );
 
+// Vue object of judicators
 var judicators = new Vue(
     {
         el: "#judicators",

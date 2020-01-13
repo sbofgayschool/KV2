@@ -110,13 +110,16 @@
 $(
 function ()
 {
+    // Set title and selected nav-bar item, and fix the width
     document.title = "Khala - Task List";
     $("body").css({"min-width": "1100px"});
     $("#nav_search").addClass("active");
+    // Search tasks
     go_search();
 }
 );
 
+// Vue object of search conditions
 var search = new Vue(
     {
         el: "#search",
@@ -129,6 +132,7 @@ var search = new Vue(
     }
 );
 
+// Vue object of tasks list
 var tasks = new Vue(
     {
         el: "#tasks",
@@ -142,6 +146,7 @@ var tasks = new Vue(
     }
 );
 
+// Vue object of page selection
 var page = new Vue(
     {
         el: "#page",
@@ -155,12 +160,31 @@ var page = new Vue(
     }
 );
 
+/**
+ * Search all tasks through http api
+ * @param reset_page If page selection is going to be reset
+ * @param clean_message If message is going to be cleaned before search
+ */
 function go_search(reset_page, clean_message)
 {
+    // Clean the message, if required
     if (clean_message)
         show_message(false);
+    // Validate all fields
+    if (!$("#search_id").val() || !/[a-z0-9]{16}/.test($("#search_id").val()))
+    {
+        show_message(true, "alert-warning", "Validation Failed!", "Value of search id is not valid!");
+        return;
+    }
+    if (!$("#search_user").val() || parseInt($("#search_user").val()) < 0)
+    {
+        show_message(true, "alert-warning", "Validation Failed!", "Value of search user is not valid!");
+        return;
+    }
+    // Modify or generate data fields
     var data = JSON.parse(JSON.stringify(search.$data));
     var keys = JSON.parse(JSON.stringify(Object.keys(data)));
+    // Delete all data with null value
     for (var k in keys)
     {
         var key = keys[k];
@@ -168,9 +192,11 @@ function go_search(reset_page, clean_message)
             delete data[key];
     }
     data["limit"] = page_limit;
+    // Reset page, if required
     if (reset_page)
         page.$data.page = 1;
     data["page"] = page.$data.page - 1;
+    // Make the ajax request
     ajax(
         "api/task/list",
         data,
@@ -189,6 +215,9 @@ function go_search(reset_page, clean_message)
     );
 }
 
+/**
+ * Call back function when successfully cancelled a task
+ */
 function cancel_success()
 {
     show_message(true, "alert-success", "Cancelled!", "Task successfully cancelled!");

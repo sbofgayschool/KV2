@@ -94,7 +94,12 @@ function()
     );
 }
 );
-// scroll function
+
+/**
+ * Scroll function
+ * @param id Id of the target widget
+ * @param speed Scrolling speed
+ */
 function scrollToID(id, speed)
 {
     var offSet = 50;
@@ -106,10 +111,6 @@ function scrollToID(id, speed)
         mainNav.css("height", "1px").removeClass("in").addClass("collapse");
         mainNav.removeClass("open");
     }
-}
-if (typeof console === "undefined")
-{
-    console = {log: function() {}};
 }
 </script>
 </body>

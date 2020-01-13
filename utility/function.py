@@ -11,11 +11,11 @@ import fcntl
 import errno
 import subprocess
 import signal
+import bson
+import re
 
-# Format for normal logger.
-LOG_FORMAT = "%(name)s - %(asctime)s %(levelname)s - %(message)s"
-# Format for raw output logger.
-RAW_FORMAT = "%(name)s - %(message)s"
+from utility.define import LOG_FORMAT, RAW_FORMAT, TASK_DICTIONARY_MAX_SIZE
+
 
 def get_logger(name, info_file, error_file, raw=False):
     """
@@ -222,3 +222,19 @@ def sigterm_handler(signum, frame):
     # Send signal
     os.kill(os.getpid(), signal.SIGINT)
     return
+
+def check_task_dict_size(task):
+    """
+    Check whether a task dictionary is larger than the limitation
+    :param task: The task dictionary
+    :return: The result
+    """
+    return len(bson.BSON.encode(task)) < TASK_DICTIONARY_MAX_SIZE
+
+def check_id(id):
+    """
+    Check whether a id is valid
+    :param id: The id
+    :return: The result
+    """
+    return bool(re.match(r"[a-z0-9]{16}", id))

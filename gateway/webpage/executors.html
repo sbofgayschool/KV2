@@ -65,8 +65,10 @@
 $(
 function ()
 {
+    // Set title and selected nav-bar item
     document.title = "Khala - Executor List";
     $("#nav_executors").addClass("active");
+    // Make the ajax call
     ajax(
         "api/executors",
         null,
@@ -77,6 +79,7 @@ function ()
 }
 );
 
+// Vue object for executors
 var executors = new Vue(
     {
         el: "#executors",

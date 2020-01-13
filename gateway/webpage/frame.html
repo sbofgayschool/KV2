@@ -139,9 +139,11 @@
 $(
 function ()
 {
-    $('html,body').animate({scrollTop: 0}, 500);
+    // $('html,body').animate({scrollTop: 0}, 500);
 }
 );
+
+// Message view object, initial data come from jinja template
 var message = new Vue({
     el: "#message",
     data: {
@@ -151,12 +153,21 @@ var message = new Vue({
         "content": "[[message_content]]"
     }
 });
+
+/**
+ * Show a Message
+ * @param show If the message should be displayed
+ * @param type Class type of the message
+ * @param title Title of the message
+ * @param content Content of the message
+ */
 function show_message(show, type, title, content)
 {
     message.$data["show"] = show;
     message.$data["type"] = type;
     message.$data["title"] = title;
     message.$data["content"] = content;
+    // If Message is going to showed, scroll the body
     if (show)
         $('html,body').animate({scrollTop: 0}, 500);
 }

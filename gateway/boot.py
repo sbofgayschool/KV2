@@ -22,26 +22,42 @@ from utility.function import get_logger, transform_address, check_services, sigt
 signal.signal(signal.SIGTERM, sigterm_handler)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Gateway of Khala system. Provide HTTP API interface and a website.')
-    parser.add_argument("--docker-sock", dest="docker_sock", default=None)
-    parser.add_argument("--retry-times", type=int, dest="retry_times", default=None)
-    parser.add_argument("--retry-interval", type=int, dest="retry_interval", default=None)
+    parser = argparse.ArgumentParser(description="Gateway of Khala system. Provide HTTP API interface and a website.")
+    parser.add_argument("--docker-sock", dest="docker_sock", default=None,
+                        help="Path to mapped docker sock file")
+    parser.add_argument("--retry-times", type=int, dest="retry_times", default=None,
+                        help="Total retry time of key operations")
+    parser.add_argument("--retry-interval", type=int, dest="retry_interval", default=None,
+                        help="Interval between retries of key operations")
 
-    parser.add_argument("--boot-check-interval", type=int, dest="boot_check_interval", default=None)
-    parser.add_argument("--boot-print-log", dest="boot_print_log", action="store_const", const=True, default=False)
+    parser.add_argument("--boot-check-interval", type=int, dest="boot_check_interval", default=None,
+                        help="Interval between services check in boot module")
+    parser.add_argument("--boot-print-log", dest="boot_print_log", action="store_const", const=True, default=False,
+                        help="Print the log of boot module to stdout")
 
-    parser.add_argument("--etcd-exe", dest="etcd_exe", default=None)
-    parser.add_argument("--etcd-name", dest="etcd_name", default=None)
-    parser.add_argument("--etcd-peer-port", type=int, dest="etcd_peer_port", default=None)
-    parser.add_argument("--etcd-client-port", type=int, dest="etcd_client_port", default=None)
-    parser.add_argument("--etcd-cluster-init-discovery", dest="etcd_cluster_init_discovery", default=None)
-    parser.add_argument("--etcd-cluster-join-member-client", dest="etcd_cluster_join_member_client", default=None)
-    parser.add_argument("--etcd-print-log", dest="etcd_print_log", action="store_const", const=True, default=False)
+    parser.add_argument("--etcd-exe", dest="etcd_exe", default=None,
+                        help="Path to etcd executable file")
+    parser.add_argument("--etcd-name", dest="etcd_name", default=None,
+                        help="Name of the etcd node")
+    parser.add_argument("--etcd-peer-port", type=int, dest="etcd_peer_port", default=None,
+                        help="Listen peer port of the etcd node, default is 2000")
+    parser.add_argument("--etcd-client-port", type=int, dest="etcd_client_port", default=None,
+                        help="Listen client port of the etcd node, default is 2001")
+    parser.add_argument("--etcd-cluster-init-discovery", dest="etcd_cluster_init_discovery", default=None,
+                        help="Discovery token url of etcd node")
+    parser.add_argument("--etcd-cluster-join-member-client", dest="etcd_cluster_join_member_client", default=None,
+                        help="Client url of a member of the cluster which this etcd node is going to join")
+    parser.add_argument("--etcd-print-log", dest="etcd_print_log", action="store_const", const=True, default=False,
+                        help="Print the log of etcd module to stdout")
 
-    parser.add_argument("--uwsgi-host", dest="uwsgi_host", default=None)
-    parser.add_argument("--uwsgi-port", dest="uwsgi_port", default=None)
-    parser.add_argument("--uwsgi-process", type=int, dest="uwsgi_process", default=None)
-    parser.add_argument("--uwsgi-print-log", dest="uwsgi_print_log", action="store_const", const=True, default=False)
+    parser.add_argument("--uwsgi-host", dest="uwsgi_host", default=None,
+                        help="Listen address of uwsgi")
+    parser.add_argument("--uwsgi-port", dest="uwsgi_port", default=None,
+                        help="Listen port of uwsgi")
+    parser.add_argument("--uwsgi-process", type=int, dest="uwsgi_process", default=None,
+                        help="Number of process of the uwsgi")
+    parser.add_argument("--uwsgi-print-log", dest="uwsgi_print_log", action="store_const", const=True, default=False,
+                        help="Print the log of uwsgi module to stdout")
 
     args = parser.parse_args()
 

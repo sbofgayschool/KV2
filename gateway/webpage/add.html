@@ -133,19 +133,52 @@
 $(
 function ()
 {
+    // Set title and selected nav-bar item
     document.title = "Khala - Add Task";
     $("#nav_add").addClass("active");
 }
 );
+
+/**
+ * Add A task through http api
+ */
 function add_task()
 {
+    // Validate all fields
+    if (!$("#user").val() || parseInt($("#user").val()) < 0)
+    {
+        show_message(true, "alert-warning", "Validation Failed!", "Value of user is not valid!");
+        return;
+    }
+    if ($("#compile_source_name") ^ $("#compile_source_str"))
+    {
+        show_message(true, "alert-warning", "Validation Failed!", "Compile source name and compile source string must be either full or empty together!");
+        return;
+    }
+    if (!$("#compile_timeout").val() || parseInt($("#compile_timeout").val()) < 0)
+    {
+        show_message(true, "alert-warning", "Validation Failed!", "Value of compile timeout is not valid!");
+        return;
+    }
+    if ($("#execute_data_name") ^ $("#execute_data_str"))
+    {
+        show_message(true, "alert-warning", "Validation Failed!", "Execute data name and execute data string must be either full or empty together!");
+        return;
+    }
+    if (!$("#execute_timeout").val() || parseInt($("#execute_timeout").val()) < 0)
+    {
+        show_message(true, "alert-warning", "Validation Failed!", "Value of execute timeout is not valid!");
+        return;
+    }
+    // Make the ajax post
     ajax(
         "api/task",
         {},
-        new FormData($('#task')[0]),
+        new FormData($("#task")[0]),
         "POST",
         function(res)
         {
+            // If succeeded, redirect to the view task page
             window.location.href="get?" + $.param({
                 "id": res.id,
                 "message_type": "alert-success",

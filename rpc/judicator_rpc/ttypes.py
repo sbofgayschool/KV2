@@ -20,17 +20,23 @@ class ReturnCode(object):
     OK = 0
     ERROR = 1
     NOT_EXIST = 2
+    TOO_LARGE = 3
+    INVALID_INPUT = 4
 
     _VALUES_TO_NAMES = {
         0: "OK",
         1: "ERROR",
         2: "NOT_EXIST",
+        3: "TOO_LARGE",
+        4: "INVALID_INPUT",
     }
 
     _NAMES_TO_VALUES = {
         "OK": 0,
         "ERROR": 1,
         "NOT_EXIST": 2,
+        "TOO_LARGE": 3,
+        "INVALID_INPUT": 4,
     }
 
 
