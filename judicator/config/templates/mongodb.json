@@ -11,7 +11,7 @@
         "etcd_path":
         {
             "primary": "mongodb/primary",
-            "exit": "mongodb/exit/"
+            "register": "mongodb/register/"
         },
         "raw_log_symbol_pos": 29,
         "register_interval": 5,

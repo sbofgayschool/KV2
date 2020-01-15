@@ -9,7 +9,6 @@ import subprocess
 import threading
 import time
 import urllib.parse
-import pymongo
 import pymongo.errors
 import os
 import shutil
@@ -50,8 +49,9 @@ def register():
         "initialize or add local mongodb to replica set",
         local_mongodb.initialize_replica_set,
         advertise_address,
-        local_etcd,
-        config["daemon"]["etcd_path"]["primary"]
+        urllib.parse.urljoin(config["daemon"]["etcd_path"]["register"], config["mongodb"]["name"]),
+        config["daemon"]["etcd_path"]["primary"],
+        local_etcd
     )[0]:
         mongodb_proc.kill()
         daemon_logger.error("Failed to initialize nor add local mongodb to replica set. Killing mongodb and exiting.")
@@ -85,20 +85,24 @@ def register():
 
                 # Try to remove all exited mongodb from replica set
                 daemon_logger.info("Trying to remove exited nodes from replica set.")
-                # Get the list from etcd
-                exiting = local_etcd.get(config["daemon"]["etcd_path"]["exit"])
-                if exiting:
-                    for key, address in exiting.items():
-                        # Remove from the replica set and then the list on etcd
-                        try:
-                            local_mongodb.remove_from_replica_set(address)
-                            local_etcd.delete(key[1: ])
-                            daemon_logger.info("Exited node %s removed from replica set." % address)
-                        except:
-                            daemon_logger.error("Failed to remove %s from replica set." % address, exc_info=True)
-                    daemon_logger.info("All exited nodes removed.")
-                else:
-                    daemon_logger.info("No exited nodes on etcd.")
+                # Get all registered node first
+                member_registered = local_etcd.get(config["daemon"]["etcd_path"]["register"]).values()
+                member_in_rs = [
+                    x["host"] for x in local_mongodb.client.admin.command("replSetGetConfig", 1)["config"]["members"]
+                ]
+                daemon_logger.info("Get registered member %s." % str(member_registered))
+                daemon_logger.info("Get member in rs %s." % str(member_in_rs))
+                # Get all member in rs but not registered, remove them
+                exiting = set([x for x in member_in_rs if x not in member_registered])
+                daemon_logger.info("Get exiting member %s." % str(exiting))
+                for address in exiting:
+                    # Remove from the replica set and then the list on etcd
+                    try:
+                        local_mongodb.remove_from_replica_set(address)
+                        daemon_logger.info("Exited node %s removed from replica set." % address)
+                    except:
+                        daemon_logger.error("Failed to remove %s from replica set." % address, exc_info=True)
+                daemon_logger.info("All exited nodes removed.")
             else:
                 daemon_logger.info("Local mongodb is secondary.")
         except:
@@ -109,13 +113,14 @@ def register():
 
 def exit_from_replica_set():
     """
-    Mark local mongodb node as exited on etcd
+    Delete local mongodb from registered list
     :return: None
     """
-    # Put local mongodb address on etcd removing list
-    reg_key = urllib.parse.urljoin(config["daemon"]["etcd_path"]["exit"], config["mongodb"]["name"])
-    reg_value = config["mongodb"]["advertise"]["address"] + ":" + config["mongodb"]["advertise"]["port"]
-    local_etcd.set(reg_key, reg_value)
+    # Delete local mongodb from registered list
+    local_etcd.delete(
+        urllib.parse.urljoin(config["daemon"]["etcd_path"]["register"], config["mongodb"]["name"]),
+        config["mongodb"]["advertise"]["address"] + ":" + config["mongodb"]["advertise"]["port"]
+    )
     daemon_logger.info("Local mongodb marked as exited on etcd.")
     return
 

@@ -35,6 +35,10 @@ def etcd_generate_run_command(etcd_config):
         command.append("--proxy")
         command.append(etcd_config["proxy"])
 
+    # If strict reconfig mode is on
+    if "strict_reconfig" in etcd_config:
+        command.append("--strict-reconfig-check=" + ("true" if etcd_config["strict_reconfig"] else "false"))
+
     # If cluster information exists
     if "cluster" in etcd_config:
         # Two types are possible: init and join
@@ -91,12 +95,12 @@ class EtcdProxy:
             raise Exception("Get self status resulted in %d, not 200." % resp.status_code)
         return json.loads(resp.text)
 
-    def add_and_get_members(self, name, peer_client, add=True):
+    def add_and_get_members(self, name, peer_client, get=True):
         """
         Add a new member (if required) and then get members of the cluster from the instance
         :param name: Name of adding node
         :param peer_client: Peer url of the new member
-        :param add: If the node is going to be added to the cluster
+        :param get: If only wish to get the members
         :return: Dictionary containing name and url of cluster members
         """
         # Get existing members first
@@ -106,14 +110,16 @@ class EtcdProxy:
 
         # If current node already exists
         resp = json.loads(resp.text)["members"]
-        if add:
+        if get:
             return dict((x["name"], x["peerURLs"][0]) for x in resp)
         for x in resp:
             if x["name"] == name:
-                self.logger.warning("Member %s is already in the cluster." % name)
-                return dict((x["name"], x["peerURLs"][0]) for x in resp)
+                self.logger.warning("Member %s is already in the cluster. It is going to deleted and re-added." % name)
+                self.remove_member(name, None)
+                break
 
         # Try to add a member
+        self.logger.info("Trying to add member %s." % name)
         resp = requests.post(
             urllib.parse.urljoin(self.url, "/v2/members"),
             json={"peerURLs":[peer_client]}
@@ -136,10 +142,11 @@ class EtcdProxy:
                 break
         return dict((x["name"], x["peerURLs"][0]) for x in resp)
 
-    def remove_member(self, name):
+    def remove_member(self, name, peer_url):
         """
         Remove a member from etcd cluster
         :param name: Name of the member
+        :param peer_url: Expected peer url of the member
         :return: None
         """
         # Get members and find id for self
@@ -153,7 +160,7 @@ class EtcdProxy:
         if len(resp) > 1:
             id = None
             for x in resp:
-                if x["name"] == name:
+                if x["name"] == name and (peer_url is None or peer_url == x["peerURLs"][0]):
                     id = x["id"]
                     break
             if id:
@@ -168,7 +175,7 @@ class EtcdProxy:
             self.logger.info("This is the only node in cluster. Skipping member deletion.")
         return
 
-    def set(self, key, value, ttl=None, insert=False, prev_value=False):
+    def set(self, key, value, ttl=None, insert=False, prev_value=None):
         """
         Set a key-value pair
         :param key: The key
@@ -188,7 +195,7 @@ class EtcdProxy:
             data["ttl"] = "" if ttl == 0 else int(ttl)
         if insert:
             params["prevExist"] = "false"
-        if prev_value:
+        if prev_value is not None:
             data["prevExist"] = "true"
             data["prevValue"] = prev_value
 
@@ -200,16 +207,19 @@ class EtcdProxy:
 
         return json.loads(resp.text)
 
-    def delete(self, key):
+    def delete(self, key, prev_value=None):
         """
         Delete a key-value pair
         :param key: The key
+        :param prev_value: Expected previous value
         :return: Loaded response
         """
         url_postfix = urllib.parse.urljoin("/v2/keys/", key)
 
         # Delete the pair
-        resp = requests.delete(urllib.parse.urljoin(self.url, url_postfix))
+        resp = requests.delete(
+            urllib.parse.urljoin(self.url, url_postfix), params={} if prev_value is None else {"prevValue": prev_value}
+        )
         if not resp:
             raise Exception("Set key: %s resulted in %d, not 200." % (key, resp.status_code))
 

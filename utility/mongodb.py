@@ -85,14 +85,20 @@ class MongoDBProxy:
                 return True
             raise
 
-    def initialize_replica_set(self, advertise_address, local_etcd, primary_key):
+    def initialize_replica_set(self, advertise_address, reg_key, primary_key, local_etcd):
         """
         Initialize or join the replica set of the mongodb instance
         :param advertise_address: Advertise address of the mongodb instance
-        :param local_etcd: Proxy of local etcd
+        :param reg_key: Key used for mongodb registration
         :param primary_key: Key used to store the primary node of mongodb replica set in the etcd
+        :param local_etcd: Proxy of local etcd
         :return:
         """
+        # Registration first
+        local_etcd.set(
+            reg_key,
+            advertise_address
+        )
         # Try to become leader of a new replica set by inserting its own advertise address to etcd
         # This can only happen when a new replica set is build and the key-value pair in etcd is empty
         try:

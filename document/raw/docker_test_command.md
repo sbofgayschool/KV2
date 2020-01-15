@@ -1,6 +1,6 @@
 ```
 
-IP=158.143.102.34
+IP=158.143.101.51
 
 docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --expose 2000 \
@@ -31,7 +31,7 @@ docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --etcd-print-log \
 --mongodb-print-log \
 --main-print-log \
---etcd-cluster-join-member-client=http://$IP:32881 \
+--etcd-cluster-join-member-client=http://$IP:32831 \
 --etcd-advertise-address=$IP \
 --mongodb-advertise-address=$IP \
 --main-advertise-address=$IP  \
@@ -51,7 +51,7 @@ docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --mongodb-print-log \
 --main-print-log \
 --etcd-proxy=on \
---etcd-cluster-join-member-client=http://$IP:32881 \
+--etcd-cluster-join-member-client=http://$IP:32831 \
 --etcd-advertise-address=$IP \
 --mongodb-advertise-address=$IP \
 --main-advertise-address=$IP  \
@@ -66,14 +66,14 @@ docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --boot-print-log \
 --etcd-print-log \
 --uwsgi-print-log \
---etcd-cluster-join-member-client=http://$IP:32881
+--etcd-cluster-join-member-client=http://$IP:32831
 
 docker container run -v /var/run/docker.sock:/var/run/docker.sock khala:v0.1 executor \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
 --etcd-print-log \
 --main-print-log \
---etcd-cluster-join-member-client=http://$IP:32881
+--etcd-cluster-join-member-client=http://$IP:32831
 
 =====
 
@@ -212,6 +212,7 @@ docker service create \
 --stop-grace-period=30s \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala \
+--env NAME={{.Service.Name}}-{{.Task.Slot}} \
 --name judicator-core khala:v0.1 judicator \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
@@ -221,15 +222,19 @@ docker service create \
 --etcd-cluster-init-independent \
 --etcd-advertise-address=DOCKER \
 --mongodb-advertise-address=DOCKER \
---main-advertise-address=DOCKER
+--main-advertise-address=DOCKER \
+--etcd-name=ENV \
+--mongodb-name=ENV \
+--main-name=ENV
 
-JOIN_IP=judicator-core.1
+JOIN_IP=judicator-core.1.t7m1bzfcngh7uz1wc3p16v7lr
 
 docker service create \
 --stop-grace-period=30s \
 --replicas 2 \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala \
+--env NAME={{.Service.Name}}-{{.Task.Slot}} \
 --name judicator khala:v0.1 judicator \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
@@ -239,31 +244,39 @@ docker service create \
 --etcd-cluster-join-member-client=http://$JOIN_IP:2001 \
 --etcd-advertise-address=DOCKER \
 --mongodb-advertise-address=DOCKER \
---main-advertise-address=DOCKER
+--main-advertise-address=DOCKER \
+--etcd-name=ENV \
+--mongodb-name=ENV \
+--main-name=ENV
 
 docker service create \
 --stop-grace-period=30s \
 --replicas 1 \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala -p 7000:7000 \
+--env NAME={{.Service.Name}}-{{.Task.Slot}} \
 --name gateway khala:v0.1 gateway \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
 --etcd-print-log \
 --uwsgi-print-log \
---etcd-cluster-join-member-client=http://$JOIN_IP:2001
+--etcd-cluster-join-member-client=http://$JOIN_IP:2001 \
+--etcd-name=ENV
 
 docker service create \
 --stop-grace-period=30s \
 --replicas 2 \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala \
+--env NAME={{.Service.Name}}-{{.Task.Slot}} \
 --name executor khala:v0.1 executor \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
 --etcd-print-log \
 --main-print-log \
---etcd-cluster-join-member-client=http://$JOIN_IP:2001
+--etcd-cluster-join-member-client=http://$JOIN_IP:2001 \
+--etcd-name=ENV \
+--main-name=ENV
 
 =====
 

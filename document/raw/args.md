@@ -10,6 +10,7 @@
 --etcd-exe
 --etcd-name
 --etcd-proxy
+--etcd-strict-reconfig
 --etcd-listen-address
 --etcd-listen-peer-port
 --etcd-listen-client-port

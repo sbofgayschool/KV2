@@ -1,9 +1,11 @@
 ## Short Term
 - Figure out how Ansible playbook can help when installing docker on remote computer.
+This can be tested on VM of DoC IC.
 - Write a one-shot script to install the whole thing,
 including docker (on both local and remote computer), docker service initialize, cluster initialize, etc.
 - Add full documents, majorly about usage and maintenance, but also should also have something about source code.
-- Thorough check and necessary tests.
+- Formalize logs.
+- Thorough check and necessary tests, especially on VM of DoC IC.
 - Build and upload the v0.1 image on docker host.
 
 #### Finished / Canceled:
@@ -15,6 +17,11 @@ including docker (on both local and remote computer), docker service initialize,
 - Add comments on webpage javascript.
 - Add argument helper string in all boot.py.
 - Add **/test to .dockerignore.
+- Add an argument indicating if the name can be get from the environment variable name.
+- When add a member to etcd cluster, check if a previous member with same name exists.
+- Add registration of mongodb name-address pair on etcd, and remove exit mechanism.
+- Modify mongodb deletion mechanism to deleting all nodes exist in replica set but are not registered.
+- Check whether the registered value is correct before unregistering main, mongodb and etcd of judicator.
 
 ## Long Term
 - <b>Security issue:</b> Find out a way to completely isolate all single tasks

@@ -98,7 +98,10 @@ if __name__ == "__main__":
     if args.etcd_exe is not None:
         config_sub["etcd"]["exe"] = args.etcd_exe
     if args.etcd_name is not None:
-        config_sub["etcd"]["name"] = args.etcd_name
+        if args.etcd_name == "ENV":
+            config_sub["etcd"]["name"] = os.environ.get("NAME")
+        else:
+            config_sub["etcd"]["name"] = args.etcd_name
     if args.etcd_peer_port is not None:
         config_sub["etcd"]["listen"]["peer_port"] = str(args.etcd_peer_port)
         config_sub["etcd"]["advertise"]["peer_port"] = str(args.etcd_peer_port)
@@ -134,7 +137,10 @@ if __name__ == "__main__":
     if args.retry_interval is not None:
         config_sub["retry"]["interval"] = args.retry_interval
     if args.main_name is not None:
-        config_sub["name"] = args.main_name
+        if args.main_name == "ENV":
+            config_sub["name"] = os.environ.get("NAME")
+        else:
+            config_sub["name"] = args.main_name
     if args.main_task_vacant is not None:
         config_sub["task"]["vacant"] = args.main_task_vacant
     if args.main_task_user_group is not None:

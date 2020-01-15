@@ -44,9 +44,9 @@
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label for="compile_source_name" class="col-sm-2 col-form-label">Compile Source Name</label>
+                                <label for="compile_source_name" class="col-sm-2 col-form-label">Compile Source File Name</label>
                                 <div class="col-sm-10">
-                                    <input class="form-control" id="compile_source_name" name="compile_source_name" placeholder="Compile Source Name">
+                                    <input class="form-control" id="compile_source_name" name="compile_source_name" placeholder="Compile Source File Name">
                                 </div>
                             </div>
                             <div class="form-group row">
@@ -81,9 +81,9 @@
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label for="execute_data_name" class="col-sm-2 col-form-label">Execute Data Name</label>
+                                <label for="execute_data_name" class="col-sm-2 col-form-label">Execute Data File Name</label>
                                 <div class="col-sm-10">
-                                    <input class="form-control" id="execute_data_name" name="execute_data_name" placeholder="Execute Data Name">
+                                    <input class="form-control" id="execute_data_name" name="execute_data_name" placeholder="Execute Data File Name">
                                 </div>
                             </div>
                             <div class="form-group row">
@@ -150,9 +150,9 @@ function add_task()
         show_message(true, "alert-warning", "Validation Failed!", "Value of user is not valid!");
         return;
     }
-    if ($("#compile_source_name") ^ $("#compile_source_str"))
+    if (Boolean($("#compile_source_name").val()) ^ Boolean($("#compile_source_str").val()))
     {
-        show_message(true, "alert-warning", "Validation Failed!", "Compile source name and compile source string must be either full or empty together!");
+        show_message(true, "alert-warning", "Validation Failed!", "Compile source name and compile source text must be either full or empty together!");
         return;
     }
     if (!$("#compile_timeout").val() || parseInt($("#compile_timeout").val()) < 0)
@@ -160,9 +160,9 @@ function add_task()
         show_message(true, "alert-warning", "Validation Failed!", "Value of compile timeout is not valid!");
         return;
     }
-    if ($("#execute_data_name") ^ $("#execute_data_str"))
+    if (Boolean($("#execute_data_name").val()) ^ Boolean($("#execute_data_str").val()))
     {
-        show_message(true, "alert-warning", "Validation Failed!", "Execute data name and execute data string must be either full or empty together!");
+        show_message(true, "alert-warning", "Validation Failed!", "Execute data name and execute data text must be either full or empty together!");
         return;
     }
     if (!$("#execute_timeout").val() || parseInt($("#execute_timeout").val()) < 0)
@@ -183,7 +183,7 @@ function add_task()
                 "id": res.id,
                 "message_type": "alert-success",
                 "message_title": "Success!",
-                "message_content": "Task " + res.id + " added successfully!"
+                "message_content": "Task " + res.id + " submitted successfully!"
             })
         },
         false

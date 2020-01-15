@@ -31,6 +31,7 @@ docker service create \
 --replicas $1 \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala \
+--env NAME={{.Service.Name}}-{{.Task.Slot}} \
 --name $JUDICATOR_CORE khala:v0.1 judicator \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
@@ -40,7 +41,10 @@ docker service create \
 --etcd-cluster-init-independent \
 --etcd-advertise-address=DOCKER \
 --mongodb-advertise-address=DOCKER \
---main-advertise-address=DOCKER
+--main-advertise-address=DOCKER \
+--etcd-name=ENV \
+--mongodb-name=ENV \
+--main-name=ENV
 
 read -ra service_id <<< `docker service ps -q $JUDICATOR_CORE`
 service_id=${service_id[0]}
@@ -62,6 +66,7 @@ docker service create \
 --replicas $2 \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala \
+--env NAME={{.Service.Name}}-{{.Task.Slot}} \
 --name $JUDICATOR khala:v0.1 judicator \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
@@ -71,7 +76,10 @@ docker service create \
 --etcd-cluster-join-member-client=http://$judicator_core_name:2001 \
 --etcd-advertise-address=DOCKER \
 --mongodb-advertise-address=DOCKER \
---main-advertise-address=DOCKER
+--main-advertise-address=DOCKER \
+--etcd-name=ENV \
+--mongodb-name=ENV \
+--main-name=ENV
 
 echo ""
 echo "================================="
@@ -84,12 +92,14 @@ docker service create \
 --replicas $3 \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala -p 7000:7000 \
+--env NAME={{.Service.Name}}-{{.Task.Slot}} \
 --name $GATEWAY khala:v0.1 gateway \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
 --etcd-print-log \
 --uwsgi-print-log \
---etcd-cluster-join-member-client=http://$judicator_core_name:2001
+--etcd-cluster-join-member-client=http://$judicator_core_name:2001 \
+--etcd-name=ENV
 
 echo ""
 echo "================================="
@@ -102,12 +112,15 @@ docker service create \
 --replicas $4 \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala \
+--env NAME={{.Service.Name}}-{{.Task.Slot}} \
 --name $EXECUTOR khala:v0.1 executor \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
 --etcd-print-log \
 --main-print-log \
---etcd-cluster-join-member-client=http://$judicator_core_name:2001
+--etcd-cluster-join-member-client=http://$judicator_core_name:2001 \
+--etcd-name=ENV \
+--main-name=ENV
 
 echo ""
 echo "Wait for $COOL_DOWN_TIME seconds."

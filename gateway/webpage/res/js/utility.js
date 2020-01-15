@@ -3,7 +3,8 @@ var result_code = {
     0: "Operation succeeded!",
     1: "Error occurs during operation!",
     2: "Specified task not exist!",
-    3: "Submitted task too large!"
+    3: "Submitted task too large!",
+    4: "Invalid input discovered!"
 };
 
 // Task status definition

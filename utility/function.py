@@ -237,4 +237,4 @@ def check_id(id):
     :param id: The id
     :return: The result
     """
-    return bool(re.match(r"[a-z0-9]{16}", id))
+    return bool(re.match(r"^[a-f0-9]{24}$", id))

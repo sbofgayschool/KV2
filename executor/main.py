@@ -153,7 +153,7 @@ def execute(id):
         logger.warning("Task %s failed to compile." % task["id"], exc_info=True)
         # If timeout, kill and wait for the subprocess
         success = False
-        task["result"]["compile_error"] = b"Compile time out."
+        task["result"]["compile_error"] = zlib.compress(b"Compile time out.")
         task["process"].kill()
         task["process"].wait()
 
@@ -166,13 +166,16 @@ def execute(id):
         # Add compile result
         with open(compile_output, "rb") as f:
             task["result"]["compile_output"] = zlib.compress(f.read())
-        if not compile_error:
+        if not task["result"]["compile_error"]:
             with open(compile_error, "rb") as f:
                 task["result"]["compile_error"] = zlib.compress(f.read())
         # If the compilation output goes beyond the limitation
-        if not check_task_dict_size(task):
+        tmp_task = dict(task)
+        tmp_task.pop("process", None)
+        tmp_task.pop("thread", None)
+        if not check_task_dict_size(tmp_task):
             task["result"]["compile_output"] = b""
-            task["result"]["compile_error"] = b"Compile output limitation exceeded."
+            task["result"]["compile_error"] = zlib.compress(b"Compile output limitation exceeded.")
             success = False
         # If compilation is successful, execute it
         if success:
@@ -218,7 +221,7 @@ def execute(id):
         logger.warning("Task %s failed to run." % task["id"], exc_info=True)
         # If timeout, kill and wait for the subprocess
         success = False
-        task["result"]["execute_error"] = b"Execution time out."
+        task["result"]["execute_error"] = zlib.compress(b"Execution time out.")
         task["process"].kill()
         task["process"].wait()
 
@@ -233,9 +236,12 @@ def execute(id):
             with open(execute_error, "rb") as f:
                 task["result"]["execute_error"] = zlib.compress(f.read())
         # If the execution output goes beyond the limitation
-        if not check_task_dict_size(task):
+        tmp_task = dict(task)
+        tmp_task.pop("process", None)
+        tmp_task.pop("thread", None)
+        if not check_task_dict_size(tmp_task):
             task["result"]["execute_output"] = b""
-            task["result"]["execute_error"] = b"Execution output limitation exceeded."
+            task["result"]["execute_error"] = zlib.compress(b"Execution output limitation exceeded.")
             success = False
         task["status"] = TASK_STATUS["SUCCESS"] if success else TASK_STATUS["RUN_FAILED"]
     except:

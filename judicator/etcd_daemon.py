@@ -142,7 +142,8 @@ if __name__ == "__main__":
                 daemon_logger,
                 "remove etcd from cluster",
                 local_etcd.remove_member,
-                config["etcd"]["name"]
+                config["etcd"]["name"],
+                "http://" + config["etcd"]["advertise"]["address"] + ":" + config["etcd"]["advertise"]["peer_port"]
             )
         else:
             daemon_logger.info("Proxy mode is on. Skip removing.")

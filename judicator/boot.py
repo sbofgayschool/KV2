@@ -42,6 +42,8 @@ if __name__ == "__main__":
                         help="Name of the etcd node")
     parser.add_argument("--etcd-proxy", dest="etcd_proxy", default=None,
                         help="If etcd node should be in proxy mode")
+    parser.add_argument("--etcd-strict-reconfig", dest="etcd_strict_reconfig", action="store_const",
+                        const=True, default=None, help="If the etcd should be in strict reconfig mode")
     parser.add_argument("--etcd-listen-address", dest="etcd_listen_address", default=None,
                         help="Listen address of the etcd node, default is 0.0.0.0")
     parser.add_argument("--etcd-listen-peer-port", type=int, dest="etcd_listen_peer_port", default=None,
@@ -132,9 +134,14 @@ if __name__ == "__main__":
     if args.etcd_exe is not None:
         config_sub["etcd"]["exe"] = args.etcd_exe
     if args.etcd_name is not None:
-        config_sub["etcd"]["name"] = args.etcd_name
+        if args.etcd_name == "ENV":
+            config_sub["etcd"]["name"] = os.environ.get("NAME")
+        else:
+            config_sub["etcd"]["name"] = args.etcd_name
     if args.etcd_proxy is not None:
         config_sub["etcd"]["proxy"] = args.etcd_proxy
+    if args.etcd_strict_reconfig is not None:
+        config_sub["etcd"]["strict_reconfig"] = args.etcd_strict_reconfig
     if args.etcd_listen_address is not None:
         config_sub["etcd"]["listen"]["address"] = transform_address(args.etcd_listen_address, client)
     if args.etcd_listen_peer_port is not None:
@@ -194,7 +201,10 @@ if __name__ == "__main__":
     if args.mongodb_exe is not None:
         config_sub["mongodb"]["exe"] = args.mongodb_exe
     if args.mongodb_name is not None:
-        config_sub["mongodb"]["name"] = args.mongodb_name
+        if args.mongodb_name == "ENV":
+            config_sub["mongodb"]["name"] = os.environ.get("NAME")
+        else:
+            config_sub["mongodb"]["name"] = args.mongodb_name
     if args.mongodb_listen_address is not None:
         config_sub["mongodb"]["listen"]["address"] = transform_address(args.mongodb_listen_address, client)
     if args.mongodb_listen_port is not None:
@@ -236,7 +246,10 @@ if __name__ == "__main__":
     if args.retry_interval is not None:
         config_sub["retry"]["interval"] = args.retry_interval
     if args.main_name is not None:
-        config_sub["name"] = args.main_name
+        if args.main_name == "ENV":
+            config_sub["name"] = os.environ.get("NAME")
+        else:
+            config_sub["name"] = args.main_name
     if args.main_listen_address is not None:
         config_sub["listen"]["address"] = transform_address(args.main_listen_address, client)
     if args.main_listen_port is not None:

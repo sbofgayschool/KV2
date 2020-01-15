@@ -52,7 +52,8 @@ def register():
         logger,
         "delete judicator from service list",
         local_etcd.delete,
-        reg_key
+        reg_key,
+        reg_value
     )
     logger.info("Judicator deleted from etcd.")
     return
