@@ -34,6 +34,7 @@ def etcd_generate_run_command(etcd_config):
     if "proxy" in etcd_config:
         command.append("--proxy")
         command.append(etcd_config["proxy"])
+        command.append("--proxy-refresh-interval=10000")
 
     # If strict reconfig mode is on
     if "strict_reconfig" in etcd_config:
@@ -156,13 +157,16 @@ class EtcdProxy:
 
         # Extract search the result
         resp = json.loads(resp.text)["members"]
-        # If more than one node exist, delete the node
+        # If more than one node exist, do the deletion
+        # Otherwise, there is no need for deletion
         if len(resp) > 1:
             id = None
             for x in resp:
                 if x["name"] == name and (peer_url is None or peer_url == x["peerURLs"][0]):
                     id = x["id"]
                     break
+            # If the node is found, delete it
+            # Otherwise, skip deletion
             if id:
                 self.logger.info("Trying to delete %s from cluster." % name)
                 url_postfix = urllib.parse.urljoin("/v2/members/", str(id))
@@ -177,10 +181,10 @@ class EtcdProxy:
 
     def set(self, key, value, ttl=None, insert=False, prev_value=None):
         """
-        Set a key-value pair
+        Set a key-value pair on etcd
         :param key: The key
         :param value: The value
-        :param ttl: The ttl of the ke
+        :param ttl: The ttl of the key
         :param insert: If the key should not exist
         :param prev_value: If the previous value of the key should equal to specified value
         :return: Loaded response

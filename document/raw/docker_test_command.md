@@ -227,11 +227,11 @@ docker service create \
 --mongodb-name=ENV \
 --main-name=ENV
 
-JOIN_IP=judicator-core.1.t7m1bzfcngh7uz1wc3p16v7lr
+JOIN_IP=judicator-core.1.ms7bq7fwolgavya2llvhjgsnv
 
 docker service create \
 --stop-grace-period=30s \
---replicas 2 \
+--replicas 1 \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala \
 --env NAME={{.Service.Name}}-{{.Task.Slot}} \
