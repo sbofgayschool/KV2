@@ -1,0 +1,38 @@
+---
+- hosts: localhost
+  connection: local
+  roles:
+    - role: geerlingguy.docker
+      become: yes
+      ansible_become_password: "password"
+  tasks:
+    - name: init docker swarm
+      shell: "docker swarm init"
+      ignore_errors: true
+    - name: init docker overlay network
+      shell: "docker network create -d overlay --attachable khala"
+      ignore_errors: true
+- hosts: khala_manager
+  roles:
+    - role: geerlingguy.docker
+      become: yes
+      ansible_become_password: "password"
+  tasks:
+    - name: get docker swarm token
+      local_action: shell docker swarm join-token manager
+      register: token
+    - name: join docker swarm
+      shell: "{{token.stdout.split('\n')[2] | trim}}"
+      ignore_errors: true
+- hosts: khala_worker
+  roles:
+    - role: geerlingguy.docker
+      become: yes
+      ansible_become_password: "password"
+  tasks:
+    - name: get docker swarm token
+      local_action: shell docker swarm join-token worker
+      register: token
+    - name: join docker swarm
+      shell: "{{token.stdout.split('\n')[2] | trim}}"
+      ignore_errors: true

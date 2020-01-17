@@ -55,3 +55,10 @@ mongod --replSet "rs0" --bind_ip localhost --port 7001 --dbpath /Users/chentingy
 
 mongod --replSet "rs0" --bind_ip localhost --port 7002 --dbpath /Users/chentingyu/Programme/Practice/MongoDB/store2
 ```
+
+#### Ansible
+```
+ansible-playbook -u chenty --ask-vault-pass --extra-vars '@~/.ansible/vault/doc_vm_passwd.yml' pb_docker.yml
+
+sudo iptables -A INPUT -p tcp --dport 2377 -j ACCEPT
+```
