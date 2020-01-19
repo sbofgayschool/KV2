@@ -82,9 +82,10 @@ def api_task_add():
             "result": None
         }
     except:
-        logger.error("Failed to generate task dictionary.", exc_info=True)
+        logger.error("Failed to parse added task.", exc_info=True)
         return flask.jsonify({"result": ReturnCode.INVALID_INPUT, "id": None})
 
+    logger.info("Generating all extra fields for added task.")
     # Deal with compile source
     compile_source = flask.request.files.get("compile_source")
     compile_source_str = flask.request.form.get("compile_source_str")
@@ -92,10 +93,10 @@ def api_task_add():
     # If the zip file has been uploaded, use it
     # Else if some text is given, zipped it and use it
     if compile_source:
-        logger.info("Compile source detected.")
+        logger.info("Detected compile source.")
         data["compile"]["source"] = compile_source.stream.read()
     elif compile_source_str and compile_source_name:
-        logger.info("Compile source text detected.")
+        logger.info("Detected compile source text.")
         # Create a temp dir
         temp_dir = tempfile.TemporaryDirectory(dir=config["data_dir"])
         # Write the text in the file with specified name
@@ -117,10 +118,10 @@ def api_task_add():
     # If the zip file has been uploaded, use it
     # Else if some text is given, zipped it and use it
     if execute_data:
-        logger.info("Execute data detected.")
+        logger.info("Detected execute data.")
         data["execute"]["data"] = execute_data.stream.read()
     elif execute_data_str and execute_data_name:
-        logger.info("Execute data text detected.")
+        logger.info("Detected execute data text.")
         # Create a temp dir
         temp_dir = tempfile.TemporaryDirectory(dir=config["data_dir"])
         # Write the text in the file with specified name
@@ -134,6 +135,8 @@ def api_task_add():
         # Read the binary
         with open(zip_path, "rb") as f:
             data["execute"]["data"] = f.read()
+
+    logger.info("Generated all fields for added task.")
 
     # Check the size of the data before submit.
     if not check_task_dict_size(data):
@@ -155,6 +158,7 @@ def api_task_cancel():
         return flask.jsonify({"result": ReturnCode.INVALID_INPUT})
 
     # Cancel and return the result
+    logger.info("Canceling task %s." % id)
     res = select_from_etcd_and_call("cancel", local_etcd, config["judicator_etcd_path"], logger, id)
     return flask.jsonify({"result": res})
 
@@ -190,7 +194,9 @@ def api_task_search():
         logger.error("Failed to get all search conditions.", exc_info=True)
         return flask.jsonify(failed_result)
 
-    # Search
+    logger.info("Parsed searching conditions.")
+
+    # Search for the task
     res = select_from_etcd_and_call(
         "search",
         local_etcd,
@@ -207,6 +213,7 @@ def api_task_search():
 
     # Handle the result and return
     tasks = [extract(x, brief=True) for x in res.tasks]
+    logger.info("Found result: %s." % str([x["id"] for x in tasks]))
     for t in tasks:
         t["add_time"] = "" if not t["add_time"] else t["add_time"].isoformat()
         t["report_time"] = "" if not t["report_time"] else t["report_time"].isoformat()
@@ -227,6 +234,7 @@ def api_task_get():
         return flask.jsonify({"result": ReturnCode.INVALID_INPUT, "task": None})
 
     # Get the task
+    logger.info("Getting task %s." % id)
     res = select_from_etcd_and_call("get", local_etcd, config["judicator_etcd_path"], logger, id)
     # If not found, return
     # Otherwise return required data.
@@ -241,6 +249,7 @@ def api_task_get():
     if file == "compile_source":
         if not task["compile"]["source"]:
             flask.abort(404)
+        logger.info("Returning compile source for task %s." % id)
         temp_file = tempfile.TemporaryFile(dir=config["data_dir"])
         temp_file.write(task["compile"]["source"])
         temp_file.seek(0)
@@ -258,6 +267,7 @@ def api_task_get():
     if file == "execute_data":
         if not task["execute"]["data"]:
             flask.abort(404)
+        logger.info("Returning execute data for task %s." % id)
         temp_file = tempfile.TemporaryFile(dir=config["data_dir"])
         temp_file.write(task["execute"]["data"])
         temp_file.seek(0)
@@ -271,6 +281,7 @@ def api_task_get():
     # Else, convert it into bool indicating whether there is such file
     task["execute"]["data"] = bool(task["execute"]["data"])
 
+    logger.info("Decompressing all fields compressed by zlib of task %s." % id)
     # Deal with zlib decompressed filed in compile section
     task["compile"]["command"] = zlib.decompress(
         task["compile"]["command"]
@@ -306,7 +317,7 @@ def api_task_get():
     task["add_time"] = "" if not task["add_time"] else task["add_time"].isoformat()
     task["report_time"] = "" if not task["report_time"] else task["report_time"].isoformat()
 
-    logger.debug("Result: %s." % str(task))
+    logger.info("Returning task %s." % id)
 
     return flask.jsonify({"result": res.result, "task": task})
 
@@ -318,6 +329,7 @@ def api_executors():
     :return: Json containing executor list
     """
     # Fetch all executors from rpc and return
+    logger.info("Getting executors.")
     res = select_from_etcd_and_call("executors", local_etcd, config["judicator_etcd_path"], logger)
     return flask.jsonify({
         "result": res.result,
@@ -331,6 +343,7 @@ def api_judicators():
     :return: Json containing judicator list
     """
     # Get from etcd and return
+    logger.info("Getting judicators.")
     judicator = local_etcd.get(config["judicator_etcd_path"])
     return flask.jsonify({
         "result": ReturnCode.OK,
@@ -362,8 +375,6 @@ def webpage(page):
         "message_type": args.get("message_type", "")
     }
     args.update(msg)
-    print(flask.request.args)
-    print(args)
     return flask.render_template(page + ".html", **args)
 
 @server.route("/", methods=["GET"])

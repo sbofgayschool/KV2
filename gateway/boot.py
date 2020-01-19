@@ -22,6 +22,7 @@ from utility.function import get_logger, transform_address, check_services, sigt
 signal.signal(signal.SIGTERM, sigterm_handler)
 
 if __name__ == "__main__":
+    # Parse all arguments
     parser = argparse.ArgumentParser(description="Gateway of Khala system. Provide HTTP API interface and a website.")
     parser.add_argument("--docker-sock", dest="docker_sock", default=None,
                         help="Path to mapped docker sock file")
@@ -69,7 +70,7 @@ if __name__ == "__main__":
     if args.boot_print_log:
         config.pop("log", None)
 
-    # Generate a logger
+    # Generate logger
     if "log" in config:
         logger = get_logger(
             "main",
@@ -127,7 +128,9 @@ if __name__ == "__main__":
         "process": None
     }
 
-    # The same thing for uwsgi
+    logger.info("Etcd config loaded.")
+
+    # Load and modify config for uwsgi
     with open("config/templates/uwsgi.json", "r") as f:
         config_sub = json_comment.load(f)
 
@@ -150,6 +153,8 @@ if __name__ == "__main__":
         "process": None
     }
 
+    logger.info("Uwsgi config loaded.")
+
     # Generate pid files for service daemons
     for s in services:
         with open(services[s]["pid_file"], "w") as f:
@@ -162,4 +167,4 @@ if __name__ == "__main__":
     # Check whether service daemons are running regularly
     check_services(start_order, exit_order, services, config["check_interval"], logger)
 
-    logger.info("Exiting.")
+    logger.info("Gateway boot program exiting.")

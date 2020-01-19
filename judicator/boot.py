@@ -23,6 +23,7 @@ from utility.function import get_logger, transform_address, check_services, sigt
 signal.signal(signal.SIGTERM, sigterm_handler)
 
 if __name__ == "__main__":
+    # Parse all arguments
     parser = argparse.ArgumentParser(description="Judicator of Khala system. Handle requests and maintain task data.")
     parser.add_argument("--docker-sock", dest="docker_sock", default=None,
                         help="Path to mapped docker sock file")
@@ -106,7 +107,7 @@ if __name__ == "__main__":
     if args.boot_print_log:
         config.pop("log", None)
 
-    # Generate a logger
+    # Generate logger
     if "log" in config:
         logger = get_logger(
             "boot",
@@ -190,7 +191,9 @@ if __name__ == "__main__":
         "process": None
     }
 
-    # The same thing for mongodb
+    logger.info("Etcd config loaded.")
+
+    # Load and modify config for mongodb
     with open("config/templates/mongodb.json", "r") as f:
         config_sub = json_comment.load(f)
 
@@ -237,7 +240,9 @@ if __name__ == "__main__":
         "process": None
     }
 
-    # The same thing for main
+    logger.info("Mongodb config loaded.")
+
+    # Load and modify config for main
     with open("config/templates/main.json", "r") as f:
         config_sub = json_comment.load(f)
 
@@ -279,6 +284,8 @@ if __name__ == "__main__":
         "process": None
     }
 
+    logger.info("Main config loaded.")
+
     # Generate pid files for service daemons
     for s in services:
         with open(services[s]["pid_file"], "w") as f:
@@ -291,4 +298,4 @@ if __name__ == "__main__":
     # Check whether service daemons are running regularly
     check_services(start_order, exit_order, services, config["check_interval"], logger)
 
-    logger.info("Exiting.")
+    logger.info("Judicator boot program exiting.")

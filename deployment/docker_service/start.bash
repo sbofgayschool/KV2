@@ -14,18 +14,18 @@ if [[ $# != 4 ]]; then
     exit 1
 fi
 
-echo "================================="
+echo "============================"
 echo "Creating following services:"
 echo "$JUDICATOR_CORE : $1"
 echo "$JUDICATOR : $2"
 echo "$GATEWAY : $3"
 echo "$EXECUTOR : $4"
-echo "================================="
+echo "============================"
 echo ""
 
-echo "================================="
+echo "============================"
 echo "Creating service $JUDICATOR_CORE."
-echo "================================="
+echo "============================"
 echo ""
 
 docker service create \
@@ -58,9 +58,9 @@ echo ""
 echo "$JUDICATOR_CORE name detected: $judicator_core_name."
 
 echo ""
-echo "================================="
+echo "============================"
 echo "Creating service $JUDICATOR."
-echo "================================="
+echo "============================"
 echo ""
 
 docker service create \
@@ -84,9 +84,9 @@ docker service create \
 --main-name=ENV
 
 echo ""
-echo "================================="
+echo "============================"
 echo "Creating service $GATEWAY."
-echo "================================="
+echo "============================"
 echo ""
 
 docker service create \
@@ -104,9 +104,9 @@ docker service create \
 --etcd-name=ENV
 
 echo ""
-echo "================================="
+echo "============================"
 echo "Creating service $EXECUTOR."
-echo "================================="
+echo "============================"
 echo ""
 
 docker service create \
@@ -129,7 +129,7 @@ echo "Wait for $COOL_DOWN_TIME seconds."
 sleep $COOL_DOWN_TIME
 
 echo ""
-echo "================================="
+echo "============================"
 echo "All Service successfully created."
-echo "================================="
+echo "============================"
 echo ""

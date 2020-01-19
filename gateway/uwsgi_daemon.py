@@ -16,17 +16,6 @@ if __name__ == "__main__":
     with open("config/uwsgi.json", "r") as f:
         config = json.load(f)
 
-    # Generate ini config file for uwsgi
-    ini = configparser.ConfigParser()
-    ini["uwsgi"] = {
-        "http": config["uwsgi"]["host"] + ":" + config["uwsgi"]["port"],
-        "module": config["uwsgi"]["module"],
-        "process": config["uwsgi"]["process"],
-        "master": config["uwsgi"]["master"]
-    }
-    with open(config["uwsgi"]["exe"][-1], "w") as f:
-        ini.write(f)
-
     # Generate daemon logger from config file
     # If logger arguments exist in config file, write the log to the designated file
     # Else, forward the log to standard output
@@ -38,7 +27,7 @@ if __name__ == "__main__":
         )
     else:
         daemon_logger = get_logger("uwsgi_daemon", None, None)
-    daemon_logger.info("Gateway uwsgi daemon program started.")
+    daemon_logger.info("Gateway uwsgi_daemon program started.")
 
     # Generate uwsgi logger forwarding uwsgi log to designated location
     if "log_uwsgi" in config["daemon"]:
@@ -50,6 +39,18 @@ if __name__ == "__main__":
         )
     else:
         uwsgi_logger = get_logger("uwsgi", None, None, True)
+
+    # Generate ini config file for uwsgi
+    ini = configparser.ConfigParser()
+    ini["uwsgi"] = {
+        "http": config["uwsgi"]["host"] + ":" + config["uwsgi"]["port"],
+        "module": config["uwsgi"]["module"],
+        "process": config["uwsgi"]["process"],
+        "master": config["uwsgi"]["master"]
+    }
+    with open(config["uwsgi"]["exe"][-1], "w") as f:
+        ini.write(f)
+    daemon_logger.info("Generated ini file for uwsgi.")
 
     command = config["uwsgi"]["exe"]
     for c in command:
@@ -66,11 +67,11 @@ if __name__ == "__main__":
         log_output(uwsgi_logger, uwsgi_proc.stdout, None)
         daemon_logger.info("Received EOF from uwsgi.")
     except KeyboardInterrupt:
-        daemon_logger.info("SIGINT Received. Killing uwsgi process.", exc_info=True)
+        daemon_logger.info("Received SIGINT. Killing uwsgi process.", exc_info=True)
         uwsgi_proc.kill()
     except:
         daemon_logger.error("Accidentally terminated. Killing uwsgi process.", exc_info=True)
         uwsgi_proc.kill()
     # Wait for the subprocess to prevent zombie process
     uwsgi_proc.wait()
-    daemon_logger.info("Exiting.")
+    daemon_logger.info("Gateway uwsgi_daemon program exiting.")

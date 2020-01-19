@@ -69,15 +69,15 @@ def execute(id):
     # Create all dirs and files
     try:
         # Create all necessary dirs and unzip sources
+        logger.info("Generating directories for task %s." % task["id"])
         os.mkdir(work_dir)
         os.mkdir(download_dir)
         os.mkdir(source_dir)
         os.mkdir(data_dir)
         os.mkdir(result_dir)
 
-        logger.info("Task %s generating dirs complete." % task["id"])
-
         # Generate all files for compilation
+        logger.info("Generating files for task %s." % task["id"])
         # Compile source
         if task["compile"]["source"]:
             with open(compile_source, "wb") as f:
@@ -108,9 +108,9 @@ def execute(id):
         subprocess.Popen(
             ["chown", str(config["task"]["user"]["uid"]) + ":" + str(config["task"]["user"]["gid"]), "-R", source_dir]
         ).wait()
-        logger.info("Task %s generating needed file complete." % task["id"])
+        logger.info("Generated all directories and files for task %s." % task["id"])
     except:
-        logger.error("Task %s generating dirs and files failed." % task["id"], exc_info=True)
+        logger.error("Failed to generate directories and files for task %s." % task["id"], exc_info=True)
         cancel = True
 
     # Start to compile
@@ -121,7 +121,7 @@ def execute(id):
     # Otherwise, clean and exit
     try:
         if not cancel:
-            logger.info("Task %s starting to compile." % task["id"])
+            logger.info("Compiling task %s." % task["id"])
             task["status"] = TASK_STATUS["COMPILING"]
             with open(compile_output, "wb") as ostream, open(compile_error, "wb") as estream:
                 task["process"] = subprocess.Popen(
@@ -134,13 +134,13 @@ def execute(id):
         else:
             task["done"] = True
     except:
-        logger.error("Error occurs when trying to start compilation of task %s." % task["id"], exc_info=True)
+        logger.error("Failed to compile task %s." % task["id"], exc_info=True)
         cancel = True
     finally:
         # Lock must be released
         lock.release()
         if cancel:
-            logger.info("Task %s exiting." % task["id"])
+            logger.info("Working thread for task %s terminating." % task["id"])
             shutil.rmtree(work_dir)
             return
 
@@ -148,9 +148,9 @@ def execute(id):
     try:
         res = task["process"].wait(task["compile"]["timeout"])
         success = res == 0
-        logger.info("Task %s finished compiling with exit code %d." % (task["id"], res))
+        logger.info("Compiled task %s with exit code %d." % (task["id"], res))
     except:
-        logger.warning("Task %s failed to compile." % task["id"], exc_info=True)
+        logger.warning("Exceeded time limit when compiling task %d." % task["id"], exc_info=True)
         # If timeout, kill and wait for the subprocess
         success = False
         task["result"]["compile_error"] = zlib.compress(b"Compile time out.")
@@ -164,6 +164,7 @@ def execute(id):
     # Otherwise, clean and exit
     try:
         # Add compile result
+        logger.info("Collecting compilation result for task %s." % task["id"])
         with open(compile_output, "rb") as f:
             task["result"]["compile_output"] = zlib.compress(f.read())
         if not task["result"]["compile_error"]:
@@ -179,7 +180,7 @@ def execute(id):
             success = False
         # If compilation is successful, execute it
         if success:
-            logger.info("Task %s start to run." % task["id"])
+            logger.info("Running task %s." % task["id"])
             task["status"] = TASK_STATUS["RUNNING"]
             with open(execute_input, "rb") as istream, \
                     open(execute_output, "wb") as ostream, \
@@ -193,10 +194,7 @@ def execute(id):
                     preexec_fn=change_user
                 )
     except:
-        logger.error(
-            "Error occurs when trying to collect compilation result and start execution of task %s." % task["id"],
-            exc_info=True
-        )
+        logger.error("Failed to collect compilation result or run task %s." % task["id"], exc_info=True)
         success = False
     finally:
         # It not successful, set status to compile failed
@@ -208,7 +206,7 @@ def execute(id):
         lock.release()
         # It not successful, clean and exit
         if not success:
-            logger.info("Task %s exiting." % task["id"])
+            logger.info("Working thread for task %s terminating." % task["id"])
             shutil.rmtree(work_dir)
             return
 
@@ -216,9 +214,9 @@ def execute(id):
     try:
         res = task["process"].wait(task["execute"]["timeout"])
         success = res == 0
-        logger.info("Task %s finished running with exit code %d." % (task["id"], res))
+        logger.info("Run task %s with exit code %d." % (task["id"], res))
     except:
-        logger.warning("Task %s failed to run." % task["id"], exc_info=True)
+        logger.warning("Exceeded time limit when running task %s." % task["id"], exc_info=True)
         # If timeout, kill and wait for the subprocess
         success = False
         task["result"]["execute_error"] = zlib.compress(b"Execution time out.")
@@ -230,6 +228,7 @@ def execute(id):
     lock.acquire()
     try:
         # Add execution result
+        logger.info("Collecting execution result.")
         with open(execute_output, "rb") as f:
             task["result"]["execute_output"] = zlib.compress(f.read())
         if not task["result"]["execute_error"]:
@@ -245,7 +244,7 @@ def execute(id):
             success = False
         task["status"] = TASK_STATUS["SUCCESS"] if success else TASK_STATUS["RUN_FAILED"]
     except:
-        logger.error("Error occurs when trying to collect execution result of task %s." % task["id"], exc_info=True)
+        logger.error("Failed to collect execution result of task %s." % task["id"], exc_info=True)
         task["status"] = TASK_STATUS["RUN_FAILED"]
     finally:
         task["done"] = True
@@ -253,7 +252,7 @@ def execute(id):
         # Lock must be released
         lock.release()
 
-    logger.info("Task %s exiting." % task["id"])
+    logger.info("Working thread for task %s terminating." % task["id"])
     # Clean files
     shutil.rmtree(work_dir)
 
@@ -288,7 +287,7 @@ if __name__ == "__main__":
     retry_times = config["retry"]["times"]
     retry_interval = config["retry"]["interval"]
 
-    # Generate a logger
+    # Generate logger
     if "log" in config:
         logger = get_logger(
             "main",
@@ -299,38 +298,34 @@ if __name__ == "__main__":
         logger = get_logger("main", None, None)
     logger.info("Executor main program started.")
 
-    # Generate proxy for etcd
+    # Generate proxy for local etcd
     with open("config/etcd.json", "r") as f:
         local_etcd = generate_local_etcd_proxy(json.load(f)["etcd"], logger)
 
     # Check whether the data dir of main is empty
     # If not, delete it and create a new one
     if not check_empty_dir(config["data_dir"]):
-        logger.info("Delete previous existing data directory and create a new one.")
         shutil.rmtree(config["data_dir"])
         os.mkdir(config["data_dir"])
         os.chmod(config["data_dir"], 0o700)
+        logger.info("Previous data directory deleted with a new one created.")
 
     # If task user id and group id is not specified, use the current user and group
     if "user" not in config["task"]:
         config["task"]["user"] = {"uid": os.getuid(), "gid": os.getgid()}
-    logger.info(
-        "Task execution is going to use uid %d and gid %d" % (
-            config["task"]["user"]["uid"],
-            config["task"]["user"]["gid"]
-        )
-    )
+    logger.info("Task execution uid: %d, gid: %d." % (config["task"]["user"]["uid"], config["task"]["user"]["gid"]))
 
     tasks = {}
     lock = threading.Lock()
 
     # Report tasks execution status regularly
+    logger.info("Starting executor routines.")
     while True:
         try:
             time.sleep(config["report_interval"])
 
             # Collect things to report
-            logger.info("Start to collect report contents.")
+            logger.info("Collecting report content.")
             complete, executing = [], []
             vacant = config["task"]["vacant"]
             try:
@@ -340,21 +335,22 @@ if __name__ == "__main__":
                     for t in tasks:
                         if not tasks[t]["cancel"]:
                             if tasks[t]["thread"] and not tasks[t]["thread"].is_alive():
-                                logger.info("Task %s added to complete list." % t)
                                 complete.append(generate(tasks[t], False, False, False))
+                                logger.info("Task %s added to complete list." % t)
                             else:
-                                logger.info("Task %s added to executing list." % t)
                                 executing.append(generate(tasks[t], True))
                                 vacant -= 1
+                                logger.info("Task %s added to executing list." % t)
                 except:
-                    logger.error("Error during report content collection.", exc_info=True)
+                    logger.error("Failed to collect report content.", exc_info=True)
                 finally:
                     # Lock must be released
                     lock.release()
             except:
-                logger.error("Fatal exception during report content collection.", exc_info=True)
+                logger.error("Failed to obtain lock for report content collection.", exc_info=True)
 
             # Try to report to judicator and get response
+            logger.info("Executor current vacancy: %d." % vacant)
             logger.info("Reporting to judicator.")
             success, res = try_with_times(
                 retry_times,
@@ -368,21 +364,23 @@ if __name__ == "__main__":
                 vacant
             )
             if not success:
-                logger.error("Failed to report to judicator, skipping tasks update.")
+                logger.error("Failed to report to judicator. Skipping tasks update.")
                 continue
             cancel, assign = [extract(x, brief=True) for x in res[0]], [extract(x) for x in res[1]]
-            logger.debug("Get cancel list %s." % cancel)
-            logger.debug("Get assign list %s." % assign)
+            logger.info("Reported to judicator with response:")
+            logger.info("Cancel list: %s." % str([t["id"] for t in cancel]))
+            logger.info("Assign list: %s." % str([t["id"] for t in assign]))
 
             # Update tasks information
-            logger.info("Try to update tasks information.")
+            logger.info("Updating tasks information.")
             try:
                 # Acquire lock first before modifying global variable
                 lock.acquire()
                 try:
                     # Cancel tasks
+                    logger.info("Checking tasks to be cancelled.")
                     for t in cancel:
-                        logger.info("Task %s is going to be cancelled." % t)
+                        logger.info("Cancelling task %s." % t["id"])
                         if not t["id"] in tasks:
                             continue
                         tasks[t["id"]]["cancel"] = True
@@ -396,18 +394,20 @@ if __name__ == "__main__":
                     # Clean all tasks
                     # A list ot tasks index must be built beforehand, as the tasks is going to change
                     tasks_list = tuple(tasks.keys())
+                    logger.info("Checking tasks to be deleted.")
                     for t in tasks_list:
                         if tasks[t]["thread"] and not tasks[t]["thread"].is_alive():
                             # A task is can only be considered as all done (thus can be deleted)
                             # when thread.is_alive() is False (indicating the daemon thread has finished)
                             # and cancel (indicating the judicator has received the result) is True
                             if tasks[t]["cancel"]:
-                                logger.info("Delete task %s." % t)
                                 del tasks[t]
+                                logger.info("Deleted task %s." % t)
 
                     # Handle newly assigned
+                    logger.info("Checking tasks to be assigned.")
                     for t in assign:
-                        logger.info("Newly assigned task %s." % t)
+                        logger.info("Assigned task %s." % t)
 
                         tasks[t["id"]] = t
                         tasks[t["id"]]["process"] = None
@@ -418,17 +418,17 @@ if __name__ == "__main__":
                         tasks[t["id"]]["thread"].setDaemon(True)
                         tasks[t["id"]]["thread"].start()
                 except:
-                    logger.error("Error during task update.", exc_info=True)
+                    logger.error("Failed to update tasks.", exc_info=True)
                 finally:
                     # Lock must be released
                     lock.release()
             except:
-                logger.error("Fatal exception during task update.", exc_info=True)
+                logger.error("Failed to obtain lock for task updating.", exc_info=True)
 
-            logger.info("Routine work finished.")
+            logger.info("Finished executor routine work.")
 
         except KeyboardInterrupt:
             logger.info("Received SIGINT.")
             break
 
-    logger.info("Exiting.")
+    logger.info("Executor main program exiting.")

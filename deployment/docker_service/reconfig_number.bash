@@ -15,30 +15,30 @@ read -ra tasks <<< $tasks
 len=${#tasks[@]}
 
 if [[ $len -eq $(($2)) ]]; then
-    echo "==========================="
+    echo "============================"
     echo "Service $1 is already running with $2 task(s)."
-    echo "==========================="
+    echo "============================"
     echo ""
     exit 0
 fi
 
-echo "==========================="
+echo "============================"
 echo "Service $1 is going to be adjusted to $2 task(s)."
-echo "==========================="
+echo "============================"
 
 if [[ $3 == "0" ]]; then
     if [[ $2 == "0" ]]; then
         echo ""
-        echo "==========================="
+        echo "============================"
         echo "Removing service $1."
-        echo "==========================="
+        echo "============================"
         echo ""
         docker service rm $1
     else
         echo ""
-        echo "==========================="
+        echo "============================"
         echo "Adjust tasks number to $2."
-        echo "==========================="
+        echo "============================"
         echo ""
         docker service scale $1=$2
     fi
@@ -54,9 +54,9 @@ else
     fi
     for (( i=len; i != $target; i+=$delta )); do
         echo ""
-        echo "==========================="
+        echo "============================"
         echo "Adjust tasks number to $(($i+$delta))."
-        echo "==========================="
+        echo "============================"
         echo ""
         docker service scale $1=$(($i+$delta))
         echo ""
@@ -65,9 +65,9 @@ else
     done
     if [[ $2 == "0" ]]; then
         echo ""
-        echo "==========================="
+        echo "============================"
         echo "Removing service $1."
-        echo "==========================="
+        echo "============================"
         echo ""
         docker service rm $1
         echo ""
@@ -76,7 +76,7 @@ else
     fi
 fi
 echo ""
-echo "==========================="
+echo "============================"
 echo "Task number of $1 successfully adjusted."
-echo "==========================="
+echo "============================"
 echo ""

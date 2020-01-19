@@ -1,5 +1,7 @@
 #### Etcd
 ```
+Ref: https://github.com/etcd-io/etcd/blob/master/Documentation/v2/clustering.md
+
 ./etcd --name infra1 \
 --data-dir=infra1 \
 --initial-advertise-peer-urls http://127.0.0.1:2001 \
@@ -38,6 +40,8 @@ curl http://127.0.0.1:3000/v2/members -XGET
 
 #### MongoDB
 ```
+Ref: https://docs.mongodb.com/manual/administration/replica-set-deployment/
+
 mongod --replSet "rs0" --bind_ip localhost --port 7000 --dbpath /Users/chentingyu/Programme/Practice/MongoDB/store0
 
 rs.initiate( {
@@ -56,9 +60,15 @@ mongod --replSet "rs0" --bind_ip localhost --port 7001 --dbpath /Users/chentingy
 mongod --replSet "rs0" --bind_ip localhost --port 7002 --dbpath /Users/chentingyu/Programme/Practice/MongoDB/store2
 ```
 
-#### Ansible
+#### Clear iptables
 ```
-ansible-playbook -u chenty --ask-vault-pass --extra-vars '@~/.ansible/vault/doc_vm_passwd.yml' pb_docker.yml
+Ref: https://www.digitalocean.com/community/tutorials/how-to-list-and-delete-iptables-firewall-rules
 
-sudo iptables -A INPUT -p tcp --dport 2377 -j ACCEPT
+sudo iptables -P INPUT ACCEPT
+sudo iptables -P FORWARD ACCEPT
+sudo iptables -P OUTPUT ACCEPT
+sudo iptables -t nat -F
+sudo iptables -t mangle -F
+sudo iptables -F
+sudo iptables -X
 ```

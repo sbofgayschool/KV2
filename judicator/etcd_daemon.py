@@ -20,7 +20,7 @@ def check():
     Check the status of local etcd instance
     :return: Result code
     """
-    daemon_logger.info("Check thread start to work.")
+    daemon_logger.info("Check thread started.")
     # Check the status of local etcd with retry times and intervals
     if try_with_times(
         retry_times,
@@ -30,11 +30,12 @@ def check():
         "check etcd status",
         local_etcd.get_self_status
     )[0]:
+        daemon_logger.info("Etcd started.")
         return
 
     # If not success, kill the etcd subprocess.
+    daemon_logger.error("Failed to start etcd. Killing etcd process.")
     etcd_proc.kill()
-    daemon_logger.error("Failed to start etcd. Killing etcd and exiting.")
     return
 
 if __name__ == "__main__":
@@ -74,9 +75,9 @@ if __name__ == "__main__":
     # Check whether the data dir of etcd is empty
     # If not, delete it and create a new one
     if not check_empty_dir(config["etcd"]["data_dir"]):
-        daemon_logger.info("Delete previous existing data directory and create a new one.")
         shutil.rmtree(config["etcd"]["data_dir"])
         os.mkdir(config["etcd"]["data_dir"])
+        daemon_logger.info("Previous data directory deleted with a new one created.")
 
     # Check whether the data dir of etcd is empty
     # If not, copy it to data dir, and the cluster initialization information should be skipped
@@ -84,7 +85,7 @@ if __name__ == "__main__":
         del config["etcd"]["cluster"]
         shutil.rmtree(config["etcd"]["data_dir"])
         shutil.copytree(config["etcd"]["init_data_dir"], config["etcd"]["data_dir"])
-        daemon_logger.info("Found existing data init directory. Skipping cluster parameters.")
+        daemon_logger.info("Found existing data initialize directory. Skipped cluster parameters.")
 
     # If cluster config exists and proxy config does not exist
     # It should be either initialized as joining an exist cluster, or initializing a new one
@@ -108,9 +109,10 @@ if __name__ == "__main__":
         if not success:
             daemon_logger.error("Failed to add member information to remote client. Exiting.")
             exit()
-        daemon_logger.debug("Found members: %s." % str(res))
         # Generate member argument for the joining command
         config["etcd"]["cluster"]["member"] = ",".join([(k + "=" + v) for k, v in res.items()])
+        daemon_logger.info("Existing members of cluster received.")
+        daemon_logger.info("Etcd will be started with member arguments: %s." % config["etcd"]["cluster"]["member"])
 
     # Generate running command
     command = etcd_generate_run_command(config["etcd"])
@@ -133,7 +135,7 @@ if __name__ == "__main__":
         log_output(etcd_logger, etcd_proc.stdout, config["daemon"]["raw_log_symbol_pos"])
         daemon_logger.info("Received EOF from etcd.")
     except KeyboardInterrupt:
-        daemon_logger.info("SIGINT Received. Start to clean up and exit.", exc_info=True)
+        daemon_logger.info("Received SIGINT. Cleaning up and exiting.", exc_info=True)
         if "proxy" not in config["etcd"]:
             try_with_times(
                 retry_times,
@@ -146,11 +148,11 @@ if __name__ == "__main__":
                 "http://" + config["etcd"]["advertise"]["address"] + ":" + config["etcd"]["advertise"]["peer_port"]
             )
         else:
-            daemon_logger.info("Proxy mode is on. Skip removing.")
+            daemon_logger.info("Detected proxy mode. Skipped removing local etcd from cluster.")
         etcd_proc.kill()
     except:
         daemon_logger.error("Accidentally terminated. Killing etcd process.", exc_info=True)
         etcd_proc.kill()
     # Wait for the subprocess to prevent zombie process
     etcd_proc.wait()
-    daemon_logger.info("Exiting.")
+    daemon_logger.info("Judicator etcd_daemon program exiting.")

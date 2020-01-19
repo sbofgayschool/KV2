@@ -1,9 +1,7 @@
 ## Short Term
-- Write a one-shot script to install the whole thing,
-including docker (on both local and remote computer), docker service initialize, cluster initialize, etc.
 - Formalize logs.
-- Thorough check and necessary tests, especially on VM of DoC IC.
 - Build and upload the v0.1 image on docker host.
+- Necessary tests on VM of Doc IC.
 - Add full documents, majorly about usage and maintenance, but also should also have something about source code.
 
 #### Finished / Canceled:
@@ -22,6 +20,8 @@ including docker (on both local and remote computer), docker service initialize,
 - Check whether the registered value is correct before unregistering main, mongodb and etcd of judicator.
 - Figure out how Ansible playbook can help when installing docker on remote computer.
 This can be tested on VM of DoC IC.
+- Write one-shot scripts to install the whole thing,
+including docker (on both local and remote computer), docker service initialize, cluster initialize, etc.
 
 ## Long Term
 - <b>Security issue:</b> Find out a way to completely isolate all single tasks

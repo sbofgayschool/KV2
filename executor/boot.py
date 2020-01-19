@@ -20,10 +20,11 @@ import signal
 from utility.function import get_logger, check_services, sigterm_handler
 
 
-# Register a signal for cleanup
+# Register SIGTERM signal for cleanup
 signal.signal(signal.SIGTERM, sigterm_handler)
 
 if __name__ == "__main__":
+    # Parse all arguments
     parser = argparse.ArgumentParser(description='Executor of Khala system. Execute tasks and report to judicators.')
     parser.add_argument("--docker-sock", dest="docker_sock", default=None,
                         help="Path to mapped docker sock file")
@@ -73,7 +74,7 @@ if __name__ == "__main__":
     if args.boot_print_log:
         config.pop("log", None)
 
-    # Generate a logger
+    # Generate logger
     if "log" in config:
         logger = get_logger(
             "boot",
@@ -128,7 +129,9 @@ if __name__ == "__main__":
         "process": None
     }
 
-    # The same thing for main
+    logger.info("Etcd config loaded.")
+
+    # Load and modify config for main
     with open("config/templates/main.json", "r") as f:
         config_sub = json_comment.load(f)
 
@@ -163,6 +166,8 @@ if __name__ == "__main__":
         "process": None
     }
 
+    logger.info("Main config loaded.")
+
     # Generate pid files for service daemons
     for s in services:
         with open(services[s]["pid_file"], "w") as f:
@@ -175,4 +180,4 @@ if __name__ == "__main__":
     # Check whether service daemons are running regularly
     check_services(start_order, exit_order, services, config["check_interval"], logger)
 
-    logger.info("Exiting.")
+    logger.info("Executor boot program exiting.")
