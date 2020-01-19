@@ -1,5 +1,7 @@
 #!/bin/bash
 
+KHALA='comradestukov/khala:v0.1'
+
 JUDICATOR_CORE='judicator-core'
 JUDICATOR='judicator'
 EXECUTOR='executor'
@@ -32,7 +34,7 @@ docker service create \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala \
 --env NAME={{.Service.Name}}-{{.Task.Slot}} \
---name $JUDICATOR_CORE khala:v0.1 judicator \
+--name $JUDICATOR_CORE $KHALA judicator \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
 --etcd-print-log \
@@ -67,7 +69,7 @@ docker service create \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala \
 --env NAME={{.Service.Name}}-{{.Task.Slot}} \
---name $JUDICATOR khala:v0.1 judicator \
+--name $JUDICATOR $KHALA judicator \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
 --etcd-print-log \
@@ -93,7 +95,7 @@ docker service create \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala -p 7000:7000 \
 --env NAME={{.Service.Name}}-{{.Task.Slot}} \
---name $GATEWAY khala:v0.1 gateway \
+--name $GATEWAY $KHALA gateway \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
 --etcd-print-log \
@@ -113,7 +115,7 @@ docker service create \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala \
 --env NAME={{.Service.Name}}-{{.Task.Slot}} \
---name $EXECUTOR khala:v0.1 executor \
+--name $EXECUTOR $KHALA executor \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
 --etcd-print-log \
