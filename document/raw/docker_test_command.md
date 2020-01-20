@@ -298,5 +298,5 @@ ansible-playbook -u chenty --ask-vault-pass --extra-vars '@~/.ansible/vault/doc_
 
 ansible-playbook -u chenty --extra-vars '@install_docker_passwd.yml' install_docker.yml
 
-ansible-playbook -u chenty --extra-vars "password=your_password" install_docker.yml
+ansible-playbook -u chenty --extra-vars 'password=your_password' install_docker.yml
 ```

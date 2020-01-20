@@ -2,6 +2,8 @@
 
 __author__ = "chenty"
 
+import random
+
 import pymongo
 import pymongo.errors
 
@@ -85,36 +87,23 @@ class MongoDBProxy:
                 return True
             raise
 
-    def initialize_replica_set(self, advertise_address, reg_key, primary_key, local_etcd):
+    def initialize_replica_set(self, advertise_address, reg_key, reg_dir, primary_key, local_etcd):
         """
         Initialize or join the replica set of the mongodb instance
         :param advertise_address: Advertise address of the mongodb instance
         :param reg_key: Key used for mongodb registration
+        :param reg_dir: Directory containing all registered mongodb
         :param primary_key: Key used to store the primary node of mongodb replica set in the etcd
         :param local_etcd: Proxy of local etcd
         :return:
         """
-        # Registration first
-        local_etcd.set(
-            reg_key,
-            advertise_address
-        )
+        # Registration first and get the address of the previous one with the same name, if exists
+        previous_address = local_etcd.get(reg_key)
+        local_etcd.set(reg_key, advertise_address)
         # Try to become leader of a new replica set by inserting its own advertise address to etcd
         # This can only happen when a new replica set is build and the key-value pair in etcd is empty
         try:
-            local_etcd.set(
-                primary_key,
-                advertise_address,
-                insert=True
-            )
-        except:
-            self.logger.warning("Failed to insert %s." % primary_key, exc_info=True)
-
-        # Check the current primary node of the replica set
-        primary = local_etcd.get(primary_key)
-        # If it is, then initialize the replica set
-        # Else, join the replica set
-        if primary == advertise_address:
+            local_etcd.set(primary_key, advertise_address, insert=True)
             # Initialize the set
             self.client.admin.command(
                 "replSetInitiate", {
@@ -122,8 +111,31 @@ class MongoDBProxy:
                     "members": [{"_id": 0, "host": advertise_address}]
                 }
             )
-            self.logger.info("Replica set intialized.")
+            self.logger.info("Initialized replica set.")
+            return
+        except:
+            self.logger.warning("Failed to become the node to initialize the replica set.", exc_info=True)
+
+        # Check the current primary node of the replica set
+        primary = local_etcd.get(primary_key)
+        # If the address is exact the advertise address, skipping initialization as it should already be in replica set
+        # Else, join the replica set
+        if primary == advertise_address:
+            self.logger.warning("This node should once be the primary node. Skipped initialization.")
         else:
+            # If the primary node is a node with the same name but a different address (it should be down)
+            # This means that there are probably no primary node
+            # In this case, find a another registered node and connect to the replica set
+            if primary == previous_address:
+                member = local_etcd.get(reg_dir)
+                # Delete self address from registered node
+                member.pop(reg_key, None)
+                if not member:
+                    raise Exception("No valid replica set member detected.")
+                # Choose one randomly, as the force parameter will be used later, this should work
+                name, primary = random.choice(tuple(member.items()))
+                self.logger.warning("Failed to find a valid primary node. Connecting to %s at %s." % (name, primary))
+
             # Create a client connected to the current primary node of mongodb replica set
             client = pymongo.MongoClient(primary.split(":")[0], int(primary.split(":")[1]))
 
@@ -133,6 +145,19 @@ class MongoDBProxy:
             # This can happen when a instance is down unexpectedly and then reboot
             # Else, add it to the set
             if not any([advertise_address == x["host"] for x in conf["config"]["members"]]):
+                if previous_address:
+                    self.logger.warning("Detected previous member with same name and different address.")
+                    self.logger.warning("Deleting it from the replica set.")
+                    removed = False
+                    for i in range(len(conf["config"]["members"])):
+                        if conf["config"]["members"][i]["host"] == previous_address:
+                            # Deletion
+                            del conf["config"]["members"][i]
+                            removed = True
+                            self.logger.warning("Previous member deleted from replica set.")
+                            break
+                    if not removed:
+                        self.logger.warning("Failed to find previous member in the replica set. Skipped deletion.")
                 # Check the amount ot voting members in the replica set
                 votes = sum([x.get("votes", 0) for x in conf["config"]["members"]])
                 # If the amount >= 7, this newly added instance will not be voter
@@ -146,10 +171,12 @@ class MongoDBProxy:
                 })
                 conf["config"]["version"] += 1
                 # Reconfig the replica set
-                client.admin.command("replSetReconfig", conf["config"])
+                # Force is added here to prevent some incomplete configure
+                # Warning: the parameter force actually should not be added here
+                client.admin.command("replSetReconfig", conf["config"], force=True)
                 self.logger.info("Added member %s to the replica set." % advertise_address)
             else:
-                self.logger.warning("Member %s is alread in the replica set." % advertise_address)
+                self.logger.warning("Member %s is already in the replica set. Skipped adding." % advertise_address)
         return
 
     def get_primary(self):
@@ -182,12 +209,12 @@ class MongoDBProxy:
                     # Warning: the parameter force actually should not be added here
                     self.client.admin.command("replSetReconfig", conf["config"], force=True)
                     removed = True
-                    self.logger.info("Removed %s from replica set." % advertise_address)
+                    self.logger.info("Removed member %s from replica set." % advertise_address)
                     break
             if not removed:
-                self.logger.warning("Failed to find the node %s in replica set." % advertise_address)
+                self.logger.warning("Failed to find member %s in replica set. Skipped removing" % advertise_address)
         else:
-            self.logger.warning("Skipped removing the only mongodb from the replica set.")
+            self.logger.warning("Only one node in replica set. Skipped removing.")
         return
 
 def generate_local_mongodb_proxy(mongodb_config, logger, replica=False):

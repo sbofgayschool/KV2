@@ -50,6 +50,7 @@ def register():
         local_mongodb.initialize_replica_set,
         advertise_address,
         urllib.parse.urljoin(config["daemon"]["etcd_path"]["register"], config["mongodb"]["name"]),
+        config["daemon"]["etcd_path"]["register"],
         config["daemon"]["etcd_path"]["primary"],
         local_etcd
     )[0]:

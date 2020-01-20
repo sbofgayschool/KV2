@@ -111,16 +111,16 @@ class EtcdProxy:
 
         # If current node already exists
         resp = json.loads(resp.text)["members"]
+        self.logger.info("Got cluster member.")
         if get:
             return dict((x["name"], x["peerURLs"][0]) for x in resp)
         for x in resp:
             if x["name"] == name:
-                self.logger.warning("Member %s is already in the cluster. It is going to deleted and re-added." % name)
+                self.logger.warning("Member %s is already in the cluster. Deleting and re-adding it." % name)
                 self.remove_member(name, None)
                 break
 
         # Try to add a member
-        self.logger.info("Trying to add member %s." % name)
         resp = requests.post(
             urllib.parse.urljoin(self.url, "/v2/members"),
             json={"peerURLs":[peer_client]}
@@ -128,7 +128,7 @@ class EtcdProxy:
         if not resp:
             raise Exception("Add member resulted in %d, not 200." % resp.status_code)
         id = json.loads(resp.text)["id"]
-        self.logger.info("Member %s is added to the cluster." % name)
+        self.logger.info("Added member %s to the cluster." % name)
 
         # Get existing members after adding
         resp = requests.get(urllib.parse.urljoin(self.url, "/v2/members"))
@@ -168,15 +168,15 @@ class EtcdProxy:
             # If the node is found, delete it
             # Otherwise, skip deletion
             if id:
-                self.logger.info("Trying to delete %s from cluster." % name)
                 url_postfix = urllib.parse.urljoin("/v2/members/", str(id))
                 resp = requests.delete(urllib.parse.urljoin(self.url, url_postfix))
                 if not resp:
                     raise Exception("Delete member resulted in %d, not 200." % resp.status_code)
+                self.logger.info("Deleted member %s." % name)
             else:
-                self.logger.warning("Failed to get id for current node. Skipping member deletion.")
+                self.logger.warning("Failed to get id of the node. Skipped deletion.")
         else:
-            self.logger.info("This is the only node in cluster. Skipping member deletion.")
+            self.logger.info("Only one node in cluster. Skipped deletion.")
         return
 
     def set(self, key, value, ttl=None, insert=False, prev_value=None):
@@ -203,7 +203,6 @@ class EtcdProxy:
             data["prevExist"] = "true"
             data["prevValue"] = prev_value
 
-        self.logger.debug("Trying to visit " + urllib.parse.urljoin(self.url, url_postfix) + ".")
         # Set the key-value pair
         resp = requests.put(urllib.parse.urljoin(self.url, url_postfix), params=params, data=data)
         if not resp:
@@ -225,7 +224,7 @@ class EtcdProxy:
             urllib.parse.urljoin(self.url, url_postfix), params={} if prev_value is None else {"prevValue": prev_value}
         )
         if not resp:
-            raise Exception("Set key: %s resulted in %d, not 200." % (key, resp.status_code))
+            raise Exception("Delete key: %s resulted in %d, not 200." % (key, resp.status_code))
 
         return json.loads(resp.text)
 

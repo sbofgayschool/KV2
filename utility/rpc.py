@@ -162,7 +162,7 @@ def select_from_etcd_and_call(func, local_etcd, judicator_path, logger, *args, *
     """
     # Get all judicator rpc address and choose one randomly
     judicator = local_etcd.get(judicator_path)
-    logger.debug("Get judicator list %s." % str(judicator))
+    logger.info("Got judicator list %s." % str(judicator))
     if not judicator:
         raise Exception("No judicator rpc service detected.")
     name, address = random.choice(tuple(judicator.items()))

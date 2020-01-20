@@ -1,8 +1,8 @@
 ## Short Term
-- Formalize logs.
-- Build and upload the v0.1 image on docker host.
 - Necessary tests on VM of Doc IC.
+- Build and upload the v0.1 image on docker host.
 - Add full documents, majorly about usage and maintenance, but also should also have something about source code.
+- A python based proxy for Khala on Vm of Doc IC (Small Independent Project).
 
 #### Finished / Canceled:
 - Add file size check for both gateway and executor when encountering too large task files.
@@ -22,6 +22,7 @@
 This can be tested on VM of DoC IC.
 - Write one-shot scripts to install the whole thing,
 including docker (on both local and remote computer), docker service initialize, cluster initialize, etc.
+- Formalize logs.
 
 ## Long Term
 - <b>Security issue:</b> Find out a way to completely isolate all single tasks

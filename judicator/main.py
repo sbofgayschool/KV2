@@ -34,7 +34,7 @@ def register():
     Regularly register the rpc service address in etcd, and unregister before exiting
     :return: None
     """
-    logger.info("Register thread start to work.")
+    logger.info("Register thread started.")
     reg_key = urllib.parse.urljoin(config["register"]["etcd_path"], config["name"])
     reg_value = config["advertise"]["address"] + ":" + config["advertise"]["port"]
     while working:
@@ -50,12 +50,13 @@ def register():
         retry_interval,
         False,
         logger,
-        "delete judicator from service list",
+        "delete judicator from etcd",
         local_etcd.delete,
         reg_key,
         reg_value
     )
-    logger.info("Judicator deleted from etcd.")
+    logger.info("Deleted judicator registration from etcd.")
+    logger.info("Register thread terminating.")
     return
 
 def lead():
@@ -64,7 +65,7 @@ def lead():
     Compete against others to be leader, and, if become the leader, do regular check of tasks and executors
     :return: None
     """
-    logger.info("Lead thread start to work.")
+    logger.info("Lead thread started.")
     while True:
         time.sleep(config["lead"]["interval"])
 
@@ -77,9 +78,9 @@ def lead():
                     ttl=config["lead"]["ttl"],
                     insert=True
                 )
-                logger.info("No previous leader. This node has become leader.")
+                logger.info("Become leader as there is previous leader.")
             except:
-                logger.warning("Previous leader exists.", exc_info=True)
+                logger.warning("Detected previous leader.", exc_info=True)
             # Try to fresh the leader information, if the this is the leader
             # Set success to True if this successfully become the leader
             try:
@@ -90,14 +91,14 @@ def lead():
                     prev_value=config["name"]
                 )
                 success = True
-                logger.info("Successfully update leader information.")
+                logger.info("Updated leader information as current leader.")
             except:
-                success = False
                 logger.warning("Failed to become leader.", exc_info=True)
+                success = False
 
             # If this is the leader, do regular check
             if success:
-                logger.info("This node is leader, starting routine check of tasks and executors.")
+                logger.info("Checking tasks and executors as leader.")
 
                 # Set all expired task to retrying and remove their executor
                 expire_time = datetime.datetime.now() - datetime.timedelta(seconds=config["task"]["expiration"])
@@ -108,7 +109,7 @@ def lead():
                     )
                     if not res:
                         break
-                    logger.warning("Set expired task %s into retrying status." % str(res["_id"]))
+                    logger.warning("Set status of expired task %s to retrying." % str(res["_id"]))
 
                 # Remove all expired executor from the record
                 # Currently this is only for monitor usage
@@ -117,11 +118,11 @@ def lead():
                     res = mongodb_executor.find_one_and_delete({"report_time": {"$lt": expire_time}})
                     if not res:
                         break
-                    logger.warning("Delete expired executor %s from records." % res["hostname"])
+                    logger.warning("Deleted expired executor %s." % res["hostname"])
 
-                logger.info("Finished routine check.")
+                logger.info("Checked tasks and executors.")
         except:
-            logger.error("Error occurs during lead process.", exc_info=True)
+            logger.error("Failed to carry out leader process.", exc_info=True)
 
 class RPCService:
     """
@@ -143,7 +144,7 @@ class RPCService:
         Check whether the service is on
         :return: Always OK
         """
-        self.logger.debug("Received RPC request: Ping.")
+        self.logger.debug("Received rpc request: ping.")
         return ReturnCode.OK
 
     def add(self, task):
@@ -153,36 +154,37 @@ class RPCService:
         :param task: Task struture, the task needed to be added
         :return: An AddResult structure containing the result and the generated id of the new task
         """
-        self.logger.debug("Received RPC request: Add.")
+        self.logger.debug("Received rpc request: add.")
 
         # Extract and clean the task
         # The task is assumed to be valid if no error occurs during extraction
         try:
             task = extract(task, result=False)
         except:
-            self.logger.error("Failed to extract task.", exc_info=True)
+            self.logger.error("Failed to extract new task.", exc_info=True)
             return AddReturn(ReturnCode.INVALID_INPUT, None)
         del task["id"]
         task["add_time"] = datetime.datetime.now()
         task["done"] = False
         task["status"] = TASK_STATUS["PENDING"]
         task["report_time"] = datetime.datetime.now()
-        self.logger.info("Adding new task to database: %s." % str(task))
+        self.logger.info("Adding new task to database.")
 
         # Add and return the auto generated id
         try:
             result = self.mongodb_task.insert_one(task)
+            self.logger.info("Added task %s.", str(result.inserted_id))
             return AddReturn(ReturnCode.OK, str(result.inserted_id))
         except pymongo.errors.WriteError as e:
             if "large" in str(e):
-                self.logger.error("Task is too large.", exc_info=True)
+                self.logger.error("Failed to add new task as it is too large.", exc_info=True)
                 return AddReturn(ReturnCode.TOO_LARGE, None)
             raise e
         except pymongo.errors.DocumentTooLarge:
-            self.logger.error("Task is too large.", exc_info=True)
+            self.logger.error("Failed to add new task as it is too large.", exc_info=True)
             return AddReturn(ReturnCode.TOO_LARGE, None)
         except:
-            self.logger.error("Failed to insert task.", exc_info=True)
+            self.logger.error("Failed to add new task.", exc_info=True)
             return AddReturn(ReturnCode.ERROR, None)
 
     def cancel(self, id):
@@ -192,11 +194,11 @@ class RPCService:
         :param id: The id of the job neede to be cancelled
         :return: Whether the cancellation is successful
         """
-        self.logger.debug("Received RPC request: Cancel.")
+        self.logger.debug("Received rpc request: cancel.")
         # Input check
         if not check_id(id):
             return ReturnCode.INVALID_INPUT
-        self.logger.info("Task %s is going to be cancelled." % id)
+        self.logger.info("Cancelling task %s." % id)
 
         # Try to update the status and executor of a undone task
         result = self.mongodb_task.find_one_and_update(
@@ -204,6 +206,7 @@ class RPCService:
             {"$set": {"executor": None, "status": TASK_STATUS["CANCELLED"], "done": True}}
         )
         if result:
+            self.logger.info("Cancelled task %s." % id)
             return ReturnCode.OK
         return ReturnCode.NOT_EXIST
 
@@ -220,7 +223,7 @@ class RPCService:
         :param page: Page number of the search
         :return: A SearchReturn structure containing the result and all
         """
-        self.logger.debug("Received RPC request: Search.")
+        self.logger.debug("Received rpc request: search.")
 
         # Check and add conditions to the filter
         filter = {}
@@ -238,15 +241,15 @@ class RPCService:
                 if end_time:
                     filter["add_time"]["$lte"] = dateutil.parser.parse(end_time)
         except:
-            self.logger.error("Invalid data.", exc_info=True)
+            self.logger.error("Failed because of invalid data.", exc_info=True)
             return SearchReturn(ReturnCode.INVALID_INPUT, 0, [])
-        self.logger.debug("Filter: %s." % filter)
+        self.logger.info("Searching with filter: %s." % str(filter))
 
         # Count result first for page calculation later
         cnt = self.mongodb_task.count(filter=filter)
         # If nothing found, return directly
         if cnt == 0:
-            self.logger.info("Find nothing.")
+            self.logger.info("Found empty result.")
             return SearchReturn(ReturnCode.OK, 0, [])
 
         # Find all result and transform them into TaskBrief structure
@@ -263,7 +266,7 @@ class RPCService:
         result = [x for x in result]
         for r in result:
             transform_id(r)
-        self.logger.debug("Search result: %s." % result)
+        self.logger.info("Found result: %s." % str([x["id"] for x in result]))
         return SearchReturn(
             ReturnCode.OK,
             1 if not limit else (cnt // limit + (1 if cnt % limit else 0)),
@@ -277,15 +280,15 @@ class RPCService:
         :param id: The id of the task
         :return: A GetResult structure containing return code and the task
         """
-        self.logger.debug("Received RPC request: Get.")
+        self.logger.debug("Received rpc request: get.")
         # Input check
         if not check_id(id):
             return ReturnCode.INVALID_INPUT
-        self.logger.info("Search for task %s." % id)
+        self.logger.info("Getting task %s." % id)
 
         # Find and transform the result
         result = self.mongodb_task.find_one({"_id": ObjectId(id)})
-        self.logger.debug("Search result: %s." % str(result))
+        self.logger.info("Got task: %s." % id)
         if result:
             transform_id(result)
             return GetReturn(ReturnCode.OK, generate(result))
@@ -301,14 +304,14 @@ class RPCService:
         :param vacant: Vacant place of the executor
         :return: A ReportResult structure containing return code, tasks needed to be deleted, and assigned tasks
         """
-        self.logger.debug("Received RPC request: Report.")
+        self.logger.debug("Received rpc request: report.")
         # Input check
         if not (isinstance(executor, str) and executor and
                 isinstance(complete, list) and
                 isinstance(executing, list) and
                 isinstance(vacant, int) and vacant >= 0):
             return ReportReturn(ReturnCode.INVALID_INPUT, [], [])
-        self.logger.info("Reporting executor: %s." % executor)
+        self.logger.info("Received report from executor %s." % executor)
 
         # Refresh or add the information of the executor
         result = self.mongodb_executor.find_one_and_update(
@@ -317,7 +320,7 @@ class RPCService:
         )
         if not result:
             self.mongodb_executor.insert_one({"hostname": executor, "report_time": datetime.datetime.now()})
-        self.logger.info("Executor %s updated." % executor)
+        self.logger.info("Updated executor %s." % executor)
 
         delete_list, assign_list = [], []
         executing_list = []
@@ -325,7 +328,7 @@ class RPCService:
         for t in complete:
             try:
                 task = extract(t)
-                self.logger.debug("Complete task: %s" % task)
+                self.logger.info("Updating complete task %s." % task["id"])
                 result = False
                 try:
                     result = self.mongodb_task.find_one_and_update(
@@ -343,7 +346,7 @@ class RPCService:
                 except pymongo.errors.OperationFailure as e:
                     # If the reported task is too big (this should not happened), set the status to error
                     if "large" in str(e):
-                        self.logger.error("Reported task is too large.", exc_info=True)
+                        self.logger.error("Failed to update task %s as it is too large." % task["id"], exc_info=True)
                         result = self.mongodb_task.find_one_and_update(
                             {"_id": ObjectId(task["id"]), "executor": executor},
                             {
@@ -359,7 +362,7 @@ class RPCService:
                     else:
                         raise e
                 except pymongo.errors.DocumentTooLarge:
-                    self.logger.error("Reported task is too large.", exc_info=True)
+                    self.logger.error("Failed to update task %s as it is too large." % task["id"], exc_info=True)
                     result = self.mongodb_task.find_one_and_update(
                         {"_id": ObjectId(task["id"]), "executor": executor},
                         {
@@ -373,11 +376,11 @@ class RPCService:
                         }
                     )
                 except:
-                    self.logger.error("Failed to update task %s." % task, exc_info=True)
+                    self.logger.error("Failed to update task %s." % task["id"], exc_info=True)
                 if not result:
-                    self.logger.warning("Complete task %s not found, delete it." % task["id"])
+                    self.logger.warning("Skipped task %s as it is not found." % task["id"])
                 else:
-                    self.logger.info("Successfully update complete task %s." % task["id"])
+                    self.logger.info("Updated complete task %s." % task["id"])
                 # Complete task is going to be deleted, no matter whether there is such a task record
                 delete_list.append(generate(task, brief=True))
             except:
@@ -390,7 +393,7 @@ class RPCService:
         for t in executing:
             try:
                 task = extract(t, brief=True)
-                self.logger.debug("Executing task %s." % task)
+                self.logger.info("Updating executing task %s." % task["id"])
                 # Put the id of the task to executing_list for unreported task check up
                 executing_list.append(ObjectId(task["id"]))
                 result = self.mongodb_task.find_one_and_update(
@@ -399,16 +402,16 @@ class RPCService:
                 )
                 if not result:
                     delete_list.append(generate(task, brief=True))
-                    self.logger.warning("Executing task %s not found, delete it." % task["id"])
+                    self.logger.warning("Skipping executing task %s as it is not found." % task["id"])
                 else:
-                    self.logger.info("Successfully update executing task %s." % task["id"])
+                    self.logger.info("Updated executing task %s." % task["id"])
             except:
                 # The same thing when handling complete task failure
                 self.logger.error("Failed to update executing task.", exc_info=True)
 
         # Find all tasks which should be executed by this executor but not appear in executing list
-        # And set their status to retry
-        self.logger.debug("Checking for unreported tasks.")
+        # And set their status to retry, and also add them to delete list
+        self.logger.info("Checking for unreported tasks.")
         while True:
             task = mongodb_task.find_one_and_update(
                 {"_id": {"$nin": executing_list}, "done": False, "executor": executor},
@@ -418,7 +421,7 @@ class RPCService:
                 break
             transform_id(task)
             self.logger.warning(
-                "Task %s should be executed by executor %s but not reported. Delete it." % (task["id"], executor)
+                "Task %s should be executed by executor %s but not reported." % (task["id"], executor)
             )
             delete_list.append(generate(task, True))
 
@@ -436,7 +439,7 @@ class RPCService:
             transform_id(task)
             assign_list.append(generate(task))
             vacant = vacant - 1
-            self.logger.info("Task %s assigned to executor %s." % (task, executor))
+            self.logger.info("Assigned Task %s to executor %s." % (task, executor))
 
         return ReportReturn(ReturnCode.OK, delete_list, assign_list)
 
@@ -446,7 +449,7 @@ class RPCService:
         Get a list of all executors
         :return: The list of all executors
         """
-        self.logger.debug("Received RPC request: Executors.")
+        self.logger.debug("Received rpc request: executors.")
 
         # Find all executors and reformat the response.
         result = self.mongodb_executor.find()
@@ -463,7 +466,7 @@ if __name__ == "__main__":
     retry_times = config["retry"]["times"]
     retry_interval = config["retry"]["interval"]
 
-    # Generate a logger
+    # Generate logger
     if "log" in config:
         logger = get_logger(
             "main",
@@ -503,14 +506,13 @@ if __name__ == "__main__":
         TBinaryProtocol.TBinaryProtocolFactory()
     )
     try:
-        logger.info("RPC server start to serve.")
+        logger.info("Starting rpc server.")
         server.serve()
     except KeyboardInterrupt:
-        logger.info("Received SIGINT. Unregister judicator on etcd.")
-        # Wait for the register thread to unregister and then stop
+        logger.info("Received SIGINT. Cancelling judicator registration on etcd.")
+        # Wait for the register thread to delete registration and then stop
         working = False
         register_thread.join()
-        logger.info("Register thread stopped.")
     except:
         logger.error("Accidentally terminated.", exc_info=True)
-    logger.info("Exiting.")
+    logger.info("Judicator main program exiting.")
