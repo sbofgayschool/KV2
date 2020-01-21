@@ -40,6 +40,9 @@ def register():
     while working:
         time.sleep(config["register"]["interval"])
         try:
+            # Check the local mongodb is running
+            if not local_mongodb.check(local=False):
+                raise Exception("Failed to confirm local mongodb status.")
             local_etcd.set(reg_key, reg_value, ttl=config["register"]["ttl"])
             logger.info("Updated judicator service on etcd.")
         except:
@@ -70,6 +73,9 @@ def lead():
         time.sleep(config["lead"]["interval"])
 
         try:
+            # Check the local mongodb is running
+            if not local_mongodb.check(local=False):
+                raise Exception("Failed to confirm local mongodb status.")
             # Try to become leader when there are no previous leader
             try:
                 local_etcd.set(
@@ -481,7 +487,7 @@ if __name__ == "__main__":
     with open("config/etcd.json", "r") as f:
         local_etcd = generate_local_etcd_proxy(json.load(f)["etcd"], logger)
     with open("config/mongodb.json", "r") as f:
-        local_mongodb = generate_local_mongodb_proxy(json.load(f)["mongodb"], logger, True)
+        local_mongodb = generate_local_mongodb_proxy(json.load(f)["mongodb"], local_etcd, logger)
     # Get a connection to both task and executor collection in mongodb
     mongodb_task = local_mongodb.client[config["task"]["database"]][config["task"]["collection"]]
     mongodb_executor = local_mongodb.client[config["executor"]["database"]][config["executor"]["collection"]]

@@ -1,6 +1,6 @@
 #### Single container IP
 ```
-IP=158.143.100.251
+IP=146.179.196.103
 
 docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --expose 2000 \
@@ -31,12 +31,12 @@ docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --etcd-print-log \
 --mongodb-print-log \
 --main-print-log \
---etcd-cluster-join-member-client=http://$IP:32786 \
+--etcd-cluster-join-member-client=http://$IP:32802 \
 --etcd-advertise-address=$IP \
 --mongodb-advertise-address=$IP \
 --main-advertise-address=$IP  \
 --etcd-advertise-peer-port=DOCKER \
---etcd-advertise-client-port=DOCKER \
+--etcd-advertise-client-port=DOCKER \x
 --mongodb-advertise-port=DOCKER \
 --main-advertise-port=DOCKER
 

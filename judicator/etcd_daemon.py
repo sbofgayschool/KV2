@@ -9,6 +9,8 @@ import subprocess
 import threading
 import os
 import shutil
+import random
+import docker
 
 from utility.function import get_logger, log_output, check_empty_dir, try_with_times
 from utility.etcd import etcd_generate_run_command, generate_local_etcd_proxy, EtcdProxy
@@ -87,6 +89,39 @@ if __name__ == "__main__":
         shutil.copytree(config["etcd"]["init_data_dir"], config["etcd"]["data_dir"])
         daemon_logger.info("Found existing data initialize directory. Skipped cluster parameters.")
 
+    # If service name of etcd member detection is specified, use it and find a member client
+    if "cluster" in config["etcd"] and \
+        config["etcd"]["cluster"]["type"] == "join" and \
+        "service" in config["etcd"]["cluster"]:
+        daemon_logger.info("Searching etcd member using docker service and dns.")
+        # Get all running tasks of the specified service
+        client = docker.APIClient(base_url=config["daemon"]["docker_sock"])
+        services = [
+            "http://" + config["etcd"]["cluster"]["service"] + "." + str(x["Slot"]) + "." + x["ID"] + ":" +
+            config["etcd"]["advertise"]["client_port"]
+            for x in client.tasks({"service": config["etcd"]["cluster"]["service"]})
+            if x["Status"]["State"] == "running"
+        ]
+        # Delete local etcd from the list
+        try:
+            services.remove(
+                "http://" + config["etcd"]["advertise"]["address"] + ":" + config["etcd"]["advertise"]["peer_port"]
+            )
+        except:
+            daemon_logger.warning("Failed to find current task in list. This should not be possible.", exc_info=True)
+        # If one or more tasks are running, join one randomly
+        # Else, initialize the cluster by itself
+        if services:
+            daemon_logger.info("Found following available members:")
+            for x in services:
+                daemon_logger.info("%s" % x)
+            config["etcd"]["cluster"]["client"] = random.choice(services)
+            daemon_logger.info("Selected %s as member client." % config["etcd"]["cluster"]["client"])
+        else:
+            config["etcd"]["cluster"] = {"type": "init"}
+            daemon_logger.info("No available member detected.")
+            daemon_logger.info("Initializing cluster by local etcd.")
+
     # If cluster config exists and proxy config does not exist
     # It should be either initialized as joining an exist cluster, or initializing a new one
     if "cluster" in config["etcd"] and \
@@ -98,7 +133,7 @@ if __name__ == "__main__":
         success, res = try_with_times(
             retry_times,
             retry_interval,
-            True,
+            False,
             daemon_logger,
             "add and get member to etcd cluster status",
             remote_etcd.add_and_get_members,

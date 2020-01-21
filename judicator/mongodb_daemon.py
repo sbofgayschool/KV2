@@ -9,7 +9,6 @@ import subprocess
 import threading
 import time
 import urllib.parse
-import pymongo.errors
 import os
 import shutil
 
@@ -33,7 +32,7 @@ def register():
         True,
         daemon_logger,
         "check mongodb status",
-        local_mongodb.check_self_running,
+        local_mongodb.check,
     )[0]:
         mongodb_proc.kill()
         daemon_logger.error("Failed to start mongodb. Killing mongodb.")
@@ -41,35 +40,18 @@ def register():
 
     advertise_address = config["mongodb"]["advertise"]["address"] + ":" + config["mongodb"]["advertise"]["port"]
     # If initialization should not be skipped, try to initialize the replica set (either initialize or join)
-    if not config["daemon"].get("skip_init", False) and not try_with_times(
-        retry_times,
-        retry_interval,
-        True,
-        daemon_logger,
-        "initialize or add local mongodb to replica set",
-        local_mongodb.initialize_replica_set,
-        advertise_address,
-        urllib.parse.urljoin(config["daemon"]["etcd_path"]["register"], config["mongodb"]["name"]),
-        config["daemon"]["etcd_path"]["register"],
-        config["daemon"]["etcd_path"]["primary"],
-        local_etcd
-    )[0]:
-        mongodb_proc.kill()
-        daemon_logger.error("Failed to initialize nor add local mongodb to replica set. Killing mongodb.")
-        return
-
-    # When everything is done, switch the mode of mongodb proxy from single to replica
     if not try_with_times(
         retry_times,
         retry_interval,
         True,
         daemon_logger,
-        "switch mode to replica",
-        local_mongodb.reconnect,
-        True
+        "initialize or register local mongodb",
+        local_mongodb.initialize,
+        config["daemon"]["etcd_path"]["init"],
+        config["daemon"]["etcd_path"]["register"]
     )[0]:
         mongodb_proc.kill()
-        daemon_logger.error("Failed to switch mongodb proxy from single to replica. Killing mongodb.")
+        daemon_logger.error("Failed to initialize nor register local mongodb. Killing mongodb.")
         return
 
     # Loop until termination to regularly check whether local mongodb has become primary node of the replica set
@@ -77,53 +59,19 @@ def register():
     while working:
         time.sleep(config["daemon"]["register_interval"])
         try:
-            # If it is primary, update the key-value pair in etcd with its own advertise address
-            if local_mongodb.get_primary() == advertise_address:
-                local_etcd.set(
-                    config["daemon"]["etcd_path"]["primary"],
-                    advertise_address
-                )
-                daemon_logger.info("Local mongodb is primary. Updated etcd.")
-
-                # Try to remove all exited mongodb from replica set
-                daemon_logger.info("Removing exited nodes from replica set.")
-                # Get all registered node first
-                member_registered = local_etcd.get(config["daemon"]["etcd_path"]["register"]).values()
-                member_in_rs = [
-                    x["host"] for x in local_mongodb.client.admin.command("replSetGetConfig", 1)["config"]["members"]
-                ]
-                daemon_logger.info("Got registered member: %s." % str(member_registered))
-                daemon_logger.info("Got member in replica set: %s." % str(member_in_rs))
-                # Get all member in rs but not registered, remove them
-                exiting = set([x for x in member_in_rs if x not in member_registered])
-                daemon_logger.info("Got exiting member: %s." % str(exiting))
-                for address in exiting:
-                    # Remove from the replica set and then the list on etcd
-                    try:
-                        local_mongodb.remove_from_replica_set(address)
-                        daemon_logger.info("Removed exited node %s from replica set." % address)
-                    except:
-                        daemon_logger.error("Failed to remove %s from replica set." % address, exc_info=True)
-                daemon_logger.info("All exited nodes removed.")
+            registered_member = list(local_etcd.get(config["daemon"]["etcd_path"]["register"]).values())
+            # If it is primary or this is the only registered node
+            # Do the checkup
+            if local_mongodb.is_primary() or (len(registered_member) == 1 and registered_member[0] == advertise_address):
+                daemon_logger.info("Local mongodb is primary or the only registered node.")
+                daemon_logger.info("Adjusting the replica set.")
+                local_mongodb.adjust_replica_set(registered_member)
             else:
-                daemon_logger.info("Local mongodb is secondary.")
+                daemon_logger.info("Local mongodb is secondary. There should be another node for regular adjustment.")
         except:
-            daemon_logger.error("Failed to check and update primary status.", exc_info=True)
+            daemon_logger.error("Failed to check primary status.", exc_info=True)
 
     daemon_logger.info("Register thread terminating.")
-    return
-
-def exit_from_replica_set():
-    """
-    Delete local mongodb from registered list
-    :return: None
-    """
-    # Delete local mongodb from registered list
-    local_etcd.delete(
-        urllib.parse.urljoin(config["daemon"]["etcd_path"]["register"], config["mongodb"]["name"]),
-        config["mongodb"]["advertise"]["address"] + ":" + config["mongodb"]["advertise"]["port"]
-    )
-    daemon_logger.info("Removed local mongodb registration on etcd.")
     return
 
 if __name__ == "__main__":
@@ -159,7 +107,7 @@ if __name__ == "__main__":
     with open("config/etcd.json", "r") as f:
         local_etcd = generate_local_etcd_proxy(json.load(f)["etcd"], daemon_logger)
     # Get a local mongodb proxy
-    local_mongodb = generate_local_mongodb_proxy(config["mongodb"], daemon_logger)
+    local_mongodb = generate_local_mongodb_proxy(config["mongodb"], local_etcd, daemon_logger)
 
     # Check whether the data dir of mongodb is empty
     # If not, delete it and create a new one
@@ -201,12 +149,8 @@ if __name__ == "__main__":
         working = False
         register_thread.join()
         # Kill the process
-        try:
-            pymongo.MongoClient("localhost", int(config["mongodb"]["listen"]["port"])).admin.command("shutdown", 1)
-        except pymongo.errors.AutoReconnect:
-            daemon_logger.info("Shutdown local mongodb.", exc_info=True)
-        except Exception as e:
-            daemon_logger.error("Failed to shutdown mongodb. Killing the process.", exc_info=True)
+        if not local_mongodb.shutdown_and_close():
+            daemon_logger.error("Killing the process.")
             mongodb_proc.kill()
         mongodb_proc.wait()
         daemon_logger.info("Mongodb process exited.")
@@ -216,9 +160,11 @@ if __name__ == "__main__":
             retry_interval,
             False,
             daemon_logger,
-            "mark local mongodb as exited",
-            exit_from_replica_set
+            "cancel registration of mongodb",
+            local_mongodb.cancel_registration,
+            config["daemon"]["etcd_path"]["register"]
         )
+        daemon_logger.info("Removed local mongodb registration on etcd.")
     except:
         daemon_logger.error("Accidentally terminated. Killing mongodb process.", exc_info=True)
         mongodb_proc.kill()

@@ -15,6 +15,7 @@ docker service rm $GATEWAY
 docker service rm $JUDICATOR
 docker service rm $JUDICATOR_CORE
 
+echo ""
 echo "============================"
 echo "All services successfully removed."
 echo "============================"

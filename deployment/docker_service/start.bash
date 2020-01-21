@@ -33,8 +33,6 @@ echo "Creating service $JUDICATOR_CORE."
 echo "============================"
 echo ""
 
-discovery=`curl https://discovery.etcd.io/new?size=$1`
-
 docker service create \
 --stop-grace-period=30s \
 --replicas $1 \
@@ -47,7 +45,7 @@ docker service create \
 --etcd-print-log \
 --mongodb-print-log \
 --main-print-log \
---etcd-cluster-init-discovery=$discovery \
+--etcd-cluster-init-independent \
 --etcd-advertise-address=DOCKER \
 --mongodb-advertise-address=DOCKER \
 --main-advertise-address=DOCKER \

@@ -5,6 +5,9 @@
         "times": 3,
         "interval": 5
     },
+    /*
+    "docker_sock": "unix:///var/run/docker.sock",
+    */
     "pid_file": "data/main.pid",
     "name": "executor_main",
     "data_dir": "data/main",

@@ -210,11 +210,12 @@ class EtcdProxy:
 
         return json.loads(resp.text)
 
-    def delete(self, key, prev_value=None):
+    def delete(self, key, prev_value=None, skip_not_found=False):
         """
         Delete a key-value pair
         :param key: The key
         :param prev_value: Expected previous value
+        :param skip_not_found: If return None when the key not exsits
         :return: Loaded response
         """
         url_postfix = urllib.parse.urljoin("/v2/keys/", key)
@@ -224,6 +225,8 @@ class EtcdProxy:
             urllib.parse.urljoin(self.url, url_postfix), params={} if prev_value is None else {"prevValue": prev_value}
         )
         if not resp:
+            if resp.status_code == 404 and skip_not_found:
+                return None
             raise Exception("Delete key: %s resulted in %d, not 200." % (key, resp.status_code))
 
         return json.loads(resp.text)

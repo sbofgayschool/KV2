@@ -9,6 +9,8 @@ import subprocess
 import threading
 import shutil
 import os
+import random
+import docker
 
 from utility.function import get_logger, log_output, check_empty_dir, try_with_times
 from utility.etcd import etcd_generate_run_command, generate_local_etcd_proxy, EtcdProxy
@@ -78,6 +80,32 @@ if __name__ == "__main__":
         shutil.rmtree(config["etcd"]["data_dir"])
         os.mkdir(config["etcd"]["data_dir"])
         daemon_logger.info("Previous data directory deleted with a new one created.")
+
+    # If service name of etcd member detection is specified, use it and find a member client
+    if "cluster" in config["etcd"] and \
+        config["etcd"]["cluster"]["type"] == "join" and \
+        "service" in config["etcd"]["cluster"]:
+        daemon_logger.info("Searching etcd member using docker service and dns.")
+        # Get all running tasks of the specified service
+        client = docker.APIClient(base_url=config["daemon"]["docker_sock"])
+        services = [
+            "http://" + config["etcd"]["cluster"]["service"] + "." + str(x["Slot"]) + "." + x["ID"] + ":" +
+            config["etcd"]["advertise"]["client_port"]
+            for x in client.tasks({"service": config["etcd"]["cluster"]["service"]})
+            if x["Status"]["State"] == "running"
+        ]
+        # If one or more tasks are running, join one randomly
+        # Else, exit with an error
+        if services:
+            daemon_logger.info("Found following available members:")
+            for x in services:
+                daemon_logger.info("%s" % x)
+            config["etcd"]["cluster"]["client"] = random.choice(services)
+            daemon_logger.info("Selected %s as member client." % config["etcd"]["cluster"]["client"])
+        else:
+            daemon_logger.error("No available member detected.")
+            daemon_logger.info("Executor etcd_daemon program exiting.")
+            exit(1)
 
     # Get existing members first, if required
     if config["etcd"]["cluster"]["type"] == "join" and \

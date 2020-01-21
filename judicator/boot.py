@@ -65,6 +65,8 @@ if __name__ == "__main__":
                         const=True, default=None, help="If the etcd node is going to be the only member of the cluster")
     parser.add_argument("--etcd-cluster-join-member-client", dest="etcd_cluster_join_member_client", default=None,
                         help="Client url of a member of the cluster which this etcd node is going to join")
+    parser.add_argument("--etcd-cluster-join-service", dest="etcd_cluster_join_service", default=None,
+                        help="Service name if the etcd is going to use docker swarm and dns to auto detect members")
     parser.add_argument("--etcd-print-log", dest="etcd_print_log", action="store_const", const=True, default=False,
                         help="Print the log of etcd module to stdout")
 
@@ -175,10 +177,13 @@ if __name__ == "__main__":
         config_sub["etcd"]["cluster"] = {"type": "init"}
     if args.etcd_cluster_join_member_client is not None:
         config_sub["etcd"]["cluster"] = {"type": "join", "client": args.etcd_cluster_join_member_client}
+    if args.etcd_cluster_join_service is not None:
+        config_sub["etcd"]["cluster"] = {"type": "join", "service": args.etcd_cluster_join_service}
     if args.etcd_print_log:
         config_sub["daemon"].pop("log_daemon", None)
         config_sub["daemon"].pop("log_etcd", None)
     if args.docker_sock is not None:
+        config_sub["daemon"]["docker_sock"] = args.docker_sock
         config_sub["etcd"]["exe"] = "etcd"
         if args.etcd_name is None:
             config_sub["etcd"]["name"] = socket.gethostname()

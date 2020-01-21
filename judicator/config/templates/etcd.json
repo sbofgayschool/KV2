@@ -7,6 +7,9 @@
             "times": 3,
             "interval": 5
         },
+        /*
+        "docker_sock": "unix:///var/run/docker.sock",
+        */
         "pid_file": "data/etcd.pid",
         "raw_log_symbol_pos": 27,
         "log_daemon":
@@ -49,6 +52,11 @@
         {
             "type": "init",
             "member": "name=url"
+        },
+        "cluster":
+        {
+            "type": "join",
+            "service": "judicator"
         },
         "cluster":
         {

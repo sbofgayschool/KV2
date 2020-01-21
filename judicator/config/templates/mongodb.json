@@ -10,7 +10,7 @@
         "pid_file": "data/mongodb.pid",
         "etcd_path":
         {
-            "primary": "mongodb/primary",
+            "init": "mongodb/init",
             "register": "mongodb/register/"
         },
         "raw_log_symbol_pos": 29,
