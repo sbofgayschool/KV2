@@ -71,4 +71,8 @@ sudo iptables -t nat -F
 sudo iptables -t mangle -F
 sudo iptables -F
 sudo iptables -X
+
+sudo apt-get -y remove fail2ban ufw
+sudo apt-get -y purge fail2ban ufw
+sudo apt-get -y autoremove
 ```

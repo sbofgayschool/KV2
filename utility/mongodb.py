@@ -143,6 +143,8 @@ class MongoDBProxy:
                 self.logger.info("%s", str(x))
             conf["config"]["version"] += 1
             force = not self.is_primary()
+            self.logger.debug("Result of isMaster: %s." % str(self.local_client.admin.command("isMaster")))
+            self.logger.debug("If in force mode: %s." % str(force))
             if force:
                 self.logger.warning("Current node is not primary, using the force mode.")
             self.local_client.admin.command("replSetReconfig", conf["config"], force=force)

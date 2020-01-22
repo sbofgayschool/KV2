@@ -22,6 +22,7 @@
 --etcd-cluster-init-independent
 --etcd-cluster-join-member-client
 --etcd-cluster-join-service
+--etcd-cluster-join-service-port
 --etcd-print-log
 
 --mongodb-exe
@@ -57,6 +58,7 @@
 --etcd-cluster-init-discovery
 --etcd-cluster-join-member-client
 --etcd-cluster-join-service
+--etcd-cluster-join-service-port
 --etcd-print-log
 
 --main-name
@@ -82,6 +84,7 @@
 --etcd-cluster-init-discovery
 --etcd-cluster-join-member-client
 --etcd-cluster-join-service
+--etcd-cluster-join-service-port
 --etcd-print-log
 
 --uwsgi-host

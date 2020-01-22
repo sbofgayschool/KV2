@@ -9,7 +9,6 @@ import subprocess
 import threading
 import shutil
 import os
-import random
 import docker
 
 from utility.function import get_logger, log_output, check_empty_dir, try_with_times
@@ -90,17 +89,19 @@ if __name__ == "__main__":
         client = docker.APIClient(base_url=config["daemon"]["docker_sock"])
         services = [
             "http://" + config["etcd"]["cluster"]["service"] + "." + str(x["Slot"]) + "." + x["ID"] + ":" +
-            config["etcd"]["advertise"]["client_port"]
-            for x in client.tasks({"service": config["etcd"]["cluster"]["service"]})
+            config["etcd"]["cluster"]["client_port"]
+            for x in sorted(
+                client.tasks({"service": config["etcd"]["cluster"]["service"]}), key=lambda x: x["CreatedAt"]
+            )
             if x["Status"]["State"] == "running"
         ]
-        # If one or more tasks are running, join one randomly
+        # If one or more tasks are running, join the first created one
         # Else, exit with an error
         if services:
             daemon_logger.info("Found following available members:")
             for x in services:
                 daemon_logger.info("%s" % x)
-            config["etcd"]["cluster"]["client"] = random.choice(services)
+            config["etcd"]["cluster"]["client"] = services[0]
             daemon_logger.info("Selected %s as member client." % config["etcd"]["cluster"]["client"])
         else:
             daemon_logger.error("No available member detected.")

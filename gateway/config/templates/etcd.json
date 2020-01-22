@@ -50,7 +50,8 @@
         "cluster":
         {
             "type": "join",
-            "service": "judicator"
+            "service": "judicator",
+            "client_port": "2001"
         },
         "cluster":
         {

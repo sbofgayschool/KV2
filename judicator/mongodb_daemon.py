@@ -8,7 +8,6 @@ json = JsonComment()
 import subprocess
 import threading
 import time
-import urllib.parse
 import os
 import shutil
 

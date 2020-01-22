@@ -1,6 +1,6 @@
 #### Single container IP
 ```
-IP=146.179.196.103
+IP=158.143.102.92
 
 docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --expose 2000 \
@@ -31,12 +31,12 @@ docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --etcd-print-log \
 --mongodb-print-log \
 --main-print-log \
---etcd-cluster-join-member-client=http://$IP:32802 \
+--etcd-cluster-join-member-client=http://$IP:32830 \
 --etcd-advertise-address=$IP \
 --mongodb-advertise-address=$IP \
 --main-advertise-address=$IP  \
 --etcd-advertise-peer-port=DOCKER \
---etcd-advertise-client-port=DOCKER \x
+--etcd-advertise-client-port=DOCKER \
 --mongodb-advertise-port=DOCKER \
 --main-advertise-port=DOCKER
 
@@ -51,7 +51,7 @@ docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --mongodb-print-log \
 --main-print-log \
 --etcd-proxy=on \
---etcd-cluster-join-member-client=http://$IP:32831 \
+--etcd-cluster-join-member-client=http://$IP:32822 \
 --etcd-advertise-address=$IP \
 --mongodb-advertise-address=$IP \
 --main-advertise-address=$IP  \
@@ -217,7 +217,7 @@ docker service create \
 --stop-grace-period=30s \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala \
---env NAME={{.Service.Name}}-{{.Task.Slot}} \
+--env NAME={{.Service.Name}}.{{.Task.Slot}} \
 --name judicator-core comradestukov/khala:v0.1 judicator \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
@@ -239,7 +239,7 @@ docker service create \
 --replicas 1 \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala \
---env NAME={{.Service.Name}}-{{.Task.Slot}} \
+--env NAME={{.Service.Name}}.{{.Task.Slot}} \
 --name judicator comradestukov/khala:v0.1 judicator \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
@@ -259,7 +259,7 @@ docker service create \
 --replicas 1 \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala -p 7000:7000 \
---env NAME={{.Service.Name}}-{{.Task.Slot}} \
+--env NAME={{.Service.Name}}.{{.Task.Slot}} \
 --name gateway comradestukov/khala:v0.1 gateway \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
@@ -273,7 +273,7 @@ docker service create \
 --replicas 2 \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
 --network khala \
---env NAME={{.Service.Name}}-{{.Task.Slot}} \
+--env NAME={{.Service.Name}}.{{.Task.Slot}} \
 --name executor comradestukov/khala:v0.1 executor \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
@@ -282,6 +282,30 @@ docker service create \
 --etcd-cluster-join-member-client=http://$JOIN_IP:2001 \
 --etcd-name=ENV \
 --main-name=ENV
+```
+
+#### Service etcd auto join
+```
+docker service create \
+--stop-grace-period=30s \
+--replicas 1 \
+--mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
+--network khala \
+--env NAME={{.Service.Name}}.{{.Task.Slot}} \
+--name judicator comradestukov/khala:v0.1 judicator \
+--docker-sock=unix:///var/run/docker.sock \
+--boot-print-log \
+--etcd-print-log \
+--mongodb-print-log \
+--main-print-log \
+--etcd-cluster-join-service=judicator \
+--etcd-advertise-address=DOCKER \
+--mongodb-advertise-address=DOCKER \
+--main-advertise-address=DOCKER \
+--etcd-name=ENV \
+--mongodb-name=ENV \
+--main-name=ENV
+
 ```
 
 #### Service remove all
