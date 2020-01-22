@@ -93,7 +93,7 @@ if __name__ == "__main__":
             for x in sorted(
                 client.tasks({"service": config["etcd"]["cluster"]["service"]}), key=lambda x: x["CreatedAt"]
             )
-            if x["Status"]["State"] == "running"
+            if x["Status"]["State"] == "running" and x["DesiredState"] == "running"
         ]
         # If one or more tasks are running, join the first created one
         # Else, exit with an error
