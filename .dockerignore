@@ -52,3 +52,7 @@ gateway/data/*
 judicator/config/*.json
 executor/config/*.json
 gateway/config/*.json
+
+# Thrift IDL
+rpc/gen.bash
+rpc/judicator.thrift

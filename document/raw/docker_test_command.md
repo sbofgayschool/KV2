@@ -1,6 +1,6 @@
 #### Single container IP
 ```
-IP=158.143.102.92
+IP=146.179.197.182
 
 docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --expose 2000 \
@@ -12,6 +12,21 @@ docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --etcd-print-log \
 --mongodb-print-log \
 --main-print-log \
+--etcd-cluster-init-independent \
+--etcd-advertise-address=$IP \
+--mongodb-advertise-address=$IP \
+--main-advertise-address=$IP \
+--etcd-advertise-peer-port=DOCKER \
+--etcd-advertise-client-port=DOCKER \
+--mongodb-advertise-port=DOCKER \
+--main-advertise-port=DOCKER
+
+docker container run -v /var/run/docker.sock:/var/run/docker.sock \
+--expose 2000 \
+--expose 2001 \
+--expose 3000 \
+--expose 4000 -P comradestukov/khala:v0.1 judicator \
+--docker-sock=unix:///var/run/docker.sock \
 --etcd-cluster-init-independent \
 --etcd-advertise-address=$IP \
 --mongodb-advertise-address=$IP \

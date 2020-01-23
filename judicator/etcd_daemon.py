@@ -94,15 +94,21 @@ if __name__ == "__main__":
         "service" in config["etcd"]["cluster"]:
         daemon_logger.info("Searching etcd member using docker service and dns.")
         # Get all running tasks of the specified service
-        client = docker.APIClient(base_url=config["daemon"]["docker_sock"])
-        services = [
-            "http://" + config["etcd"]["cluster"]["service"] + "." + str(x["Slot"]) + "." + x["ID"] + ":" +
-            config["etcd"]["cluster"]["client_port"]
-            for x in sorted(
-                client.tasks({"service": config["etcd"]["cluster"]["service"]}), key=lambda x: x["CreatedAt"]
-            )
-            if x["Status"]["State"] == "running" and x["DesiredState"] == "running"
-        ]
+        services = []
+        try:
+            client = docker.APIClient(base_url=config["daemon"]["docker_sock"])
+            services = [
+                "http://" + config["etcd"]["cluster"]["service"] + "." + str(x["Slot"]) + "." + x["ID"] + ":" +
+                config["etcd"]["cluster"]["client_port"]
+                for x in sorted(
+                    client.tasks({"service": config["etcd"]["cluster"]["service"]}), key=lambda x: x["CreatedAt"]
+                )
+                if x["Status"]["State"] == "running" and x["DesiredState"] == "running"
+            ]
+        except:
+            daemon_logger.error("Failed to connect to docker engine.", exc_info=True)
+            daemon_logger.error("Judicator etcd_daemon program exiting.")
+            exit(1)
         # Delete local etcd from the list
         try:
             services.remove(

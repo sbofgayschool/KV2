@@ -1,7 +1,11 @@
 #!/bin/bash
 
 if [[ $# != 3 ]]; then
-    echo "USAGE: $0 service-name task-number adjust-interval"
+    echo -e "USAGE: $0 service-name task-number adjust-interval\n\
+Possible Service:\n\
+  judicator\n\
+  gateway\n\
+  executor"
     exit 1
 fi
 
@@ -77,6 +81,6 @@ else
 fi
 echo ""
 echo "============================"
-echo "Task number of $1 successfully adjusted."
+echo "Task number of service $1 successfully adjusted."
 echo "============================"
 echo ""
