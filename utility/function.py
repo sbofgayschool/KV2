@@ -13,6 +13,7 @@ import subprocess
 import signal
 import bson
 import re
+import zlib
 
 from utility.define import LOG_FORMAT, RAW_FORMAT, TASK_DICTIONARY_MAX_SIZE
 
@@ -239,3 +240,15 @@ def check_id(id):
     :return: The result
     """
     return bool(re.match(r"^[a-f0-9]{24}$", id))
+
+def decompress_and_truncate(zipped, max_length=1000):
+    """
+    Decompress a string zipped by zlib and truncate it
+    :param zipped: Zipped string
+    :param max_length: Specified length
+    :return:
+    """
+    res = zlib.decompress(zipped).decode("utf-8") if zipped else ""
+    if len(res) > max_length:
+        res = res[: max_length] + "..."
+    return res

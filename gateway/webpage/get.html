@@ -30,7 +30,7 @@
                         <table class="table table-bordered">
                             <thead>
                                 <tr>
-                                    <th style="width: 35%">Attribute</th>
+                                    <th style="width: 25%">Attribute</th>
                                     <th style="width: 75%">Value</th>
                                 </tr>
                             </thead>
@@ -49,7 +49,10 @@
                                 </tr>
                                 <tr>
                                     <td>Compile Command</td>
-                                    <td style="white-space: pre-wrap;">{{data.compile.command}}</td>
+                                    <td style="white-space: pre-wrap;">
+                                        <span>{{data.compile.command}}</span>
+                                        <span v-if="data.compile.command"><br><a v-bind:href="'api/task?id='+data.id+'&file=compile_command'">Download</a></span>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td>Compile Timeout</td>
@@ -57,7 +60,10 @@
                                 </tr>
                                 <tr>
                                     <td>Execute Input</td>
-                                    <td style="white-space: pre-wrap;">{{data.execute.input}}</td>
+                                    <td style="white-space: pre-wrap;">
+                                        <span>{{data.execute.input}}</span>
+                                        <span v-if="data.execute.input"><br><a v-bind:href="'api/task?id='+data.id+'&file=execute_input'">Download</a></span>
+                                    </td>
                                 </tr>
                                 <tr v-if="data.execute.data">
                                     <td>Execute Data</td>
@@ -65,7 +71,10 @@
                                 </tr>
                                 <tr>
                                     <td>Execute Command</td>
-                                    <td style="white-space: pre-wrap;">{{data.execute.command}}</td>
+                                    <td style="white-space: pre-wrap;">
+                                        <span>{{data.execute.command}}</span>
+                                        <span v-if="data.execute.command"><br><a v-bind:href="'api/task?id='+data.id+'&file=execute_command'">Download</a></span>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td>Execute Timeout</td>
@@ -73,7 +82,10 @@
                                 </tr>
                                 <tr>
                                     <td>Execute Standard</td>
-                                    <td style="white-space: pre-wrap;">{{data.execute.standard}}</td>
+                                    <td style="white-space: pre-wrap;">
+                                        <span>{{data.execute.standard}}</span>
+                                        <span v-if="data.execute.standard"><br><a v-bind:href="'api/task?id='+data.id+'&file=execute_standard'">Download</a></span>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td>Add time</td>
@@ -101,19 +113,31 @@
                                 </tr>
                                 <tr v-if="data.result">
                                     <td>Compile Output</td>
-                                    <td style="white-space: pre-wrap;">{{data.result.compile_output}}</td>
+                                    <td style="white-space: pre-wrap;">
+                                        <span>{{data.result.compile_output}}</span>
+                                        <span v-if="data.result.compile_output"><br><a v-bind:href="'api/task?id='+data.id+'&file=compile_output'">Download</a></span>
+                                    </td>
                                 </tr>
                                 <tr v-if="data.result">
                                     <td>Compile Error</td>
-                                    <td style="white-space: pre-wrap;">{{data.result.compile_error}}</td>
+                                    <td style="white-space: pre-wrap;">
+                                        <span>{{data.result.compile_error}}</span>
+                                        <span v-if="data.result.compile_error"><br><a v-bind:href="'api/task?id='+data.id+'&file=compile_error'">Download</a></span>
+                                    </td>
                                 </tr>
                                 <tr v-if="data.result">
                                     <td>Execute Output</td>
-                                    <td style="white-space: pre-wrap;">{{data.result.execute_output}}</td>
+                                    <td style="white-space: pre-wrap;">
+                                        <span>{{data.result.execute_output}}</span>
+                                        <span v-if="data.result.execute_output"><br><a v-bind:href="'api/task?id='+data.id+'&file=execute_output'">Download</a></span>
+                                    </td>
                                 </tr>
                                 <tr v-if="data.result">
                                     <td>Execute Error</td>
-                                    <td style="white-space: pre-wrap;">{{data.result.execute_error}}</td>
+                                    <td style="white-space: pre-wrap;">
+                                        <span>{{data.result.execute_error}}</span>
+                                        <span v-if="data.result.execute_error"><br><a v-bind:href="'api/task?id='+data.id+'&file=execute_error'">Download</a></span>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>

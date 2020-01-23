@@ -15,8 +15,10 @@ if [[ $tasks == "no such service"* ]]; then
     exit 1
 fi
 
-read -ra tasks <<< $tasks
-len=${#tasks[@]}
+len=0
+for t in $tasks; do
+    len=$(($len+1))
+done
 
 if [[ $len -eq $(($2)) ]]; then
     echo "============================"

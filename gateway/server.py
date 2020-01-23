@@ -13,7 +13,7 @@ import zipfile
 
 from rpc.judicator_rpc.ttypes import *
 
-from utility.function import get_logger, check_task_dict_size, check_id
+from utility.function import get_logger, check_task_dict_size, check_id, decompress_and_truncate
 from utility.etcd import generate_local_etcd_proxy
 from utility.rpc import select_from_etcd_and_call, extract, generate
 
@@ -245,73 +245,67 @@ def api_task_get():
 
     task = extract(res.task)
 
-    # Decompress compile source and return if it is required
-    if file == "compile_source":
-        if not task["compile"]["source"]:
-            flask.abort(404)
-        logger.info("Returning compile source for task %s." % id)
-        temp_file = tempfile.TemporaryFile(dir=config["data_dir"])
-        temp_file.write(task["compile"]["source"])
-        temp_file.seek(0)
-        return flask.send_file(
-            temp_file,
-            cache_timeout=-1,
-            as_attachment=True,
-            attachment_filename=id + "_compile_source.zip",
-            mimetype="application/zip"
-        )
-    # Else, convert it into bool indicating whether there is such file
-    task["compile"]["source"] = bool(task["compile"]["source"])
+    # If requesting files, try to fetch it
+    if file:
+        # Compile source and execute_data are in zip format
+        # Others are plain text
+        if file == "compile_source" or file == "execute_data":
+            postfix = ".zip"
+            mimetype = "application/zip"
+            content = task["compile"]["source"] if file == "compile_source" else task["execute"]["data"]
+        else:
+            postfix = ".txt"
+            mimetype = "plain/text"
+            if file == "compile_command":
+                content = task["compile"]["command"]
 
-    # Decompress execute data and return if it is required
-    if file == "execute_data":
-        if not task["execute"]["data"]:
+            elif file == "execute_input":
+                content = task["execute"]["input"]
+            elif file == "execute_command":
+                content = task["execute"]["command"]
+            elif file == "execute_standard":
+                content = task["execute"]["standard"]
+
+            else:
+                content = task.get("result", {}).get(file, b"")
+            if content:
+                content = zlib.decompress(content)
+        # If nothing has been found, return 404
+        if not content:
+            logger.warning("Returning 404 as %s is empty for task %s." % (file, id))
             flask.abort(404)
-        logger.info("Returning execute data for task %s." % id)
+        # Write a temp file and return it
+        logger.info("Returning %s for task %s." % (file, id))
         temp_file = tempfile.TemporaryFile(dir=config["data_dir"])
-        temp_file.write(task["execute"]["data"])
+        temp_file.write(content)
         temp_file.seek(0)
         return flask.send_file(
             temp_file,
             cache_timeout=-1,
             as_attachment=True,
-            attachment_filename=id + "_execute_data.zip",
-            mimetype="application/zip"
+            attachment_filename=id + "_" + file + postfix,
+            mimetype=mimetype
         )
-    # Else, convert it into bool indicating whether there is such file
+
+    # Deal with sip field
+    task["compile"]["source"] = bool(task["compile"]["source"])
     task["execute"]["data"] = bool(task["execute"]["data"])
 
     logger.info("Decompressing all fields compressed by zlib of task %s." % id)
-    # Deal with zlib decompressed filed in compile section
-    task["compile"]["command"] = zlib.decompress(
-        task["compile"]["command"]
-    ).decode("utf-8") if task["compile"]["command"] else ""
+    # Deal with zlib decompressed field in compile section
+    task["compile"]["command"] = decompress_and_truncate(task["compile"]["command"])
 
-    # Deal with zlib decompressed filed in execute section
-    task["execute"]["input"] = zlib.decompress(
-        task["execute"]["input"]
-    ).decode("utf-8") if task["execute"]["input"] else ""
-    task["execute"]["command"] = zlib.decompress(
-        task["execute"]["command"]
-    ).decode("utf-8") if task["execute"]["command"] else ""
-    task["execute"]["standard"] = zlib.decompress(
-        task["execute"]["standard"]
-    ).decode("utf-8") if task["execute"]["standard"] else ""
+    # Deal with zlib decompressed field in execute section
+    task["execute"]["input"] = decompress_and_truncate(task["execute"]["input"])
+    task["execute"]["command"] = decompress_and_truncate(task["execute"]["command"])
+    task["execute"]["standard"] = decompress_and_truncate(task["execute"]["standard"])
 
-    # Deal with zlib decompressed filed in result section
+    # Deal with zlib decompressed field in result section
     if task["result"]:
-        task["result"]["compile_output"] = zlib.decompress(
-            task["result"]["compile_output"]
-        ).decode("utf-8") if task["result"]["compile_output"] else ""
-        task["result"]["compile_error"] = zlib.decompress(
-            task["result"]["compile_error"]
-        ).decode("utf-8") if task["result"]["compile_error"] else ""
-        task["result"]["execute_output"] = zlib.decompress(
-            task["result"]["execute_output"]
-        ).decode("utf-8") if task["result"]["execute_output"] else ""
-        task["result"]["execute_error"] = zlib.decompress(
-            task["result"]["execute_error"]
-        ).decode("utf-8") if task["result"]["execute_error"] else ""
+        task["result"]["compile_output"] = decompress_and_truncate(task["result"]["compile_output"])
+        task["result"]["compile_error"] = decompress_and_truncate(task["result"]["compile_error"])
+        task["result"]["execute_output"] = decompress_and_truncate(task["result"]["execute_output"])
+        task["result"]["execute_error"] = decompress_and_truncate(task["result"]["execute_error"])
 
     # Deal with time section
     task["add_time"] = "" if not task["add_time"] else task["add_time"].isoformat()

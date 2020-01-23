@@ -149,11 +149,16 @@ def execute(id):
         res = task["process"].wait(task["compile"]["timeout"])
         success = res == 0
         logger.info("Compiled task %s with exit code %d." % (task["id"], res))
-    except:
-        logger.warning("Exceeded time limit when compiling task %d." % task["id"], exc_info=True)
-        # If timeout, kill and wait for the subprocess
+    except Exception as e:
+        # Check if it is timed out or something else happened
+        if isinstance(e, subprocess.TimeoutExpired):
+            logger.warning("Exceeded time limit when compiling task %s." % task["id"], exc_info=True)
+            task["result"]["compile_error"] = zlib.compress(b"Compile time out.")
+        else:
+            logger.error("Failed to finish compilation of task %s." % task["id"], exc_info=True)
+            task["result"]["compile_error"] = zlib.compress(b"Unknown error.")
+        # Kill and wait for the subprocess
         success = False
-        task["result"]["compile_error"] = zlib.compress(b"Compile time out.")
         task["process"].kill()
         task["process"].wait()
 
@@ -215,11 +220,16 @@ def execute(id):
         res = task["process"].wait(task["execute"]["timeout"])
         success = res == 0
         logger.info("Run task %s with exit code %d." % (task["id"], res))
-    except:
-        logger.warning("Exceeded time limit when running task %s." % task["id"], exc_info=True)
-        # If timeout, kill and wait for the subprocess
+    except Exception as e:
+        # Check if it is timed out or something else happened
+        if isinstance(e, subprocess.TimeoutExpired):
+            logger.warning("Exceeded time limit when running task %s." % task["id"], exc_info=True)
+            task["result"]["execute_error"] = zlib.compress(b"Execution time out.")
+        else:
+            logger.error("Failed to finish execution of task %s." % task["id"], exc_info=True)
+            task["result"]["execute_error"] = zlib.compress(b"Unknown error.")
+        # Kill and wait for the subprocess
         success = False
-        task["result"]["execute_error"] = zlib.compress(b"Execution time out.")
         task["process"].kill()
         task["process"].wait()
 
@@ -407,7 +417,7 @@ if __name__ == "__main__":
                     # Handle newly assigned
                     logger.info("Checking tasks to be assigned.")
                     for t in assign:
-                        logger.info("Assigned task %s." % t)
+                        logger.info("Assigned task %s." % t["id"])
 
                         tasks[t["id"]] = t
                         tasks[t["id"]]["process"] = None

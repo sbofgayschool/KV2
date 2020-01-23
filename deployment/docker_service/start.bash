@@ -2,32 +2,50 @@
 
 KHALA='comradestukov/khala:v0.1'
 
+NETWORK='khala'
+
 JUDICATOR='judicator'
 EXECUTOR='executor'
 GATEWAY='gateway'
 
 COOL_DOWN_TIME="25"
 
-if [[ $# != 3 ]]; then
-    echo "USAGE: $0 judicator-number gateway-number executor-number"
+if [[ $# < 3 ]] || [[ $# > 4 ]]; then
+    echo "USAGE: $0 judicator-number gateway-number executor-number [--output-log]"
     exit 1
 fi
 
-if [[ $1 = "0" ]]; then
-    echo "judicator-number cannot be 0"
-    exit 1
+if [[ $# == 4 ]] && [[ $4 == "--output-log" ]]; then
+    JUDICATOR_PRINT_FLAG="--boot-print-log --etcd-print-log --mongodb-print-log --main-print-log"
+    GATEWAY_PRINT_FLAG="--boot-print-log --etcd-print-log --uwsgi-print-log"
+    EXECUTOR_PRINT_FLAG="--boot-print-log --etcd-print-log --main-print-log"
+else
+    JUDICATOR_PRINT_FLAG=""
+    GATEWAY_PRINT_FLAG=""
+    EXECUTOR_PRINT_FLAG=""
 fi
 
 echo "============================"
 echo "Creating following services:"
-echo "$JUDICATOR : $1"
-echo "$GATEWAY : $2"
-echo "$EXECUTOR : $3"
+echo "$JUDICATOR : $1 $JUDICATOR_PRINT_FLAG"
+echo "$GATEWAY : $2 $GATEWAY_PRINT_FLAG"
+echo "$EXECUTOR : $3 $EXECUTOR_PRINT_FLAG"
 echo "============================"
 echo ""
 
 echo "============================"
-echo "Creating first service $JUDICATOR."
+echo "Creating network."
+echo "============================"
+echo ""
+if [[ `docker network ls --filter="name=$NETWORK" -q` == "" ]]; then
+    docker network create -d overlay --attachable khala
+else
+    echo "Network $NETWORK already exists."
+fi
+
+echo ""
+echo "============================"
+echo "Creating first $JUDICATOR service."
 echo "============================"
 echo ""
 
@@ -35,14 +53,11 @@ docker service create \
 --stop-grace-period=30s \
 --replicas 1 \
 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
---network khala \
+--network $NETWORK \
 --env NAME={{.Service.Name}}.{{.Task.Slot}} \
 --name $JUDICATOR $KHALA judicator \
 --docker-sock=unix:///var/run/docker.sock \
---boot-print-log \
---etcd-print-log \
---mongodb-print-log \
---main-print-log \
+$JUDICATOR_PRINT_FLAG \
 --etcd-cluster-join-service=$JUDICATOR \
 --etcd-advertise-address=DOCKER \
 --mongodb-advertise-address=DOCKER \
@@ -51,6 +66,7 @@ docker service create \
 --mongodb-name=ENV \
 --main-name=ENV
 
+echo ""
 echo "============================"
 echo "Scaling service $JUDICATOR to $1."
 echo "============================"
@@ -69,13 +85,11 @@ if [[ $2 != "0" ]]; then
     --stop-grace-period=30s \
     --replicas $2 \
     --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
-    --network khala -p 7000:7000 \
+    --network $NETWORK -p 7000:7000 \
     --env NAME={{.Service.Name}}.{{.Task.Slot}} \
     --name $GATEWAY $KHALA gateway \
     --docker-sock=unix:///var/run/docker.sock \
-    --boot-print-log \
-    --etcd-print-log \
-    --uwsgi-print-log \
+    $GATEWAY_PRINT_FLAG \
     --etcd-cluster-join-service=$JUDICATOR \
     --etcd-name=ENV
 fi
@@ -91,13 +105,11 @@ if [[ $3 != "0" ]]; then
     --stop-grace-period=30s \
     --replicas $3 \
     --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
-    --network khala \
+    --network $NETWORK \
     --env NAME={{.Service.Name}}.{{.Task.Slot}} \
     --name $EXECUTOR $KHALA executor \
     --docker-sock=unix:///var/run/docker.sock \
-    --boot-print-log \
-    --etcd-print-log \
-    --main-print-log \
+    $EXECUTOR_PRINT_FLAG \
     --etcd-cluster-join-service=$JUDICATOR \
     --etcd-name=ENV \
     --main-name=ENV

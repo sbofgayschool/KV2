@@ -445,7 +445,7 @@ class RPCService:
             transform_id(task)
             assign_list.append(generate(task))
             vacant = vacant - 1
-            self.logger.info("Assigned Task %s to executor %s." % (task, executor))
+            self.logger.info("Assigned Task %s to executor %s." % (task["id"], executor))
 
         return ReportReturn(ReturnCode.OK, delete_list, assign_list)
 
