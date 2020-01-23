@@ -101,7 +101,7 @@ if __name__ == "__main__":
             for x in sorted(
                 client.tasks({"service": config["etcd"]["cluster"]["service"]}), key=lambda x: x["CreatedAt"]
             )
-            if x["Status"]["State"] == "running"
+            if x["Status"]["State"] == "running" and x["DesiredState"] == "running"
         ]
         # Delete local etcd from the list
         try:
