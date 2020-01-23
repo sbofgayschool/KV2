@@ -1,6 +1,7 @@
+# Todo list
+This file contains todo list for the whole project.
+
 ## Short Term
-- Necessary tests on VM of Doc IC.
-- Build and upload the v0.1 image on docker host.
 - Add full documents, majorly about usage and maintenance, but also should also have something about source code.
 - A python based proxy for Khala on VM of Doc IC (Small Independent Project).
 
@@ -12,7 +13,6 @@
 - Add form validation for gateway, both backend and frontend.
 - Add comments on webpage javascript.
 - Add argument helper string in all boot.py.
-- Add **/test to .dockerignore.
 - Add an argument indicating if the name can be get from the environment variable name.
 - When add a member to etcd cluster, check if a previous member with same name exists.
 - Add registration of mongodb name-address pair on etcd, and remove exit mechanism.
@@ -23,6 +23,8 @@ This can be tested on VM of DoC IC.
 - Write one-shot scripts to install the whole thing,
 including docker (on both local and remote computer), docker service initialize, cluster initialize, etc.
 - Formalize logs.
+- Necessary tests on VM of Doc IC.
+- Build and upload the v0.1 image on docker host.
 
 ## Long Term
 - <b>Security issue:</b> Find out a way to completely isolate all single tasks

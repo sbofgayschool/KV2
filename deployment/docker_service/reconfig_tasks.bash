@@ -10,7 +10,7 @@ Possible Service:\n\
 fi
 
 tasks=`docker service ps -q --filter "desired-state=running" $1`
-if [[ $tasks == "no such service"* ]]; then
+if [[ $tasks == "" ]]; then
     echo "Service $1 not found."
     exit 1
 fi
