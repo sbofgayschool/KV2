@@ -66,13 +66,14 @@ $JUDICATOR_PRINT_FLAG \
 --mongodb-name=ENV \
 --main-name=ENV
 
-echo ""
-echo "============================"
-echo "Scaling service $JUDICATOR to $1."
-echo "============================"
-echo ""
-
-docker service scale $JUDICATOR=$1
+if [[ $1 != "1" ]]; then
+    echo ""
+    echo "============================"
+    echo "Scaling service $JUDICATOR to $1."
+    echo "============================"
+    echo ""
+    docker service scale $JUDICATOR=$1
+fi
 
 if [[ $2 != "0" ]]; then
     echo ""

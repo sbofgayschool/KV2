@@ -287,7 +287,7 @@ def api_task_get():
             mimetype=mimetype
         )
 
-    # Deal with sip field
+    # Deal with zip field
     task["compile"]["source"] = bool(task["compile"]["source"])
     task["execute"]["data"] = bool(task["execute"]["data"])
 

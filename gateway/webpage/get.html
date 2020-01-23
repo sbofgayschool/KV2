@@ -5,7 +5,7 @@
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1>View Tast</h1>
+                <h1>View Task</h1>
             </div>
             <div class="col-sm-6">
                 <ol class="breadcrumb float-sm-right">
@@ -45,13 +45,13 @@
                                 </tr>
                                 <tr v-if="data.compile.source">
                                     <td>Compile Source</td>
-                                    <td><a v-bind:href="'api/task?id='+data.id+'&file=compile_source'">Download</a></td>
+                                    <td><a class="btn btn-xs btn-info" v-bind:href="'api/task?id='+data.id+'&file=compile_source'">Download</a></td>
                                 </tr>
                                 <tr>
                                     <td>Compile Command</td>
-                                    <td style="white-space: pre-wrap;">
+                                    <td style="white-space: pre-wrap; word-wrap: break-word; word-break: break-all;">
                                         <span>{{data.compile.command}}</span>
-                                        <span v-if="data.compile.command"><br><a v-bind:href="'api/task?id='+data.id+'&file=compile_command'">Download</a></span>
+                                        <span v-if="data.compile.command"><a class="btn btn-xs btn-info" v-bind:href="'api/task?id='+data.id+'&file=compile_command'">Download</a></span>
                                     </td>
                                 </tr>
                                 <tr>
@@ -60,20 +60,20 @@
                                 </tr>
                                 <tr>
                                     <td>Execute Input</td>
-                                    <td style="white-space: pre-wrap;">
+                                    <td style="white-space: pre-wrap; word-wrap: break-word; word-break: break-all;">
                                         <span>{{data.execute.input}}</span>
-                                        <span v-if="data.execute.input"><br><a v-bind:href="'api/task?id='+data.id+'&file=execute_input'">Download</a></span>
+                                        <span v-if="data.execute.input"><a class="btn btn-xs btn-info" v-bind:href="'api/task?id='+data.id+'&file=execute_input'">Download</a></span>
                                     </td>
                                 </tr>
                                 <tr v-if="data.execute.data">
                                     <td>Execute Data</td>
-                                    <td><a v-bind:href="'api/task?id='+data.id+'&file=execute_data'">Download</a></td>
+                                    <td><a class="btn btn-xs btn-info" v-bind:href="'api/task?id='+data.id+'&file=execute_data'">Download</a></td>
                                 </tr>
                                 <tr>
                                     <td>Execute Command</td>
-                                    <td style="white-space: pre-wrap;">
+                                    <td style="white-space: pre-wrap; word-wrap: break-word; word-break: break-all;">
                                         <span>{{data.execute.command}}</span>
-                                        <span v-if="data.execute.command"><br><a v-bind:href="'api/task?id='+data.id+'&file=execute_command'">Download</a></span>
+                                        <span v-if="data.execute.command"><a class="btn btn-xs btn-info" v-bind:href="'api/task?id='+data.id+'&file=execute_command'">Download</a></span>
                                     </td>
                                 </tr>
                                 <tr>
@@ -82,9 +82,9 @@
                                 </tr>
                                 <tr>
                                     <td>Execute Standard</td>
-                                    <td style="white-space: pre-wrap;">
+                                    <td style="white-space: pre-wrap; word-wrap: break-word; word-break: break-all;">
                                         <span>{{data.execute.standard}}</span>
-                                        <span v-if="data.execute.standard"><br><a v-bind:href="'api/task?id='+data.id+'&file=execute_standard'">Download</a></span>
+                                        <span v-if="data.execute.standard"><a class="btn btn-xs btn-info" v-bind:href="'api/task?id='+data.id+'&file=execute_standard'">Download</a></span>
                                     </td>
                                 </tr>
                                 <tr>
@@ -113,30 +113,30 @@
                                 </tr>
                                 <tr v-if="data.result">
                                     <td>Compile Output</td>
-                                    <td style="white-space: pre-wrap;">
+                                    <td style="white-space: pre-wrap; word-wrap: break-word; word-break: break-all;">
                                         <span>{{data.result.compile_output}}</span>
-                                        <span v-if="data.result.compile_output"><br><a v-bind:href="'api/task?id='+data.id+'&file=compile_output'">Download</a></span>
+                                        <span v-if="data.result.compile_output"><a class="btn btn-xs btn-info" v-bind:href="'api/task?id='+data.id+'&file=compile_output'">Download</a></span>
                                     </td>
                                 </tr>
                                 <tr v-if="data.result">
                                     <td>Compile Error</td>
-                                    <td style="white-space: pre-wrap;">
+                                    <td style="white-space: pre-wrap; word-wrap: break-word; word-break: break-all;">
                                         <span>{{data.result.compile_error}}</span>
-                                        <span v-if="data.result.compile_error"><br><a v-bind:href="'api/task?id='+data.id+'&file=compile_error'">Download</a></span>
+                                        <span v-if="data.result.compile_error"><a class="btn btn-xs btn-info" v-bind:href="'api/task?id='+data.id+'&file=compile_error'">Download</a></span>
                                     </td>
                                 </tr>
                                 <tr v-if="data.result">
                                     <td>Execute Output</td>
-                                    <td style="white-space: pre-wrap;">
+                                    <td style="white-space: pre-wrap; word-wrap: break-word; word-break: break-all;">
                                         <span>{{data.result.execute_output}}</span>
-                                        <span v-if="data.result.execute_output"><br><a v-bind:href="'api/task?id='+data.id+'&file=execute_output'">Download</a></span>
+                                        <span v-if="data.result.execute_output"><a class="btn btn-xs btn-info" v-bind:href="'api/task?id='+data.id+'&file=execute_output'">Download</a></span>
                                     </td>
                                 </tr>
                                 <tr v-if="data.result">
                                     <td>Execute Error</td>
-                                    <td style="white-space: pre-wrap;">
+                                    <td style="white-space: pre-wrap; word-wrap: break-word; word-break: break-all;">
                                         <span>{{data.result.execute_error}}</span>
-                                        <span v-if="data.result.execute_error"><br><a v-bind:href="'api/task?id='+data.id+'&file=execute_error'">Download</a></span>
+                                        <span v-if="data.result.execute_error"><a class="btn btn-xs btn-info" v-bind:href="'api/task?id='+data.id+'&file=execute_error'">Download</a></span>
                                     </td>
                                 </tr>
                             </tbody>
