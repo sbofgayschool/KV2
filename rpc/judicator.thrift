@@ -87,11 +87,11 @@ struct ExecutorsReturn {
 
 service Judicator {
     ReturnCode ping();
-    AddReturn add(Task task);
-    ReturnCode cancel(string id);
-    SearchReturn search(string id, i32 user, string start_time, string end_time, bool old_to_new, i32 limit, i32 page);
-    GetReturn get(string id);
-    ReportReturn report(string executor, list<Task> complete, list<TaskBrief> executing, i32 vacant);
+    AddReturn add(1: Task task);
+    ReturnCode cancel(1: string id);
+    SearchReturn search(1: string id, 2:i32 user, 3: string start_time, 4: string end_time, 5: bool old_to_new, 6: i32 limit, 7: i32 page);
+    GetReturn get(1: string id);
+    ReportReturn report(1: string executor, 2: list<Task> complete, 3: list<TaskBrief> executing, 4: i32 vacant);
 
     ExecutorsReturn executors();
 }

@@ -202,13 +202,3 @@ def generate_local_mongodb_proxy(config, local_etcd, logger):
         local_etcd,
         logger
     )
-
-def transform_id(f):
-    """
-    Transform the _id (ObjectId) field to a id field (String) inside a json
-    :param f: The json object
-    :return: None
-    """
-    f["id"] = str(f["_id"])
-    del f["_id"]
-    return

@@ -2,9 +2,7 @@
 
 __author__ = "chenty"
 
-from jsoncomment import JsonComment
-json = JsonComment()
-
+import json
 import os
 from os.path import join
 import shutil
@@ -16,28 +14,40 @@ import subprocess
 
 from rpc.judicator_rpc.ttypes import ReturnCode
 
-from utility.function import get_logger, try_with_times, check_empty_dir, check_task_dict_size
-from utility.etcd import generate_local_etcd_proxy
+from utility.function import get_logger, try_with_times, check_empty_dir
+from utility.task import TASK_STATUS, check_task_dict_size
+from utility.etcd.proxy import generate_local_etcd_proxy
 from utility.rpc import extract, generate, select_from_etcd_and_call
-from utility.define import TASK_STATUS
 
 
-def change_user():
+# Global dictionary for all tasks
+tasks = {}
+# The lock for the dictionary
+lock = threading.Lock()
+
+def change_user(config):
     """
-    Change user of subprocess according to given configuration
-    :return: None
+    A wrapper for changing user of subprocess according to given configuration
+    :param config: The configuration json
+    :return: Wrapped function
     """
-    os.setgid(config["task"]["user"]["gid"])
-    os.setuid(config["task"]["user"]["uid"])
-    return
+    def change():
+        os.setgid(config["task"]["user"]["gid"])
+        os.setuid(config["task"]["user"]["uid"])
+        return
+    return change
 
-def execute(id):
+def execute(id, config, logger):
     """
     Target function for execute daemon threads
     Execute a job
     :param id: Job id
+    :param config: Configuration json
+    :param logger: The logger object
     :return: None
     """
+    global tasks, lock
+
     logger.info("Working thread for task %s started." % id)
     # Get the specified task
     task = tasks[id]
@@ -129,7 +139,7 @@ def execute(id):
                     stdout=ostream,
                     stderr=estream,
                     cwd=source_dir,
-                    preexec_fn=change_user
+                    preexec_fn=change_user(config)
                 )
         else:
             task["done"] = True
@@ -196,7 +206,7 @@ def execute(id):
                     stdout=ostream,
                     stderr=estream,
                     cwd=source_dir,
-                    preexec_fn=change_user
+                    preexec_fn=change_user(config)
                 )
     except:
         logger.error("Failed to collect compilation result or run task %s." % task["id"], exc_info=True)
@@ -268,12 +278,15 @@ def execute(id):
 
     return
 
-def report(complete, executing, vacant):
+def report(complete, executing, vacant, local_etcd, config, logger):
     """
     Get the address of a judicator and report the tasks status
     :param complete: Complete task list
     :param executing: Executing task list
     :param vacant: Vacant task places
+    :param local_etcd: Proxy of local etcd
+    :param config: Configuration json
+    :param logger: Logger object
     :return: Tuple contain RPC report return
     """
     res = select_from_etcd_and_call(
@@ -290,9 +303,16 @@ def report(complete, executing, vacant):
         raise Exception("Return code from judicator is not 0 but %d." % res.result)
     return res.cancel, res.assign
 
-if __name__ == "__main__":
+def run(module_name="Executor", etcd_conf_path="config/etcd.json", main_conf_path="config/main.json"):
+    """
+    Load config and run executor main program
+    :param module_name: Name of the caller module
+    :param etcd_conf_path: Path to etcd config file
+    :param main_conf_path: Path to main config file
+    :return: None
+    """
     # Load configuration
-    with open("config/main.json", "r") as f:
+    with open(main_conf_path, "r") as f:
         config = json.load(f)
     retry_times = config["retry"]["times"]
     retry_interval = config["retry"]["interval"]
@@ -306,10 +326,10 @@ if __name__ == "__main__":
         )
     else:
         logger = get_logger("main", None, None)
-    logger.info("Executor main program started.")
+    logger.info("%s main program started." % module_name)
 
     # Generate proxy for local etcd
-    with open("config/etcd.json", "r") as f:
+    with open(etcd_conf_path, "r") as f:
         local_etcd = generate_local_etcd_proxy(json.load(f)["etcd"], logger)
 
     # Check whether the data dir of main is empty
@@ -324,9 +344,6 @@ if __name__ == "__main__":
     if "user" not in config["task"]:
         config["task"]["user"] = {"uid": os.getuid(), "gid": os.getgid()}
     logger.info("Task execution uid: %d, gid: %d." % (config["task"]["user"]["uid"], config["task"]["user"]["gid"]))
-
-    tasks = {}
-    lock = threading.Lock()
 
     # Report tasks execution status regularly
     logger.info("Starting executor routines.")
@@ -371,7 +388,10 @@ if __name__ == "__main__":
                 report,
                 complete,
                 executing,
-                vacant
+                vacant,
+                local_etcd,
+                config,
+                logger
             )
             if not success:
                 logger.error("Failed to report to judicator. Skipping tasks update.")
@@ -424,7 +444,7 @@ if __name__ == "__main__":
                         tasks[t["id"]]["cancel"] = False
 
                         # Generate a thread and start it
-                        tasks[t["id"]]["thread"] = threading.Thread(target=execute, args=(t["id"], ))
+                        tasks[t["id"]]["thread"] = threading.Thread(target=execute, args=(t["id"], config, logger))
                         tasks[t["id"]]["thread"].setDaemon(True)
                         tasks[t["id"]]["thread"].start()
                 except:
@@ -441,4 +461,8 @@ if __name__ == "__main__":
             logger.info("Received SIGINT.")
             break
 
-    logger.info("Executor main program exiting.")
+    logger.info("%s main program exiting." % module_name)
+
+
+if __name__ == "__main__":
+    run()

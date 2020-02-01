@@ -634,7 +634,7 @@ class add_args(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
-            if fid == -1:
+            if fid == 1:
                 if ftype == TType.STRUCT:
                     self.task = Task()
                     self.task.read(iprot)
@@ -651,7 +651,7 @@ class add_args(object):
             return
         oprot.writeStructBegin('add_args')
         if self.task is not None:
-            oprot.writeFieldBegin('task', TType.STRUCT, -1)
+            oprot.writeFieldBegin('task', TType.STRUCT, 1)
             self.task.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -671,7 +671,10 @@ class add_args(object):
     def __ne__(self, other):
         return not (self == other)
 all_structs.append(add_args)
-add_args.thrift_spec = ()
+add_args.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'task', [Task, None], None, ),  # 1
+)
 
 
 class add_result(object):
@@ -756,7 +759,7 @@ class cancel_args(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
-            if fid == -1:
+            if fid == 1:
                 if ftype == TType.STRING:
                     self.id = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
@@ -772,7 +775,7 @@ class cancel_args(object):
             return
         oprot.writeStructBegin('cancel_args')
         if self.id is not None:
-            oprot.writeFieldBegin('id', TType.STRING, -1)
+            oprot.writeFieldBegin('id', TType.STRING, 1)
             oprot.writeString(self.id.encode('utf-8') if sys.version_info[0] == 2 else self.id)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -792,7 +795,10 @@ class cancel_args(object):
     def __ne__(self, other):
         return not (self == other)
 all_structs.append(cancel_args)
-cancel_args.thrift_spec = ()
+cancel_args.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'id', 'UTF8', None, ),  # 1
+)
 
 
 class cancel_result(object):
@@ -888,37 +894,37 @@ class search_args(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
-            if fid == -1:
+            if fid == 1:
                 if ftype == TType.STRING:
                     self.id = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
-            elif fid == -2:
+            elif fid == 2:
                 if ftype == TType.I32:
                     self.user = iprot.readI32()
                 else:
                     iprot.skip(ftype)
-            elif fid == -3:
+            elif fid == 3:
                 if ftype == TType.STRING:
                     self.start_time = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
-            elif fid == -4:
+            elif fid == 4:
                 if ftype == TType.STRING:
                     self.end_time = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
-            elif fid == -5:
+            elif fid == 5:
                 if ftype == TType.BOOL:
                     self.old_to_new = iprot.readBool()
                 else:
                     iprot.skip(ftype)
-            elif fid == -6:
+            elif fid == 6:
                 if ftype == TType.I32:
                     self.limit = iprot.readI32()
                 else:
                     iprot.skip(ftype)
-            elif fid == -7:
+            elif fid == 7:
                 if ftype == TType.I32:
                     self.page = iprot.readI32()
                 else:
@@ -933,33 +939,33 @@ class search_args(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('search_args')
-        if self.page is not None:
-            oprot.writeFieldBegin('page', TType.I32, -7)
-            oprot.writeI32(self.page)
-            oprot.writeFieldEnd()
-        if self.limit is not None:
-            oprot.writeFieldBegin('limit', TType.I32, -6)
-            oprot.writeI32(self.limit)
-            oprot.writeFieldEnd()
-        if self.old_to_new is not None:
-            oprot.writeFieldBegin('old_to_new', TType.BOOL, -5)
-            oprot.writeBool(self.old_to_new)
-            oprot.writeFieldEnd()
-        if self.end_time is not None:
-            oprot.writeFieldBegin('end_time', TType.STRING, -4)
-            oprot.writeString(self.end_time.encode('utf-8') if sys.version_info[0] == 2 else self.end_time)
-            oprot.writeFieldEnd()
-        if self.start_time is not None:
-            oprot.writeFieldBegin('start_time', TType.STRING, -3)
-            oprot.writeString(self.start_time.encode('utf-8') if sys.version_info[0] == 2 else self.start_time)
+        if self.id is not None:
+            oprot.writeFieldBegin('id', TType.STRING, 1)
+            oprot.writeString(self.id.encode('utf-8') if sys.version_info[0] == 2 else self.id)
             oprot.writeFieldEnd()
         if self.user is not None:
-            oprot.writeFieldBegin('user', TType.I32, -2)
+            oprot.writeFieldBegin('user', TType.I32, 2)
             oprot.writeI32(self.user)
             oprot.writeFieldEnd()
-        if self.id is not None:
-            oprot.writeFieldBegin('id', TType.STRING, -1)
-            oprot.writeString(self.id.encode('utf-8') if sys.version_info[0] == 2 else self.id)
+        if self.start_time is not None:
+            oprot.writeFieldBegin('start_time', TType.STRING, 3)
+            oprot.writeString(self.start_time.encode('utf-8') if sys.version_info[0] == 2 else self.start_time)
+            oprot.writeFieldEnd()
+        if self.end_time is not None:
+            oprot.writeFieldBegin('end_time', TType.STRING, 4)
+            oprot.writeString(self.end_time.encode('utf-8') if sys.version_info[0] == 2 else self.end_time)
+            oprot.writeFieldEnd()
+        if self.old_to_new is not None:
+            oprot.writeFieldBegin('old_to_new', TType.BOOL, 5)
+            oprot.writeBool(self.old_to_new)
+            oprot.writeFieldEnd()
+        if self.limit is not None:
+            oprot.writeFieldBegin('limit', TType.I32, 6)
+            oprot.writeI32(self.limit)
+            oprot.writeFieldEnd()
+        if self.page is not None:
+            oprot.writeFieldBegin('page', TType.I32, 7)
+            oprot.writeI32(self.page)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -978,7 +984,16 @@ class search_args(object):
     def __ne__(self, other):
         return not (self == other)
 all_structs.append(search_args)
-search_args.thrift_spec = ()
+search_args.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'id', 'UTF8', None, ),  # 1
+    (2, TType.I32, 'user', None, None, ),  # 2
+    (3, TType.STRING, 'start_time', 'UTF8', None, ),  # 3
+    (4, TType.STRING, 'end_time', 'UTF8', None, ),  # 4
+    (5, TType.BOOL, 'old_to_new', None, None, ),  # 5
+    (6, TType.I32, 'limit', None, None, ),  # 6
+    (7, TType.I32, 'page', None, None, ),  # 7
+)
 
 
 class search_result(object):
@@ -1063,7 +1078,7 @@ class get_args(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
-            if fid == -1:
+            if fid == 1:
                 if ftype == TType.STRING:
                     self.id = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
@@ -1079,7 +1094,7 @@ class get_args(object):
             return
         oprot.writeStructBegin('get_args')
         if self.id is not None:
-            oprot.writeFieldBegin('id', TType.STRING, -1)
+            oprot.writeFieldBegin('id', TType.STRING, 1)
             oprot.writeString(self.id.encode('utf-8') if sys.version_info[0] == 2 else self.id)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -1099,7 +1114,10 @@ class get_args(object):
     def __ne__(self, other):
         return not (self == other)
 all_structs.append(get_args)
-get_args.thrift_spec = ()
+get_args.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'id', 'UTF8', None, ),  # 1
+)
 
 
 class get_result(object):
@@ -1190,12 +1208,12 @@ class report_args(object):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
-            if fid == -1:
+            if fid == 1:
                 if ftype == TType.STRING:
                     self.executor = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
-            elif fid == -2:
+            elif fid == 2:
                 if ftype == TType.LIST:
                     self.complete = []
                     (_etype31, _size28) = iprot.readListBegin()
@@ -1206,7 +1224,7 @@ class report_args(object):
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
-            elif fid == -3:
+            elif fid == 3:
                 if ftype == TType.LIST:
                     self.executing = []
                     (_etype37, _size34) = iprot.readListBegin()
@@ -1217,7 +1235,7 @@ class report_args(object):
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
-            elif fid == -4:
+            elif fid == 4:
                 if ftype == TType.I32:
                     self.vacant = iprot.readI32()
                 else:
@@ -1232,27 +1250,27 @@ class report_args(object):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('report_args')
-        if self.vacant is not None:
-            oprot.writeFieldBegin('vacant', TType.I32, -4)
-            oprot.writeI32(self.vacant)
+        if self.executor is not None:
+            oprot.writeFieldBegin('executor', TType.STRING, 1)
+            oprot.writeString(self.executor.encode('utf-8') if sys.version_info[0] == 2 else self.executor)
             oprot.writeFieldEnd()
-        if self.executing is not None:
-            oprot.writeFieldBegin('executing', TType.LIST, -3)
-            oprot.writeListBegin(TType.STRUCT, len(self.executing))
-            for iter40 in self.executing:
+        if self.complete is not None:
+            oprot.writeFieldBegin('complete', TType.LIST, 2)
+            oprot.writeListBegin(TType.STRUCT, len(self.complete))
+            for iter40 in self.complete:
                 iter40.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
-        if self.complete is not None:
-            oprot.writeFieldBegin('complete', TType.LIST, -2)
-            oprot.writeListBegin(TType.STRUCT, len(self.complete))
-            for iter41 in self.complete:
+        if self.executing is not None:
+            oprot.writeFieldBegin('executing', TType.LIST, 3)
+            oprot.writeListBegin(TType.STRUCT, len(self.executing))
+            for iter41 in self.executing:
                 iter41.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
-        if self.executor is not None:
-            oprot.writeFieldBegin('executor', TType.STRING, -1)
-            oprot.writeString(self.executor.encode('utf-8') if sys.version_info[0] == 2 else self.executor)
+        if self.vacant is not None:
+            oprot.writeFieldBegin('vacant', TType.I32, 4)
+            oprot.writeI32(self.vacant)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1271,7 +1289,13 @@ class report_args(object):
     def __ne__(self, other):
         return not (self == other)
 all_structs.append(report_args)
-report_args.thrift_spec = ()
+report_args.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'executor', 'UTF8', None, ),  # 1
+    (2, TType.LIST, 'complete', (TType.STRUCT, [Task, None], False), None, ),  # 2
+    (3, TType.LIST, 'executing', (TType.STRUCT, [TaskBrief, None], False), None, ),  # 3
+    (4, TType.I32, 'vacant', None, None, ),  # 4
+)
 
 
 class report_result(object):
