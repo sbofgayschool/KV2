@@ -2,9 +2,7 @@
 
 __author__ = "chenty"
 
-from jsoncomment import JsonComment
-json = JsonComment()
-
+import json
 import datetime
 import threading
 import time
@@ -21,22 +19,33 @@ from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
-from utility.function import get_logger, try_with_times, check_id
-from utility.etcd import generate_local_etcd_proxy
-from utility.mongodb import generate_local_mongodb_proxy, transform_id
-from utility.define import TASK_STATUS
+from utility.function import get_logger, try_with_times
+from utility.etcd.proxy import generate_local_etcd_proxy
+from utility.mongodb.proxy import generate_local_mongodb_proxy
+from utility.task import check_id, transform_id, TASK_STATUS
 from utility.rpc import extract, generate
 
 
-def register():
+# Global bool indicating if the program is working
+working = True
+
+def register(config, local_etcd, local_mongodb, logger):
     """
     Target function for register thread
     Regularly register the rpc service address in etcd, and unregister before exiting
+    :param config: Configuration dictionary
+    :param local_etcd: Local etcd proxy
+    :param local_mongodb: Local mongodb proxy
+    :param logger: The logger
     :return: None
     """
     logger.info("Register thread started.")
+
+    retry_times = config["retry"]["times"]
+    retry_interval = config["retry"]["interval"]
     reg_key = urllib.parse.urljoin(config["register"]["etcd_path"], config["name"])
     reg_value = config["advertise"]["address"] + ":" + config["advertise"]["port"]
+
     while working:
         time.sleep(config["register"]["interval"])
         try:
@@ -62,11 +71,16 @@ def register():
     logger.info("Register thread terminating.")
     return
 
-def lead():
+def lead(config, local_etcd, local_mongodb, mongodb_task, mongodb_executor, logger):
     """
     Target function for lead thread
     Compete against others to be leader, and, if become the leader, do regular check of tasks and executors
-    :return: None
+    :param config: Configuration dictionary
+    :param local_etcd: Local etcd proxy
+    :param local_mongodb: Local mongodb proxy
+    :param mongodb_task: Mongodb collection of tasks
+    :param mongodb_executor: Mongodb collection of executors
+    :param logger: The logger
     """
     logger.info("Lead thread started.")
     while True:
@@ -419,7 +433,7 @@ class RPCService:
         # And set their status to retry, and also add them to delete list
         self.logger.info("Checking for unreported tasks.")
         while True:
-            task = mongodb_task.find_one_and_update(
+            task = self.mongodb_task.find_one_and_update(
                 {"_id": {"$nin": executing_list}, "done": False, "executor": executor},
                 {"$set": {"executor": None, "status": TASK_STATUS["RETRYING"]}}
             )
@@ -465,42 +479,52 @@ class RPCService:
         ]
         return ExecutorsReturn(ReturnCode.OK, executors)
 
-if __name__ == "__main__":
+def run(
+    module_name="Judicator",
+    etcd_conf_path="config/etcd.json",
+    mongodb_conf_path="config/mongodb.json",
+    main_conf_path="config/main.json"
+):
+    """
+    Load config and run judicator main program
+    :param module_name: Name of the caller module
+    :param etcd_conf_path: Path to etcd config file
+    :param mongodb_conf_path: Path to mongodb config file
+    :param main_conf_path: Path to main config file
+    :return: None
+    """
+    global working
+
     # Load configuration
-    with open("config/main.json", "r") as f:
+    with open(main_conf_path, "r") as f:
         config = json.load(f)
-    retry_times = config["retry"]["times"]
-    retry_interval = config["retry"]["interval"]
 
     # Generate logger
     if "log" in config:
-        logger = get_logger(
-            "main",
-            config["log"]["info"],
-            config["log"]["error"]
-        )
+        logger = get_logger("main", config["log"]["info"], config["log"]["error"])
     else:
         logger = get_logger("main", None, None)
-    logger.info("Judicator main program started.")
+    logger.info("%s main program started." % module_name)
 
     # Generate proxy for etcd and mongodb
-    with open("config/etcd.json", "r") as f:
+    with open(etcd_conf_path, "r") as f:
         local_etcd = generate_local_etcd_proxy(json.load(f)["etcd"], logger)
-    with open("config/mongodb.json", "r") as f:
+    with open(mongodb_conf_path, "r") as f:
         local_mongodb = generate_local_mongodb_proxy(json.load(f)["mongodb"], local_etcd, logger)
     # Get a connection to both task and executor collection in mongodb
     mongodb_task = local_mongodb.client[config["task"]["database"]][config["task"]["collection"]]
     mongodb_executor = local_mongodb.client[config["executor"]["database"]][config["executor"]["collection"]]
 
-    working = True
-
     # Create and start the register thread
-    register_thread = threading.Thread(target=register)
+    register_thread = threading.Thread(target=register, args=(config, local_etcd, local_mongodb, logger))
     register_thread.setDaemon(True)
     register_thread.start()
 
     # Create and start the
-    lead_thread = threading.Thread(target=lead)
+    lead_thread = threading.Thread(
+        target=lead,
+        args=(config, local_etcd, local_mongodb, mongodb_task, mongodb_executor, logger)
+    )
     lead_thread.setDaemon(True)
     lead_thread.start()
 
@@ -521,4 +545,9 @@ if __name__ == "__main__":
         register_thread.join()
     except:
         logger.error("Accidentally terminated.", exc_info=True)
-    logger.info("Judicator main program exiting.")
+
+    logger.info("%s main program exiting." % module_name)
+    return
+
+if __name__ == "__main__":
+    run()

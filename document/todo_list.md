@@ -2,6 +2,7 @@
 This file contains todo list for the whole project.
 
 ## Short Term
+- Add full tests.
 - Add full documents, majorly about usage and maintenance, but also should also have something about source code.
 
 #### Finished / Canceled:
@@ -13,7 +14,7 @@ This file contains todo list for the whole project.
 - Add comments on webpage javascript.
 - Add argument helper string in all boot.py.
 - Add an argument indicating if the name can be get from the environment variable name.
-- When add a member to etcd cluster, check if a previous member with same name exists.
+- When adding a member to etcd cluster, check if a previous member with same name exists.
 - Add registration of mongodb name-address pair on etcd, and remove exit mechanism.
 - Modify mongodb deletion mechanism to deleting all nodes exist in replica set but are not registered.
 - Check whether the registered value is correct before unregistering main, mongodb and etcd of judicator.
@@ -30,7 +31,7 @@ including docker (on both local and remote computer), docker service initialize,
 - <b>Security issue:</b> Find out a way to completely isolate all single tasks
 OR
 set a full limitation (CPU, memory, disk space, etc.) on all single tasks.
-- Reconstruct codes to avoid duplication, especially in boot.py and etcd_daemon.py
+- Refactor codes to avoid duplication, especially in boot.py and etcd_daemon.py
 - More strict check on input.
 - Make maintain.py be able to lock multiple pid files.
 - Add user functions (user register, login, etc.) and admin functions.

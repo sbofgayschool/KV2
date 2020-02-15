@@ -78,5 +78,6 @@ def run(module_name="Gateway", uwsgi_conf_path="config/uwsgi.json"):
         uwsgi_proc.kill()
     # Wait for the subprocess to prevent zombie process
     uwsgi_proc.wait()
+
     daemon_logger.info("%s uwsgi_daemon program exiting." % module_name)
     return

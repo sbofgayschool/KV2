@@ -8,15 +8,21 @@ import threading
 import os
 import shutil
 import docker
+import socket
 
-from utility.function import get_logger, log_output, check_empty_dir, try_with_times
+from utility.function import get_logger, log_output, check_empty_dir, try_with_times, transform_address
 from utility.etcd.proxy import etcd_generate_run_command, generate_local_etcd_proxy, EtcdProxy
 
 
-def check(retry_times, retry_interval, daemon_logger, etcd_proc, local_etcd):
+def check(retry_times, retry_interval, etcd_proc, local_etcd, daemon_logger):
     """
     Target function of check thread
     Check the status of local etcd instance
+    :param retry_times: Chances of retry
+    :param retry_interval: Time interval between retry
+    :param etcd_proc: Etcd process object
+    :param local_etcd: Local Etcd proxy
+    :param daemon_logger: The logger
     :return: Result code
     """
     daemon_logger.info("Check thread started.")
@@ -208,4 +214,132 @@ def run(module_name, etcd_conf_path="config/etcd.json"):
         etcd_proc.kill()
     # Wait for the subprocess to prevent zombie process
     etcd_proc.wait()
+
     daemon_logger.info("%s etcd_daemon program exiting." % module_name)
+    return
+
+def terminal_command(parser, fixed_address=False, join_only=True):
+    parser.add_argument("--docker-sock", dest="docker_sock", default=None,
+                        help="Path to mapped docker sock file")
+    parser.add_argument("--retry-times", type=int, dest="retry_times", default=None,
+                        help="Total retry time of key operations")
+    parser.add_argument("--retry-interval", type=int, dest="retry_interval", default=None,
+                        help="Interval between retries of key operations")
+
+    parser.add_argument("--boot-check-interval", type=int, dest="boot_check_interval", default=None,
+                        help="Interval between services check in boot module")
+    parser.add_argument("--boot-print-log", dest="boot_print_log", action="store_const", const=True, default=False,
+                        help="Print the log of boot module to stdout")
+
+    parser.add_argument("--etcd-exe", dest="etcd_exe", default=None,
+                        help="Path to etcd executable file")
+    parser.add_argument("--etcd-name", dest="etcd_name", default=None,
+                        help="Name of the etcd node")
+    parser.add_argument("--etcd-proxy", dest="etcd_proxy", default=None,
+                        help="If etcd node should be in proxy mode")
+    parser.add_argument("--etcd-strict-reconfig", dest="etcd_strict_reconfig", action="store_const",
+                        const=True, default=None, help="If the etcd should be in strict reconfig mode")
+    if not fixed_address:
+        parser.add_argument("--etcd-listen-address", dest="etcd_listen_address", default=None,
+                            help="Listen address of the etcd node, default is 0.0.0.0")
+    parser.add_argument("--etcd-listen-peer-port", type=int, dest="etcd_listen_peer_port", default=None,
+                        help="Listen peer port of the etcd node, default is 2000")
+    parser.add_argument("--etcd-listen-client-port", type=int, dest="etcd_listen_client_port", default=None,
+                        help="Listen client port of the etcd node, default is 2001")
+    if not fixed_address:
+        parser.add_argument("--etcd-advertise-address", dest="etcd_advertise_address", default=None,
+                            help="Advertise address of the etcd node, default is localhost")
+    parser.add_argument("--etcd-advertise-peer-port", dest="etcd_advertise_peer_port", default=None,
+                        help="Advertise peer port of the etcd node, default is 2000")
+    parser.add_argument("--etcd-advertise-client-port", dest="etcd_advertise_client_port", default=None,
+                        help="Advertise client port of the etcd node, default is 2001")
+    parser.add_argument("--etcd-cluster-init-discovery", dest="etcd_cluster_init_discovery", default=None,
+                        help="Discovery token url of etcd node")
+    if not join_only:
+        parser.add_argument("--etcd-cluster-init-member", dest="etcd_cluster_init_member", default=None,
+                            help="Name-url pairs used for initialized of etcd node")
+        parser.add_argument("--etcd-cluster-init-independent", dest="etcd_cluster_init_independent",
+                            action="store_const", const=True, default=None,
+                            help="If the etcd node is going to be the only member of the cluster")
+    parser.add_argument("--etcd-cluster-join-member-client", dest="etcd_cluster_join_member_client", default=None,
+                        help="Client url of a member of the cluster which this etcd node is going to join")
+    parser.add_argument("--etcd-cluster-join-service", dest="etcd_cluster_join_service", default=None,
+                        help="Service name if the etcd is going to use docker swarm and dns to auto detect members")
+    parser.add_argument("--etcd-cluster-join-service-port", dest="etcd_cluster_join_service_port", default=None,
+                        help="Etcd client port used for auto detection, default is 2001")
+    parser.add_argument("--etcd-print-log", dest="etcd_print_log", action="store_const", const=True, default=False,
+                        help="Print the log of etcd module to stdout")
+
+    def conf_generator(args, config_sub, client, services, start_list):
+        if args.retry_times is not None:
+            config_sub["daemon"]["retry"]["times"] = args.retry_times
+        if args.retry_interval is not None:
+            config_sub["daemon"]["retry"]["interval"] = args.retry_interval
+        if args.etcd_exe is not None:
+            config_sub["etcd"]["exe"] = args.etcd_exe
+        if args.etcd_name is not None:
+            if args.etcd_name == "ENV":
+                config_sub["etcd"]["name"] = os.environ.get("NAME")
+            else:
+                config_sub["etcd"]["name"] = args.etcd_name
+        if args.etcd_proxy is not None:
+            config_sub["etcd"]["proxy"] = args.etcd_proxy
+        if args.etcd_strict_reconfig is not None:
+            config_sub["etcd"]["strict_reconfig"] = args.etcd_strict_reconfig
+        if (not fixed_address) and args.etcd_listen_address is not None:
+            config_sub["etcd"]["listen"]["address"] = transform_address(args.etcd_listen_address, client)
+        if args.etcd_listen_peer_port is not None:
+            config_sub["etcd"]["listen"]["peer_port"] = str(args.etcd_listen_peer_port)
+            config_sub["etcd"]["advertise"]["peer_port"] = str(args.etcd_listen_peer_port)
+        if args.etcd_listen_client_port is not None:
+            config_sub["etcd"]["listen"]["client_port"] = str(args.etcd_listen_client_port)
+            config_sub["etcd"]["advertise"]["client_port"] = str(args.etcd_listen_client_port)
+        if (not fixed_address) and args.etcd_advertise_address is not None:
+            config_sub["etcd"]["advertise"]["address"] = transform_address(args.etcd_advertise_address, client)
+        if args.etcd_advertise_peer_port is not None:
+            if args.etcd_advertise_peer_port == "DOCKER":
+                config_sub["etcd"]["advertise"]["peer_port"] = str(
+                    client.port(socket.gethostname(), int(config_sub["etcd"]["listen"]["peer_port"]))[0]["HostPort"]
+                )
+            else:
+                config_sub["etcd"]["advertise"]["peer_port"] = str(args.etcd_advertise_peer_port)
+        if args.etcd_advertise_client_port is not None:
+            if args.etcd_advertise_client_port == "DOCKER":
+                config_sub["etcd"]["advertise"]["client_port"] = str(
+                    client.port(socket.gethostname(), int(config_sub["etcd"]["listen"]["client_port"]))[0]["HostPort"]
+                )
+            else:
+                config_sub["etcd"]["advertise"]["client_port"] = str(args.etcd_advertise_client_port)
+        if args.etcd_cluster_init_discovery is not None:
+            config_sub["etcd"]["cluster"] = {"type": "init", "discovery": args.etcd_cluster_init_discovery}
+        if args.etcd_cluster_init_member is not None:
+            config_sub["etcd"]["cluster"] = {"type": "init", "member": args.etcd_cluster_init_member}
+        if args.etcd_cluster_init_independent is not None:
+            config_sub["etcd"]["cluster"] = {"type": "init"}
+        if args.etcd_cluster_join_member_client is not None:
+            config_sub["etcd"]["cluster"] = {"type": "join", "client": args.etcd_cluster_join_member_client}
+        if args.etcd_cluster_join_service is not None:
+            config_sub["etcd"]["cluster"] = {
+                "type": "join",
+                "service": args.etcd_cluster_join_service,
+                "client_port":
+                    args.etcd_cluster_join_service_port if args.etcd_cluster_join_service_port is not None else "2001"
+            }
+        if args.etcd_print_log:
+            config_sub["daemon"].pop("log_daemon", None)
+            config_sub["daemon"].pop("log_etcd", None)
+        if args.docker_sock is not None:
+            config_sub["daemon"]["docker_sock"] = args.docker_sock
+            config_sub["etcd"]["exe"] = "etcd"
+            if args.etcd_name is None:
+                config_sub["etcd"]["name"] = socket.gethostname()
+
+        services["etcd"] = {
+            "pid_file": config_sub["daemon"]["pid_file"],
+            "command": config_sub["daemon"]["exe"],
+            "process": None
+        }
+        start_list.append("etcd")
+        return
+
+    return conf_generator

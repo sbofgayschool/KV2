@@ -311,6 +311,8 @@ def run(module_name="Executor", etcd_conf_path="config/etcd.json", main_conf_pat
     :param main_conf_path: Path to main config file
     :return: None
     """
+    global tasks, lock
+
     # Load configuration
     with open(main_conf_path, "r") as f:
         config = json.load(f)
@@ -319,11 +321,7 @@ def run(module_name="Executor", etcd_conf_path="config/etcd.json", main_conf_pat
 
     # Generate logger
     if "log" in config:
-        logger = get_logger(
-            "main",
-            config["log"]["info"],
-            config["log"]["error"]
-        )
+        logger = get_logger("main", config["log"]["info"], config["log"]["error"])
     else:
         logger = get_logger("main", None, None)
     logger.info("%s main program started." % module_name)
@@ -462,7 +460,7 @@ def run(module_name="Executor", etcd_conf_path="config/etcd.json", main_conf_pat
             break
 
     logger.info("%s main program exiting." % module_name)
-
+    return
 
 if __name__ == "__main__":
     run()

@@ -191,5 +191,6 @@ def run(module_name="Judicator", etcd_conf_path="config/etcd.json", mongodb_conf
         mongodb_proc.kill()
     # Wait until mongodb process exit
     mongodb_proc.wait()
+
     daemon_logger.info("%s mongodb_daemon program exiting." % module_name)
     return

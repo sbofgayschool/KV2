@@ -113,11 +113,7 @@ if __name__ == "__main__":
 
     # Generate logger
     if "log" in config:
-        logger = get_logger(
-            "boot",
-            config["log"]["info"],
-            config["log"]["error"]
-        )
+        logger = get_logger("boot", config["log"]["info"], config["log"]["error"])
     else:
         logger = get_logger("boot", None, None)
     logger.info("Judicator boot program started.")

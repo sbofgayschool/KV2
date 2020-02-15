@@ -12,11 +12,12 @@
     - name: init docker overlay network
       shell: "docker network create -d overlay --attachable khala"
       ignore_errors: true
-- hosts: khala_manager
+- hosts: khala_manager:khala_worker
   roles:
     - role: geerlingguy.docker
       become: yes
       ansible_become_password: "{{password}}"
+- hosts: khala_manager
   tasks:
     - name: get docker swarm token
       local_action: shell docker swarm join-token manager
@@ -25,10 +26,6 @@
       shell: "{{token.stdout.split('\n')[2] | trim}}"
       ignore_errors: true
 - hosts: khala_worker
-  roles:
-    - role: geerlingguy.docker
-      become: yes
-      ansible_become_password: "{{password}}"
   tasks:
     - name: get docker swarm token
       local_action: shell docker swarm join-token worker
