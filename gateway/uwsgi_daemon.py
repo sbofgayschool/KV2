@@ -2,7 +2,7 @@
 
 __author__ = "chenty"
 
-from utility.web_server.uwsgi_daemon import run
+from utility.uwsgi.daemon import run
 
 
 if __name__ == "__main__":

@@ -11,6 +11,9 @@ import time
 import zipfile
 import zlib
 import subprocess
+import socket
+import grp
+import pwd
 
 from rpc.judicator_rpc.ttypes import ReturnCode
 
@@ -32,6 +35,10 @@ def change_user(config):
     :return: Wrapped function
     """
     def change():
+        """
+        Change the user for subprocess
+        :return: None
+        """
         os.setgid(config["task"]["user"]["gid"])
         os.setuid(config["task"]["user"]["uid"])
         return
@@ -461,6 +468,70 @@ def run(module_name="Executor", etcd_conf_path="config/etcd.json", main_conf_pat
 
     logger.info("%s main program exiting." % module_name)
     return
+
+def command_parser(parser):
+    """
+    Add executor main args to args parser
+    :param parser: The args parser
+    :return: Callback function to modify config
+    """
+    # Add needed args
+    parser.add_argument("--main-name", dest="main_name", default=None,
+                        help="Name of the executor")
+    parser.add_argument("--main-task-vacant", type=int, dest="main_task_vacant", default=None,
+                        help="Capacity of tasks of the executor")
+    parser.add_argument("--main-report-interval", type=int, dest="main_report_interval", default=None,
+                        help="Interval between reports made to judicator from executor")
+    parser.add_argument("--main-task-user-group", dest="main_task_user_group", default=None,
+                        help="User:group string indicating execution user/group when executing real tasks.")
+    parser.add_argument("--main-print-log", dest="main_print_log", action="store_const", const=True, default=False,
+                        help="Print the log of main module to stdout")
+
+    def conf_generator(args, config_sub, client, services, start_order):
+        """
+        Callback function to modify executor main configuration according to parsed args
+        :param args: Parse args
+        :param config_sub: Template config
+        :param client: Docker client
+        :param services: Dictionary of services
+        :param start_order: List of services in starting order
+        :return: None
+        """
+        # Modify config by parsed args
+        if args.retry_times is not None:
+            config_sub["retry"]["times"] = args.retry_times
+        if args.retry_interval is not None:
+            config_sub["retry"]["interval"] = args.retry_interval
+        if args.main_name is not None:
+            if args.main_name == "ENV":
+                config_sub["name"] = os.environ.get("NAME")
+            else:
+                config_sub["name"] = args.main_name
+        if args.main_task_vacant is not None:
+            config_sub["task"]["vacant"] = args.main_task_vacant
+        if args.main_task_user_group is not None:
+            user, group = args.main_task_user_group.split(':')
+            config_sub["task"]["user"] = {"uid": pwd.getpwnam(user)[2], "gid": grp.getgrnam(group)[2]}
+        if args.main_report_interval is not None:
+            config_sub["report_interval"] = args.main_report_interval
+        if args.main_print_log:
+            config_sub.pop("log", None)
+        if args.docker_sock is not None:
+            config_sub["docker_sock"] = args.docker_sock
+            config_sub["task"]["user"] = {"uid": pwd.getpwnam("executor")[2], "gid": grp.getgrnam("executor")[2]}
+            if args.main_name is None:
+                config_sub["name"] = socket.gethostname()
+
+        # Generate information for execution
+        services["main"] = {
+            "pid_file": config_sub["pid_file"],
+            "command": config_sub["exe"],
+            "process": None
+        }
+        start_order.append("main")
+        return
+
+    return conf_generator
 
 if __name__ == "__main__":
     run()

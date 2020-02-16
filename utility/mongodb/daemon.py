@@ -8,8 +8,9 @@ import threading
 import time
 import os
 import shutil
+import socket
 
-from utility.function import get_logger, log_output, try_with_times, check_empty_dir
+from utility.function import get_logger, log_output, try_with_times, check_empty_dir, transform_address
 from utility.etcd.proxy import generate_local_etcd_proxy
 from utility.mongodb.proxy import mongodb_generate_run_command, generate_local_mongodb_proxy
 
@@ -194,3 +195,84 @@ def run(module_name="Judicator", etcd_conf_path="config/etcd.json", mongodb_conf
 
     daemon_logger.info("%s mongodb_daemon program exiting." % module_name)
     return
+
+def command_parser(parser):
+    """
+    Add mongodb args to args parser
+    :param parser: The args parser
+    :return: Callback function to modify config
+    """
+    # Add needed args
+    parser.add_argument("--mongodb-exe", dest="mongodb_exe", default=None,
+                        help="Path to mongodb executable file")
+    parser.add_argument("--mongodb-name", dest="mongodb_name", default=None,
+                        help="Name of the mongodb node")
+    parser.add_argument("--mongodb-listen-address", dest="mongodb_listen_address", default=None,
+                        help="Listen address of the mongodb node, default is 0.0.0.0")
+    parser.add_argument("--mongodb-listen-port", type=int, dest="mongodb_listen_port", default=None,
+                        help="Listen port of the etcd node, default is 3000")
+    parser.add_argument("--mongodb-advertise-address", dest="mongodb_advertise_address", default=None,
+                        help="Advertise address of the mongodb node, default is localhost")
+    parser.add_argument("--mongodb-advertise-port", dest="mongodb_advertise_port", default=None,
+                        help="Advertise port of the etcd node, default is 3000")
+    parser.add_argument("--mongodb-replica-set", dest="mongodb_replica_set", default=None,
+                        help="Name of the replica set which the mongodb node is going to join")
+    parser.add_argument("--mongodb-print-log", dest="mongodb_print_log", action="store_const", const=True,
+                        default=False, help="Print the log of mongodb module to stdout")
+
+    def conf_generator(args, config_sub, client, services, start_order):
+        """
+        Callback function to modify mongodb configuration according to parsed args
+        :param args: Parse args
+        :param config_sub: Template config
+        :param client: Docker client
+        :param services: Dictionary of services
+        :param start_order: List of services in starting order
+        :return: None
+        """
+        # Modify config by parsed args
+        if args.retry_times is not None:
+            config_sub["daemon"]["retry"]["times"] = args.retry_times
+        if args.retry_interval is not None:
+            config_sub["daemon"]["retry"]["interval"] = args.retry_interval
+        if args.mongodb_exe is not None:
+            config_sub["mongodb"]["exe"] = args.mongodb_exe
+        if args.mongodb_name is not None:
+            if args.mongodb_name == "ENV":
+                config_sub["mongodb"]["name"] = os.environ.get("NAME")
+            else:
+                config_sub["mongodb"]["name"] = args.mongodb_name
+        if args.mongodb_listen_address is not None:
+            config_sub["mongodb"]["listen"]["address"] = transform_address(args.mongodb_listen_address, client)
+        if args.mongodb_listen_port is not None:
+            config_sub["mongodb"]["listen"]["port"] = str(args.mongodb_listen_port)
+            config_sub["mongodb"]["advertise"]["port"] = str(args.mongodb_listen_port)
+        if args.mongodb_advertise_address is not None:
+            config_sub["mongodb"]["advertise"]["address"] = transform_address(args.mongodb_advertise_address, client)
+        if args.mongodb_advertise_port is not None:
+            if args.mongodb_advertise_port == "DOCKER":
+                config_sub["mongodb"]["advertise"]["port"] = str(
+                    client.port(socket.gethostname(), int(config_sub["mongodb"]["listen"]["port"]))[0]["HostPort"]
+                )
+            else:
+                config_sub["mongodb"]["advertise"]["port"] = str(args.mongodb_advertise_port)
+        if args.mongodb_replica_set is not None:
+            config_sub["mongodb"]["replica_set"] = args.mongodb_replica_set
+        if args.mongodb_print_log:
+            config_sub["daemon"].pop("log_daemon", None)
+            config_sub["daemon"].pop("log_mongodb", None)
+        if args.docker_sock is not None:
+            config_sub["mongodb"]["exe"] = "mongod"
+            if args.mongodb_name is None:
+                config_sub["mongodb"]["name"] = socket.gethostname()
+
+        # Generate information for execution
+        services["mongodb"] = {
+            "pid_file": config_sub["daemon"]["pid_file"],
+            "command": config_sub["daemon"]["exe"],
+            "process": None
+        }
+        start_order.append("mongodb")
+        return
+
+    return conf_generator

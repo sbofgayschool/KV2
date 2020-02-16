@@ -218,19 +218,15 @@ def run(module_name, etcd_conf_path="config/etcd.json"):
     daemon_logger.info("%s etcd_daemon program exiting." % module_name)
     return
 
-def terminal_command(parser, fixed_address=False, join_only=True):
-    parser.add_argument("--docker-sock", dest="docker_sock", default=None,
-                        help="Path to mapped docker sock file")
-    parser.add_argument("--retry-times", type=int, dest="retry_times", default=None,
-                        help="Total retry time of key operations")
-    parser.add_argument("--retry-interval", type=int, dest="retry_interval", default=None,
-                        help="Interval between retries of key operations")
-
-    parser.add_argument("--boot-check-interval", type=int, dest="boot_check_interval", default=None,
-                        help="Interval between services check in boot module")
-    parser.add_argument("--boot-print-log", dest="boot_print_log", action="store_const", const=True, default=False,
-                        help="Print the log of boot module to stdout")
-
+def command_parser(parser, fixed_address=False, join_only=False):
+    """
+    Add etcd args to args parser
+    :param parser: The args parser
+    :param fixed_address: If the etcd should use address provided by template config only
+    :param join_only: If the etcd should only join a cluster
+    :return: Callback function to modify config
+    """
+    # Add needed args
     parser.add_argument("--etcd-exe", dest="etcd_exe", default=None,
                         help="Path to etcd executable file")
     parser.add_argument("--etcd-name", dest="etcd_name", default=None,
@@ -270,7 +266,17 @@ def terminal_command(parser, fixed_address=False, join_only=True):
     parser.add_argument("--etcd-print-log", dest="etcd_print_log", action="store_const", const=True, default=False,
                         help="Print the log of etcd module to stdout")
 
-    def conf_generator(args, config_sub, client, services, start_list):
+    def conf_generator(args, config_sub, client, services, start_order):
+        """
+        Callback function to modify etcd configuration according to parsed args
+        :param args: Parse args
+        :param config_sub: Template config
+        :param client: Docker client
+        :param services: Dictionary of services
+        :param start_order: List of services in starting order
+        :return: None
+        """
+        # Modify config by parsed args
         if args.retry_times is not None:
             config_sub["daemon"]["retry"]["times"] = args.retry_times
         if args.retry_interval is not None:
@@ -312,9 +318,9 @@ def terminal_command(parser, fixed_address=False, join_only=True):
                 config_sub["etcd"]["advertise"]["client_port"] = str(args.etcd_advertise_client_port)
         if args.etcd_cluster_init_discovery is not None:
             config_sub["etcd"]["cluster"] = {"type": "init", "discovery": args.etcd_cluster_init_discovery}
-        if args.etcd_cluster_init_member is not None:
+        if (not join_only) and args.etcd_cluster_init_member is not None:
             config_sub["etcd"]["cluster"] = {"type": "init", "member": args.etcd_cluster_init_member}
-        if args.etcd_cluster_init_independent is not None:
+        if (not join_only) and args.etcd_cluster_init_independent is not None:
             config_sub["etcd"]["cluster"] = {"type": "init"}
         if args.etcd_cluster_join_member_client is not None:
             config_sub["etcd"]["cluster"] = {"type": "join", "client": args.etcd_cluster_join_member_client}
@@ -334,12 +340,13 @@ def terminal_command(parser, fixed_address=False, join_only=True):
             if args.etcd_name is None:
                 config_sub["etcd"]["name"] = socket.gethostname()
 
+        # Generate information for execution
         services["etcd"] = {
             "pid_file": config_sub["daemon"]["pid_file"],
             "command": config_sub["daemon"]["exe"],
             "process": None
         }
-        start_list.append("etcd")
+        start_order.append("etcd")
         return
 
     return conf_generator

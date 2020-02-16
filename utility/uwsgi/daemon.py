@@ -6,7 +6,7 @@ import json
 import configparser
 import subprocess
 
-from utility.function import get_logger, log_output
+from utility.function import get_logger, log_output, transform_address
 
 
 def run(module_name="Gateway", uwsgi_conf_path="config/uwsgi.json"):
@@ -81,3 +81,52 @@ def run(module_name="Gateway", uwsgi_conf_path="config/uwsgi.json"):
 
     daemon_logger.info("%s uwsgi_daemon program exiting." % module_name)
     return
+
+def command_parser(parser):
+    """
+    Add uwsgi args to args parser
+    :param parser: The args parser
+    :return: Callback function to modify config
+    """
+    # Add needed args
+    parser.add_argument("--uwsgi-host", dest="uwsgi_host", default=None,
+                        help="Listen address of uwsgi")
+    parser.add_argument("--uwsgi-port", dest="uwsgi_port", default=None,
+                        help="Listen port of uwsgi")
+    parser.add_argument("--uwsgi-process", type=int, dest="uwsgi_process", default=None,
+                        help="Number of process of the uwsgi")
+    parser.add_argument("--uwsgi-print-log", dest="uwsgi_print_log", action="store_const", const=True, default=False,
+                        help="Print the log of uwsgi module to stdout")
+
+    def conf_generator(args, config_sub, client, services, start_order):
+        """
+        Callback function to modify uwsgi configuration according to parsed args
+        :param args: Parse args
+        :param config_sub: Template config
+        :param client: Docker client
+        :param services: Dictionary of services
+        :param start_order: List of services in starting order
+        :return: None
+        """
+        # Modify config by parsed args
+        if args.uwsgi_host is not None:
+            config_sub["uwsgi"]["host"] = transform_address(args.uwsgi_host, client)
+        if args.uwsgi_port is not None:
+            config_sub["uwsgi"]["port"] = str(args.uwsgi_port)
+        if args.uwsgi_process is not None:
+            config_sub["uwsgi"]["process"] = args.uwsgi_process
+        if args.uwsgi_print_log:
+            config_sub["daemon"].pop("log_daemon", None)
+            config_sub["daemon"].pop("log_uwsgi", None)
+            config_sub["server"].pop("log_daemon", None)
+
+        # Generate information for execution
+        services["uwsgi"] = {
+            "pid_file": config_sub["daemon"]["pid_file"],
+            "command": config_sub["daemon"]["exe"],
+            "process": None
+        }
+        start_order.append("uwsgi")
+        return
+
+    return conf_generator

@@ -12,7 +12,7 @@ import zipfile
 from rpc.judicator_rpc.ttypes import *
 
 from utility.function import get_logger
-from utility.task import check_task_dict_size, check_id, decompress_and_truncate, TASK_DICTIONARY_MAX_SIZE
+from utility.task import check_task_dict_size, check_id, decompress_and_truncate, TASK_DICTIONARY_MAX_SIZE, check_int
 from utility.etcd.proxy import generate_local_etcd_proxy
 from utility.rpc import select_from_etcd_and_call, extract, generate
 
@@ -95,6 +95,10 @@ class Server(flask.Flask):
                     "report_time": None,
                     "result": None
                 }
+                if not (check_int(data["user"]) and
+                        check_int(data["compile"]["timeout"]) and
+                        check_int(data["execute"]["timeout"])):
+                    raise Exception("An int parameter is out of bound.")
             except:
                 self.logger.error("Failed to parse added task.", exc_info=True)
                 return flask.jsonify({"result": ReturnCode.INVALID_INPUT, "id": None})

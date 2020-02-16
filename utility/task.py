@@ -50,6 +50,14 @@ def check_id(id):
     """
     return bool(re.match(r"^[a-f0-9]{24}$", id))
 
+def check_int(x):
+    """
+    Check whether a int is valid
+    :param x: The int
+    :return: The result
+    """
+    return 0 <= x <= 2147483647
+
 def decompress_and_truncate(zipped, max_length=1000):
     """
     Decompress a string zipped by zlib and truncate it
