@@ -6,7 +6,6 @@ __author__ = "chenty"
 import os
 os.environ["PYTHONPATH"] += ":" + os.getcwd()
 os.environ["PYTHONPATH"] += ":" + os.path.dirname(os.getcwd())
-
 import signal
 
 from utility.etcd.daemon import command_parser as etcd_parser

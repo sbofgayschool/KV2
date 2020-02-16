@@ -96,11 +96,11 @@ class EtcdProxy:
             raise Exception("Get self status resulted in %d, not 200." % resp.status_code)
         return json.loads(resp.text)
 
-    def add_and_get_members(self, name, peer_client, get=True):
+    def add_and_get_members(self, name, peer_url, get=True):
         """
         Add a new member (if required) and then get members of the cluster from the instance
         :param name: Name of adding node
-        :param peer_client: Peer url of the new member
+        :param peer_url: Peer url of the new member
         :param get: If only wish to get the members
         :return: Dictionary containing name and url of cluster members
         """
@@ -123,7 +123,7 @@ class EtcdProxy:
         # Try to add a member
         resp = requests.post(
             urllib.parse.urljoin(self.url, "/v2/members"),
-            json={"peerURLs":[peer_client]}
+            json={"peerURLs":[peer_url]}
         )
         if not resp:
             raise Exception("Add member resulted in %d, not 200." % resp.status_code)

@@ -2,7 +2,8 @@
 This file contains todo list for the whole project.
 
 ## Short Term
-- Add full tests.
+- Add full tests:
+etcd_proxy, etcd_daemon, mongodb_proxy, mongodb_daemon, uwsgi_daemon, judicator_main, executor_main, server, system.
 - Add full documents, majorly about usage and maintenance, but also should also have something about source code.
 
 #### Finished / Canceled:
@@ -31,9 +32,6 @@ including docker (on both local and remote computer), docker service initialize,
 - <b>Security issue:</b> Find out a way to completely isolate all single tasks
 OR
 set a full limitation (CPU, memory, disk space, etc.) on all single tasks.
-- Refactor codes to avoid duplication, especially in boot.py and etcd_daemon.py
-- More strict check on input.
-- Make maintain.py be able to lock multiple pid files.
 - Add user functions (user register, login, etc.) and admin functions.
 - Internationalize.
 - Windows OS support in un-docker environment.
@@ -45,3 +43,6 @@ set a full limitation (CPU, memory, disk space, etc.) on all single tasks.
 - Add new nodes to the system even when the system has failed nodes.
 - Make restart of a killed, randomly port-mapped docker container available.
 - Remove warning from thrift generation.
+- Refactor codes to avoid duplication, especially in boot.py and etcd_daemon.py
+- More strict check on input.
+- Make maintain.py be able to lock multiple pid files.

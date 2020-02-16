@@ -30,6 +30,9 @@
         "data_dir": "data/etcd",
         "data_init_dir": "data/etcd_init",
         "strict_reconfig": true,
+        /*
+        "proxy": "on",
+        */
         "listen":
         {
             "address": "0.0.0.0",
