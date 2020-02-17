@@ -244,7 +244,7 @@ class TestEtcdProxy(unittest.TestCase):
         :return: None
         """
         print("Tearing down environment.\n")
-        # Kill a subprocess
+        # Kill all subprocess
         if cls.infra0_proc:
             os.kill(cls.infra0_proc.pid, signal.SIGKILL)
             cls.infra0_proc.wait()
