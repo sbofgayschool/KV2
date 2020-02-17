@@ -4,8 +4,11 @@ __author__ = "chenty"
 
 # Add current folder and parent folder into python path
 import os
-os.environ["PYTHONPATH"] += ":" + os.getcwd()
+os.environ["PYTHONPATH"] = os.environ.get("PYTHONPATH", "") + ":" + os.getcwd()
 os.environ["PYTHONPATH"] += ":" + os.path.dirname(os.getcwd())
+import sys
+sys.path.append(os.getcwd())
+sys.path.append(os.path.dirname(os.getcwd()))
 import signal
 
 from utility.etcd.daemon import command_parser as etcd_parser

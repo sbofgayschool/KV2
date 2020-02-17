@@ -33,3 +33,8 @@ gateway/data/*
 judicator/config/*.json
 executor/config/*.json
 gateway/config/*.json
+
+# Coverage
+.coverage
+.coverage.*
+coverage_html_report

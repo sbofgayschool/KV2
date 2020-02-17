@@ -4,8 +4,11 @@ __author__ = "chenty"
 
 # Add current folder and parent folder into python path
 import os
-os.environ["PYTHONPATH"] += ":" + os.getcwd()
+os.environ["PYTHONPATH"] = os.environ.get("PYTHONPATH", "") + ":" + os.getcwd()
 os.environ["PYTHONPATH"] += ":" + os.path.dirname(os.getcwd())
+import sys
+sys.path.append(os.getcwd())
+sys.path.append(os.path.dirname(os.getcwd()))
 import unittest
 import subprocess
 import signal
@@ -31,7 +34,7 @@ class TestEtcdProxy(unittest.TestCase):
         cls.infra0_conf = {
             "exe": "etcd",
             "name": "infra0",
-            "data_dir": "temp_data/infra0",
+            "data_dir": "infra0",
             "listen": {
                 "address": "0.0.0.0",
                 "peer_port": "2000",
@@ -49,7 +52,7 @@ class TestEtcdProxy(unittest.TestCase):
         cls.infra1_conf = {
             "exe": "etcd",
             "name": "infra1",
-            "data_dir": "temp_data/infra1",
+            "data_dir": "infra1",
             "listen": {
                 "address": "0.0.0.0",
                 "peer_port": "2002",
@@ -68,7 +71,7 @@ class TestEtcdProxy(unittest.TestCase):
         cls.infra2_conf = {
             "exe": "etcd",
             "name": "infra2",
-            "data_dir": "temp_data/infra2",
+            "data_dir": "infra2",
             "proxy": "on",
             "listen": {
                 "address": "0.0.0.0",
@@ -90,10 +93,8 @@ class TestEtcdProxy(unittest.TestCase):
         cls.infra2_proc = None
 
         # Generate temp data dir
-        os.mkdir("temp_data")
-        os.mkdir("temp_data/infra0")
-        os.mkdir("temp_data/infra1")
-        os.mkdir("temp_data/infra2")
+        for d in ["infra0", "infra1", "infra2"]:
+            os.mkdir(d)
 
         # Generate a logger
         cls.logger = get_logger("Test", None, None)
@@ -258,7 +259,8 @@ class TestEtcdProxy(unittest.TestCase):
         # f = open("__init__.py", "r")
 
         # Remove temp dir
-        shutil.rmtree("temp_data")
+        for d in ["infra0", "infra1", "infra2"]:
+            shutil.rmtree(d)
         return
 
 if __name__ == "__main__":

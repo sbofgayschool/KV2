@@ -184,7 +184,7 @@ def run(module_name, etcd_conf_path="config/etcd.json"):
     # Create a check thread to check if etcd has been started up
     check_thread = threading.Thread(
         target=check,
-        args=(retry_times, retry_interval, daemon_logger, etcd_proc, local_etcd)
+        args=(retry_times, retry_interval, etcd_proc, local_etcd, daemon_logger)
     )
     check_thread.setDaemon(True)
     check_thread.start()
