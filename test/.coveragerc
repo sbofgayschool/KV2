@@ -48,6 +48,9 @@ exclude_lines =
     except pymongo.errors\.WriteError
     except pymongo.errors\.DocumentTooLarge
 
+    # Don't care about test rpc interface
+    def ping
+
 ignore_errors = True
 
 [html]

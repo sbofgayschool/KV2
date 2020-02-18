@@ -167,6 +167,7 @@ class TestMongodbDaemon(unittest.TestCase):
 
         # Sub processes
         cls.etcd_proc = multiprocessing.Process(target=etcd_run, args=("Etcd", "etcd/conf.json"))
+        cls.etcd_proc.daemon = True
         cls.etcd_proc.start()
         cls.mongodb1 = None
         cls.mongodb2 = None
@@ -184,10 +185,13 @@ class TestMongodbDaemon(unittest.TestCase):
 
         # Generate all daemon
         cls.mongodb1 = multiprocessing.Process(target=run, args=("Mongodb1", "etcd/conf.json", "mongodb1/conf.json"))
+        cls.mongodb1.daemon = True
         cls.mongodb1.start()
         cls.mongodb2 = multiprocessing.Process(target=run, args=("Mongodb2", "etcd/conf.json", "mongodb2/conf.json"))
+        cls.mongodb2.daemon = True
         cls.mongodb2.start()
         cls.mongodb3 = multiprocessing.Process(target=run, args=("Mongodb3", "etcd/conf.json", "mongodb3/conf.json"))
+        cls.mongodb3.daemon = True
         cls.mongodb3.start()
 
         time.sleep(20)

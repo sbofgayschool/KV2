@@ -385,7 +385,7 @@ class Server(flask.Flask):
             :param path: Path to the file
             :return: The file
             """
-            return flask.send_from_directory("webpage/res", path)
+            return flask.send_from_directory(self.conf["template"] + "/res", path)
 
         @self.route("/<path:page>", methods=["GET"])
         def webpage(page):

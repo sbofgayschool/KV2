@@ -26,7 +26,8 @@ including docker (on both local and remote computer), docker service initialize,
 - Formalize logs.
 - Necessary tests on VM of Doc IC.
 - Build and upload the v0.1 image on docker host.
-- <b>CANCELED, shellx.doc.ic.ac.uk does not open any possible ports due to the configuration of its iptables (or something else) .</b> <del>A python based proxy for Khala on VM of Doc IC (Small Independent Project).</del>
+- <b>CANCELED, shellx.doc.ic.ac.uk does not open any possible ports due to the configuration of its iptables 
+(or something else) .</b> <del>A python based proxy for Khala on VM of Doc IC (Small Independent Project).</del>
 
 ## Long Term
 - <b>Security issue:</b> Find out a way to completely isolate all single tasks

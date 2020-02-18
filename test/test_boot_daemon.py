@@ -78,6 +78,7 @@ class TestBootDaemon(unittest.TestCase):
             "args_parser": uwsgi_parser
         }]
         cls.boot = multiprocessing.Process(target=run, args=(service_list, "Test", "Test only.", "boot.json"))
+        cls.boot.daemon = True
         cls.boot.start()
 
         time.sleep(5)

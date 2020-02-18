@@ -64,6 +64,7 @@ class TestUwsgiDaemon(unittest.TestCase):
 
         # Generate all daemon
         cls.uwsgi = multiprocessing.Process(target=run, args=("Test", "conf.json"))
+        cls.uwsgi.daemon = True
         cls.uwsgi.start()
 
         time.sleep(5)

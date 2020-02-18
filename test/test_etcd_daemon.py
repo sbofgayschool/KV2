@@ -144,11 +144,14 @@ class TestEtcdDaemon(unittest.TestCase):
 
         # Generate all daemon
         cls.etcd1 = multiprocessing.Process(target=run, args=("Etcd1", "etcd1/conf.json"))
+        cls.etcd1.daemon = True
         cls.etcd1.start()
         time.sleep(2)
         cls.etcd2 = multiprocessing.Process(target=run, args=("Etcd2", "etcd2/conf.json"))
+        cls.etcd2.daemon = True
         cls.etcd2.start()
         cls.etcd3 = multiprocessing.Process(target=run, args=("Etcd3", "etcd3/conf.json"))
+        cls.etcd3.daemon = True
         cls.etcd3.start()
 
         time.sleep(20)
