@@ -24,12 +24,12 @@ if __name__ == "__main__":
         "name": "etcd",
         "config_template": "config/templates/etcd.json",
         "config": "config/etcd.json",
-        "generator": etcd_parser,
+        "args_parser": etcd_parser,
         "args": (True, True)
     }, {
         "name": "main",
         "config_template": "config/templates/uwsgi.json",
         "config": "config/uwsgi.json",
-        "generator": uwsgi_parser
+        "args_parser": uwsgi_parser
     }]
     run(service_list, "Gateway", "Gateway of Khala system. Provide HTTP API interface and a website.")

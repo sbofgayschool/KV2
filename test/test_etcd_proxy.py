@@ -109,7 +109,7 @@ class TestEtcdProxy(unittest.TestCase):
 
         cls.infra0_proc = subprocess.Popen(
             etcd_generate_run_command(cls.infra0_conf),
-            stdout=subprocess.PIPE,
+            stdout=sys.stdout,
             stderr=subprocess.STDOUT
         )
         cls.infra0 = generate_local_etcd_proxy(cls.infra0_conf, cls.logger)
@@ -145,7 +145,7 @@ class TestEtcdProxy(unittest.TestCase):
         cls.infra1_conf["cluster"]["member"] = ",".join([(k + "=" + v) for k, v in res.items()])
         cls.infra1_proc = subprocess.Popen(
             etcd_generate_run_command(cls.infra1_conf),
-            stdout=subprocess.PIPE,
+            stdout=sys.stdout,
             stderr=subprocess.STDOUT
         )
         cls.infra1 = generate_local_etcd_proxy(cls.infra1_conf, cls.logger)
@@ -158,7 +158,7 @@ class TestEtcdProxy(unittest.TestCase):
         cls.infra2_conf["cluster"]["member"] = ",".join([(k + "=" + v) for k, v in res.items()])
         cls.infra2_proc = subprocess.Popen(
             etcd_generate_run_command(cls.infra2_conf),
-            stdout=subprocess.PIPE,
+            stdout=sys.stdout,
             stderr=subprocess.STDOUT
         )
         cls.infra2 = generate_local_etcd_proxy(cls.infra2_conf, cls.logger)
@@ -246,13 +246,13 @@ class TestEtcdProxy(unittest.TestCase):
         print("Tearing down environment.\n")
         # Kill all subprocess
         if cls.infra0_proc:
-            os.kill(cls.infra0_proc.pid, signal.SIGKILL)
+            os.kill(cls.infra0_proc.pid, signal.SIGINT)
             cls.infra0_proc.wait()
         if cls.infra1_proc:
-            os.kill(cls.infra1_proc.pid, signal.SIGKILL)
+            os.kill(cls.infra1_proc.pid, signal.SIGINT)
             cls.infra1_proc.poll()
         if cls.infra2_proc:
-            os.kill(cls.infra2_proc.pid, signal.SIGKILL)
+            os.kill(cls.infra2_proc.pid, signal.SIGINT)
             cls.infra2_proc.poll()
 
         # Discarded test of tracemalloc

@@ -23,7 +23,7 @@ from utility.etcd.proxy import EtcdProxy
 from utility.function import get_logger
 
 
-# Unit test class for utility.etcd.proxy
+# Unit test class for utility.etcd.daemon
 class TestEtcdDaemon(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -200,15 +200,15 @@ class TestEtcdDaemon(unittest.TestCase):
         # Stop subprocess
         if cls.etcd1 and cls.etcd1.is_alive():
             if cls.etcd1.pid:
-                os.kill(cls.etcd1.pid, signal.SIGKILL)
+                os.kill(cls.etcd1.pid, signal.SIGINT)
             cls.etcd1.join()
         if cls.etcd2 and cls.etcd2.is_alive():
             if cls.etcd2.pid:
-                os.kill(cls.etcd2.pid, signal.SIGKILL)
+                os.kill(cls.etcd2.pid, signal.SIGINT)
             cls.etcd2.join()
         if cls.etcd3 and cls.etcd3.is_alive():
             if cls.etcd3.pid:
-                os.kill(cls.etcd3.pid, signal.SIGKILL)
+                os.kill(cls.etcd3.pid, signal.SIGINT)
             cls.etcd3.join()
 
         # Remove temp dir

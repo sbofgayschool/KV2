@@ -1,8 +1,18 @@
 # .coveragerc to control coverage.py
 [run]
+source =
+    ..
 branch = True
 omit =
     */venv/*
+    *maintain.py
+    */boot.py
+    */etcd_daemon.py
+    */mongodb_daemon.py
+    */uwsgi_daemon.py
+    */__init__.py
+    *rpc/*
+    *test/*
 
 [report]
 # Regexes for lines to exclude from consideration
@@ -22,11 +32,21 @@ exclude_lines =
     if 0:
     if __name__ == .__main__.:
 
-    # Don't care about docker service
+    # Don't care about docker service in etcd
     \"service\" in config\[\"etcd\"\]\[\"cluster\"\]:
 
-    # Don't care about command_parser (temporarily)
+    # Don't care about empty dir check
+    if not check_empty_dir\(config
+
+    # Don't care about command line args parser
     def command_parser
+
+    # Don't care about signal handler
+    def sigterm_handler:
+
+    # Don't care about mongodb write errors
+    except pymongo.errors\.WriteError
+    except pymongo.errors\.DocumentTooLarge
 
 ignore_errors = True
 

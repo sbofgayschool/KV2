@@ -45,7 +45,7 @@ def register(config, local_etcd, local_mongodb, mongodb_proc, daemon_logger):
         "check mongodb status",
         local_mongodb.check,
     )[0]:
-        mongodb_proc.kill()
+        mongodb_proc.terminate()
         daemon_logger.error("Failed to start mongodb. Killing mongodb.")
         return
 
@@ -61,7 +61,7 @@ def register(config, local_etcd, local_mongodb, mongodb_proc, daemon_logger):
         config["daemon"]["etcd_path"]["init"],
         config["daemon"]["etcd_path"]["register"]
     )[0]:
-        mongodb_proc.kill()
+        mongodb_proc.terminate()
         daemon_logger.error("Failed to initialize nor register local mongodb. Killing mongodb.")
         return
 
@@ -173,7 +173,7 @@ def run(module_name="Judicator", etcd_conf_path="config/etcd.json", mongodb_conf
         # Kill the process
         if not local_mongodb.shutdown_and_close():
             daemon_logger.error("Killing the process.")
-            mongodb_proc.kill()
+            mongodb_proc.terminate()
         mongodb_proc.wait()
         daemon_logger.info("Mongodb process exited.")
         # Register this mongodb as exited one
@@ -189,7 +189,7 @@ def run(module_name="Judicator", etcd_conf_path="config/etcd.json", mongodb_conf
         daemon_logger.info("Removed local mongodb registration on etcd.")
     except:
         daemon_logger.error("Accidentally terminated. Killing mongodb process.", exc_info=True)
-        mongodb_proc.kill()
+        mongodb_proc.terminate()
     # Wait until mongodb process exit
     mongodb_proc.wait()
 

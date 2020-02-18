@@ -22,8 +22,8 @@ from utility.etcd.proxy import etcd_generate_run_command, EtcdProxy
 from utility.function import get_logger
 
 
-# Unit test class for utility.etcd.proxy
-class TestEtcdProxy(unittest.TestCase):
+# Unit test class for utility.mongodb.proxy
+class TestMongodbProxy(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """
@@ -57,7 +57,7 @@ class TestEtcdProxy(unittest.TestCase):
         }
         cls.etcd_proc = subprocess.Popen(
             etcd_generate_run_command(etcd_conf),
-            stdout=subprocess.PIPE,
+            stdout=sys.stdout,
             stderr=subprocess.STDOUT
         )
 
@@ -126,17 +126,17 @@ class TestEtcdProxy(unittest.TestCase):
         # Start all mongodb proxy
         cls.mongodb1_proc = subprocess.Popen(
             mongodb_generate_run_command(cls.mongodb1_conf),
-            stdout=subprocess.PIPE,
+            stdout=sys.stdout,
             stderr=subprocess.STDOUT
         )
         cls.mongodb2_proc = subprocess.Popen(
             mongodb_generate_run_command(cls.mongodb2_conf),
-            stdout=subprocess.PIPE,
+            stdout=sys.stdout,
             stderr=subprocess.STDOUT
         )
         cls.mongodb3_proc = subprocess.Popen(
             mongodb_generate_run_command(cls.mongodb3_conf),
-            stdout=subprocess.PIPE,
+            stdout=sys.stdout,
             stderr=subprocess.STDOUT
         )
         cls.mongodb1 = generate_local_mongodb_proxy(cls.mongodb1_conf, cls.etcd, cls.logger)
@@ -274,16 +274,16 @@ class TestEtcdProxy(unittest.TestCase):
 
         # Kill subprocess
         if cls.mongodb1_proc:
-            os.kill(cls.mongodb1_proc.pid, signal.SIGKILL)
+            os.kill(cls.mongodb1_proc.pid, signal.SIGINT)
             cls.mongodb1_proc.wait()
         if cls.mongodb2_proc:
-            os.kill(cls.mongodb2_proc.pid, signal.SIGKILL)
+            os.kill(cls.mongodb2_proc.pid, signal.SIGINT)
             cls.mongodb2_proc.wait()
         if cls.mongodb3_proc:
-            os.kill(cls.mongodb3_proc.pid, signal.SIGKILL)
+            os.kill(cls.mongodb3_proc.pid, signal.SIGINT)
             cls.mongodb3_proc.wait()
         if cls.etcd_proc:
-            os.kill(cls.etcd_proc.pid, signal.SIGKILL)
+            os.kill(cls.etcd_proc.pid, signal.SIGINT)
             cls.etcd_proc.wait()
 
         # Remove temp dir

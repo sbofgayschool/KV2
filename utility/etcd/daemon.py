@@ -9,6 +9,7 @@ import os
 import shutil
 import docker
 import socket
+import signal
 
 from utility.function import get_logger, log_output, check_empty_dir, try_with_times, transform_address
 from utility.etcd.proxy import etcd_generate_run_command, generate_local_etcd_proxy, EtcdProxy
@@ -40,7 +41,7 @@ def check(retry_times, retry_interval, etcd_proc, local_etcd, daemon_logger):
 
     # If not success, kill the etcd subprocess.
     daemon_logger.error("Failed to start etcd. Killing etcd process.")
-    etcd_proc.kill()
+    etcd_proc.terminate()
     return
 
 def run(module_name, etcd_conf_path="config/etcd.json"):
@@ -208,10 +209,10 @@ def run(module_name, etcd_conf_path="config/etcd.json"):
             )
         else:
             daemon_logger.info("Detected proxy mode. Skipped removing local etcd from cluster.")
-        etcd_proc.kill()
+        os.kill(etcd_proc.pid, signal.SIGINT)
     except:
         daemon_logger.error("Accidentally terminated. Killing etcd process.", exc_info=True)
-        etcd_proc.kill()
+        etcd_proc.terminate()
     # Wait for the subprocess to prevent zombie process
     etcd_proc.wait()
 

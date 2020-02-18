@@ -3,7 +3,7 @@ This file contains todo list for the whole project.
 
 ## Short Term
 - Add full tests:
-etcd_proxy, etcd_daemon, mongodb_proxy, mongodb_daemon, uwsgi_daemon, judicator_main, executor_main, server, system.
+etcd_proxy, etcd_daemon, mongodb_proxy, mongodb_daemon, uwsgi_daemon, boot_daemon (with uwsgi), system (integrated).
 - Add full documents, majorly about usage and maintenance, but also should also have something about source code.
 
 #### Finished / Canceled:

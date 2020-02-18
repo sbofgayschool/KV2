@@ -5,6 +5,8 @@ __author__ = "chenty"
 import json
 import configparser
 import subprocess
+import os
+import signal
 
 from utility.function import get_logger, log_output, transform_address
 
@@ -72,10 +74,10 @@ def run(module_name="Gateway", uwsgi_conf_path="config/uwsgi.json"):
         daemon_logger.info("Received EOF from uwsgi.")
     except KeyboardInterrupt:
         daemon_logger.info("Received SIGINT. Killing uwsgi process.", exc_info=True)
-        uwsgi_proc.kill()
+        os.kill(uwsgi_proc.pid, signal.SIGINT)
     except:
         daemon_logger.error("Accidentally terminated. Killing uwsgi process.", exc_info=True)
-        uwsgi_proc.kill()
+        uwsgi_proc.terminate()
     # Wait for the subprocess to prevent zombie process
     uwsgi_proc.wait()
 

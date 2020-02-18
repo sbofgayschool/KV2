@@ -25,16 +25,16 @@ if __name__ == "__main__":
         "name": "etcd",
         "config_template": "config/templates/etcd.json",
         "config": "config/etcd.json",
-        "generator": etcd_parser
+        "args_parser": etcd_parser
     }, {
         "name": "mongodb",
         "config_template": "config/templates/mongodb.json",
         "config": "config/mongodb.json",
-        "generator": mongodb_parser
+        "args_parser": mongodb_parser
     }, {
         "name": "main",
         "config_template": "config/templates/main.json",
         "config": "config/main.json",
-        "generator": main_parser
+        "args_parser": main_parser
     }]
     run(service_list, "Judicator", "Judicator of Khala system. Handle requests and maintain task data.")

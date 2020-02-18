@@ -24,12 +24,12 @@ if __name__ == "__main__":
         "name": "etcd",
         "config_template": "config/templates/etcd.json",
         "config": "config/etcd.json",
-        "generator": etcd_parser,
+        "args_parser": etcd_parser,
         "args": (True, True)
     }, {
         "name": "main",
         "config_template": "config/templates/main.json",
         "config": "config/main.json",
-        "generator": main_parser
+        "args_parser": main_parser
     }]
     run(service_list, "Executor", "Executor of Khala system. Execute tasks and report to judicators.")
