@@ -2,8 +2,6 @@
 This file contains todo list for the whole project.
 
 ## Short Term
-- Add full tests:
-etcd_proxy, etcd_daemon, mongodb_proxy, mongodb_daemon, uwsgi_daemon, boot_daemon (with uwsgi), system (integrated).
 - Add full documents, majorly about usage and maintenance, but also should also have something about source code.
 
 #### Finished / Canceled:
@@ -28,6 +26,8 @@ including docker (on both local and remote computer), docker service initialize,
 - Build and upload the v0.1 image on docker host.
 - <b>CANCELED, shellx.doc.ic.ac.uk does not open any possible ports due to the configuration of its iptables 
 (or something else) .</b> <del>A python based proxy for Khala on VM of Doc IC (Small Independent Project).</del>
+- Add full tests:
+etcd_proxy, etcd_daemon, mongodb_proxy, mongodb_daemon, uwsgi_daemon, boot_daemon (with uwsgi), system (integrated).
 
 ## Long Term
 - <b>Security issue:</b> Find out a way to completely isolate all single tasks
