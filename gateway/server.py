@@ -78,15 +78,23 @@ class Server(flask.Flask):
                     "user": int(flask.request.form.get("user")),
                     "compile": {
                         "source": b"",
-                        "command": zlib.compress(flask.request.form.get("compile_command").encode("utf-8")),
+                        "command": zlib.compress(
+                            flask.request.form.get("compile_command").replace("\r\n", "\n").encode("utf-8")
+                        ),
                         "timeout": int(flask.request.form.get("compile_timeout"))
                     },
                     "execute": {
-                        "input": zlib.compress(flask.request.form.get("execute_input").encode("utf-8")),
+                        "input": zlib.compress(
+                            flask.request.form.get("execute_input").replace("\r\n", "\n").encode("utf-8")
+                        ),
                         "data": b"",
-                        "command": zlib.compress(flask.request.form.get("execute_command").encode("utf-8")),
+                        "command": zlib.compress(
+                            flask.request.form.get("execute_command").replace("\r\n", "\n").encode("utf-8")
+                        ),
                         "timeout": int(flask.request.form.get("execute_timeout")),
-                        "standard": zlib.compress(flask.request.form.get("execute_standard").encode("utf-8"))
+                        "standard": zlib.compress(
+                            flask.request.form.get("execute_standard").replace("\r\n", "\n").encode("utf-8")
+                        )
                     },
                     "add_time": None,
                     "done": False,
@@ -120,7 +128,7 @@ class Server(flask.Flask):
                 # Write the text in the file with specified name
                 file_path = join(temp_dir.name, compile_source_name)
                 with open(file_path, "w") as f:
-                    f.write(compile_source_str)
+                    f.write(compile_source_str.replace("\r\n", "\n"))
                 # Create the zip file
                 zip_path = join(temp_dir.name, "source.zip")
                 with zipfile.ZipFile(zip_path, "w") as f:
@@ -145,7 +153,7 @@ class Server(flask.Flask):
                 # Write the text in the file with specified name
                 file_path = join(temp_dir.name, execute_data_name)
                 with open(file_path, "w") as f:
-                    f.write(execute_data_str)
+                    f.write(execute_data_str.replace("\r\n", "\n"))
                 # Create the zip file
                 zip_path = join(temp_dir.name, "data.zip")
                 with zipfile.ZipFile(zip_path, "w") as f:

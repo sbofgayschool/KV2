@@ -1,6 +1,14 @@
+#### Build and upload docker container
+```
+docker build -t comradestukov/khala:v0.1 .
+docker push comradestukov/khala:v0.1
+```
+
 #### Single container IP
 ```
-IP=158.143.102.42
+IP=ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'
+
+IP=158.143.100.42
 
 docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --expose 2000 \
@@ -27,29 +35,44 @@ docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --expose 3000 \
 --expose 4000 -P comradestukov/khala:v0.1 judicator \
 --docker-sock=unix:///var/run/docker.sock \
---etcd-cluster-init-independent \
---etcd-advertise-address=$IP \
---mongodb-advertise-address=$IP \
---main-advertise-address=$IP \
---etcd-advertise-peer-port=DOCKER \
---etcd-advertise-client-port=DOCKER \
---mongodb-advertise-port=DOCKER \
---main-advertise-port=DOCKER
-
-docker container run -v /var/run/docker.sock:/var/run/docker.sock \
---expose 2000 \
---expose 2001 \
---expose 3000 \
---expose 4000 -P comradestukov/khala:v0.1 judicator \
---docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
 --etcd-print-log \
 --mongodb-print-log \
 --main-print-log \
---etcd-cluster-join-member-client=http://$IP:32846 \
+--etcd-cluster-join-member-client=http://$IP:32770 \
 --etcd-advertise-address=$IP \
 --mongodb-advertise-address=$IP \
 --main-advertise-address=$IP  \
+--etcd-advertise-peer-port=DOCKER \
+--etcd-advertise-client-port=DOCKER \
+--mongodb-advertise-port=DOCKER \
+--main-advertise-port=DOCKER
+
+docker container run -v /var/run/docker.sock:/var/run/docker.sock \
+--expose 7000 -P comradestukov/khala:v0.1 gateway \
+--docker-sock=unix:///var/run/docker.sock \
+--boot-print-log \
+--etcd-print-log \
+--uwsgi-print-log \
+--etcd-cluster-join-member-client=http://$IP:32770
+
+docker container run -v /var/run/docker.sock:/var/run/docker.sock comradestukov/khala:v0.1 executor \
+--docker-sock=unix:///var/run/docker.sock \
+--boot-print-log \
+--etcd-print-log \
+--main-print-log \
+--etcd-cluster-join-member-client=http://$IP:32770
+
+docker container run -v /var/run/docker.sock:/var/run/docker.sock \
+--expose 2000 \
+--expose 2001 \
+--expose 3000 \
+--expose 4000 -P comradestukov/khala:v0.1 judicator \
+--docker-sock=unix:///var/run/docker.sock \
+--etcd-cluster-init-independent \
+--etcd-advertise-address=$IP \
+--mongodb-advertise-address=$IP \
+--main-advertise-address=$IP \
 --etcd-advertise-peer-port=DOCKER \
 --etcd-advertise-client-port=DOCKER \
 --mongodb-advertise-port=DOCKER \
@@ -74,21 +97,6 @@ docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --etcd-advertise-client-port=DOCKER \
 --mongodb-advertise-port=DOCKER \
 --main-advertise-port=DOCKER
-
-docker container run -v /var/run/docker.sock:/var/run/docker.sock \
---expose 7000 -P comradestukov/khala:v0.1 gateway \
---docker-sock=unix:///var/run/docker.sock \
---boot-print-log \
---etcd-print-log \
---uwsgi-print-log \
---etcd-cluster-join-member-client=http://$IP:32831
-
-docker container run -v /var/run/docker.sock:/var/run/docker.sock comradestukov/khala:v0.1 executor \
---docker-sock=unix:///var/run/docker.sock \
---boot-print-log \
---etcd-print-log \
---main-print-log \
---etcd-cluster-join-member-client=http://$IP:32831
 ```
 
 #### Single container discovery
@@ -139,8 +147,7 @@ docker stop $(docker ps -a -q) && docker rm $(docker ps -a -q)
 
 #### Service IP
 ```
-docker network create -d overlay \
---attachable khala
+docker network create -d overlay --attachable khala
 
 docker service create \
 --stop-grace-period=30s \
