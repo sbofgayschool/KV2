@@ -9,16 +9,18 @@
     "docker_sock": "unix:///var/run/docker.sock",
     */
     "pid_file": "data/main.pid",
-    "name": "executor_main",
+    "name": "executor",
     "data_dir": "data/main",
     "judicator_etcd_path": "judicator/service",
     "task":
     {
+        /*
         "user":
         {
-            "uid": 501,
-            "gid": 20
+            "uid": 0,
+            "gid": 0
         },
+        */
         "vacant": 3,
         "dir":
         {

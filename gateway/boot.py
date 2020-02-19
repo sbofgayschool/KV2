@@ -27,7 +27,7 @@ if __name__ == "__main__":
         "args_parser": etcd_parser,
         "args": (True, True)
     }, {
-        "name": "main",
+        "name": "uwsgi",
         "config_template": "config/templates/uwsgi.json",
         "config": "config/uwsgi.json",
         "args_parser": uwsgi_parser

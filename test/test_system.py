@@ -19,11 +19,29 @@ import json
 import tracemalloc
 tracemalloc.start()
 
+from rpc.judicator_rpc.ttypes import *
+
 from utility.etcd.daemon import run as etcd_run
 from utility.mongodb.daemon import run as mongodb_run
 from judicator.main import run as judicator_run
 from executor.main import run as executor_run
+from utility.task import TASK_STATUS
 
+
+# A general task
+task_template = {
+    "user": 0,
+    "compile_source_str": "bebebe\n",
+    "compile_source_name": "sources",
+    "compile_command": "cat sources;\necho 'compiled.';\n",
+    "compile_timeout": 1,
+    "execute_input": "",
+    "execute_data_str": "nrnrnr\n",
+    "execute_data_name": "raw.dat",
+    "execute_command": "cat data/raw.dat;\necho 'executed.';\n",
+    "execute_timeout": 1,
+    "execute_standard": "std",
+}
 
 # Unit test class for a integrated system
 class TestSystem(unittest.TestCase):
@@ -151,14 +169,10 @@ class TestSystem(unittest.TestCase):
                     "times": 3,
                     "interval": 5
                 },
-                "name": "executor_main",
+                "name": "executor",
                 "data_dir": "data/executor",
                 "judicator_etcd_path": "judicator/service",
                 "task": {
-                    "user": {
-                        "uid": 501,
-                        "gid": 20
-                    },
                     "vacant": 3,
                     "dir": {
                         "download": "download",
@@ -224,11 +238,153 @@ class TestSystem(unittest.TestCase):
     def test_000_system_working(self):
         """
         Test that the system is working through
-        :return:
+        :return: None
         """
-        time.sleep(5)
+        time.sleep(10)
 
         self.assertEqual(requests.get("http://localhost:7000/api/test").text, "Khala gateway server is working.")
+        return
+
+    def test_001_add_search_get_cancel_task(self):
+        """
+        Test for adding a task without an executor. Then perform search, get and cancel.
+        :return: None
+        """
+        # Try an invalid input
+        task = dict(task_template)
+        task["compile_timeout"] = -1
+        self.assertEqual(
+            json.loads(requests.post("http://localhost:7000/api/task", data=task).text),
+            {"result": ReturnCode.INVALID_INPUT, "id": None}
+        )
+
+        # Try an valid input
+        task["compile_timeout"] = 1
+        res = json.loads(requests.post("http://localhost:7000/api/task", data=task).text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        id = res["id"]
+
+        # Now search
+        param = {
+            "user": 0,
+            "start_time": "1900-01-01T00:00:00",
+            "end_time": "2020-12-31T23:59:59",
+            "limit": 10,
+            "page": 0
+        }
+        res = json.loads(requests.get("http://localhost:7000/api/task/list", params=param).text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        self.assertEqual(res["pages"], 1)
+        self.assertEqual(len(res["tasks"]), 1)
+        self.assertEqual(res["tasks"][0]["id"], id)
+
+        # Get details
+        res = json.loads(requests.get("http://localhost:7000/api/task", params={"id": id}).text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        self.assertEqual(res["task"]["id"], id)
+        self.assertEqual(res["task"]["status"], TASK_STATUS["PENDING"])
+        self.assertEqual(res["task"]["executor"], None)
+
+        # Cancel it
+        self.assertEqual(
+            json.loads(requests.delete("http://localhost:7000/api/task", params={"id": id}).text)["result"],
+            ReturnCode.OK
+        )
+        res = json.loads(requests.get("http://localhost:7000/api/task", params={"id": id}).text)
+        self.assertEqual(res["task"]["id"], id)
+        self.assertEqual(res["task"]["status"], TASK_STATUS["CANCELLED"])
+
+        return
+
+    def test_002_start_executor_and_check(self):
+        """
+        Start an executor and check judicator and executor list.
+        :return: None
+        """
+        cls = self.__class__
+
+        cls.executor = multiprocessing.Process(
+            target=executor_run,
+            args=("Executor", "config/etcd.json", "config/executor.json")
+        )
+        cls.executor.daemon = True
+        cls.executor.start()
+
+        time.sleep(6)
+        res = json.loads(requests.get("http://localhost:7000/api/judicators").text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        self.assertEqual(res["judicators"], [{"name": "/judicator/service/judicator", "address": "localhost:4000"}])
+
+        res = json.loads(requests.get("http://localhost:7000/api/executors").text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        self.assertEqual(len(res["executors"]), 1)
+        self.assertEqual(res["executors"][0]["hostname"], "executor")
+
+    def test_003_add_tasks(self):
+        """
+        Test for adding different tasks
+        :return: None
+        """
+        # Cancelled
+        task = dict(task_template)
+        task["compile_timeout"] = 100
+        task["compile_command"] = "sleep 99"
+        res = json.loads(requests.post("http://localhost:7000/api/task", data=task).text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        cancel_id = res["id"]
+        while True:
+            time.sleep(1)
+            res = json.loads(requests.get("http://localhost:7000/api/task", params={"id": cancel_id}).text)
+            self.assertEqual(res["result"], ReturnCode.OK)
+            if res["task"]["executor"]:
+                break
+        self.assertEqual(
+            json.loads(requests.delete("http://localhost:7000/api/task", params={"id": cancel_id}).text)["result"],
+            ReturnCode.OK
+        )
+        time.sleep(1)
+        res = json.loads(requests.get("http://localhost:7000/api/task", params={"id": cancel_id}).text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        self.assertEqual(res["task"]["status"], TASK_STATUS["CANCELLED"])
+
+        time.sleep(5)
+
+        # Compile timeout
+        task = dict(task_template)
+        task["compile_command"] = "sleep 2"
+        res = json.loads(requests.post("http://localhost:7000/api/task", data=task).text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        compile_timeout_id = res["id"]
+
+        # Execute timeout
+        task = dict(task_template)
+        task["execute_command"] = "sleep 2"
+        res = json.loads(requests.post("http://localhost:7000/api/task", data=task).text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        execute_timeout_id = res["id"]
+
+        # Success
+        res = json.loads(requests.post("http://localhost:7000/api/task", data=task_template).text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        success_id = res["id"]
+
+        time.sleep(11)
+
+        # Check result
+        res = json.loads(requests.get("http://localhost:7000/api/task", params={"id": compile_timeout_id}).text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        self.assertEqual(res["task"]["status"], TASK_STATUS["COMPILE_FAILED"])
+        self.assertEqual(res["task"]["result"]["compile_error"], "Compile time out.")
+        res = json.loads(requests.get("http://localhost:7000/api/task", params={"id": execute_timeout_id}).text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        self.assertEqual(res["task"]["status"], TASK_STATUS["RUN_FAILED"])
+        self.assertEqual(res["task"]["result"]["execute_error"], "Execution time out.")
+        res = json.loads(requests.get("http://localhost:7000/api/task", params={"id": success_id}).text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        self.assertEqual(res["task"]["status"], TASK_STATUS["SUCCESS"])
+        self.assertEqual(res["task"]["result"]["compile_output"], "bebebe\ncompiled.\n")
+        self.assertEqual(res["task"]["result"]["execute_output"], "nrnrnr\nexecuted.\n")
+
         return
 
     @classmethod

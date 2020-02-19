@@ -206,7 +206,7 @@ class Server(flask.Flask):
                 user = flask.request.args.get("user", None)
                 if user is not None:
                     user = int(user)
-                    if not 0 <= user:
+                    if not check_int(user):
                         return flask.jsonify(failed_result)
                 start_time = flask.request.args.get("start_time", None)
                 end_time = flask.request.args.get("end_time", None)

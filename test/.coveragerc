@@ -51,6 +51,9 @@ exclude_lines =
     # Don't care about test rpc interface
     def ping
 
+    # Don't care about downloading files
+    if file:
+
 ignore_errors = True
 
 [html]

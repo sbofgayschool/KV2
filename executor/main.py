@@ -123,7 +123,7 @@ def execute(id, config, logger):
                 f.write(zlib.decompress(task["execute"]["command"]))
         # Changing the owner of source dir
         subprocess.Popen(
-            ["chown", str(config["task"]["user"]["uid"]) + ":" + str(config["task"]["user"]["gid"]), "-R", source_dir]
+            ["chown", "-R", str(config["task"]["user"]["uid"]) + ":" + str(config["task"]["user"]["gid"]), source_dir]
         ).wait()
         logger.info("Generated all directories and files for task %s." % task["id"])
     except:
