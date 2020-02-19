@@ -165,6 +165,7 @@ function ()
 {
     // Set title
     document.title = "Khala - View Task";
+    $("body").css({"min-width": "1100px"});
     // Get task through http api
     ajax(
         "api/task",

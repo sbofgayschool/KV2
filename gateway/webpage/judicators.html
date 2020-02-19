@@ -65,6 +65,7 @@ function ()
 {
     // Set title and selected nav-bar item
     document.title = "Khala - Judicator List";
+    $("body").css({"min-width": "1100px"});
     $("#nav_judicators").addClass("active");
     // Get judicators through http api
     ajax(
