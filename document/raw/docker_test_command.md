@@ -6,7 +6,7 @@ docker push comradestukov/khala:v0.1
 
 #### Single container IP
 ```
-IP=ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'
+IP=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
 
 IP=158.143.100.42
 
@@ -232,8 +232,7 @@ docker service create \
 
 #### Service DNS
 ```
-docker network create -d overlay \
---attachable khala
+docker network create -d overlay --attachable khala
 
 docker service create \
 --stop-grace-period=30s \
@@ -320,7 +319,7 @@ docker service create \
 --etcd-print-log \
 --mongodb-print-log \
 --main-print-log \
---etcd-cluster-join-service=judicator \
+--etcd-cluster-service=judicator \
 --etcd-advertise-address=DOCKER \
 --mongodb-advertise-address=DOCKER \
 --main-advertise-address=DOCKER \
@@ -341,8 +340,6 @@ Ref: https://www.cnblogs.com/sparkdev/p/9962904.html
 Ref: https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html
 
 ansible-playbook -u chenty --ask-vault-pass --extra-vars '@~/.ansible/vault/doc_vm_passwd.yml' pb_docker.yml
-
 ansible-playbook -u chenty --extra-vars '@install_docker_passwd.yml' install_docker.yml
-
-ansible-playbook -u chenty --extra-vars 'password=your_password' install_docker.yml
+ansible-playbook -u chenty --extra-vars 'ansible_become_pass=your_password' install_docker.yml
 ```

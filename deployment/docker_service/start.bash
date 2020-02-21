@@ -59,7 +59,7 @@ if [[ $1 != "0" ]]; then
     --name $JUDICATOR $KHALA judicator \
     --docker-sock=unix:///var/run/docker.sock \
     $JUDICATOR_PRINT_FLAG \
-    --etcd-cluster-join-service=$JUDICATOR \
+    --etcd-cluster-service=$JUDICATOR \
     --etcd-advertise-address=DOCKER \
     --mongodb-advertise-address=DOCKER \
     --main-advertise-address=DOCKER \
@@ -93,7 +93,7 @@ if [[ $2 != "0" ]]; then
     --name $GATEWAY $KHALA gateway \
     --docker-sock=unix:///var/run/docker.sock \
     $GATEWAY_PRINT_FLAG \
-    --etcd-cluster-join-service=$JUDICATOR \
+    --etcd-cluster-service=$JUDICATOR \
     --etcd-name=ENV
 fi
 
@@ -113,7 +113,7 @@ if [[ $3 != "0" ]]; then
     --name $EXECUTOR $KHALA executor \
     --docker-sock=unix:///var/run/docker.sock \
     $EXECUTOR_PRINT_FLAG \
-    --etcd-cluster-join-service=$JUDICATOR \
+    --etcd-cluster-service=$JUDICATOR \
     --etcd-name=ENV \
     --main-name=ENV
 fi

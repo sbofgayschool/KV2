@@ -1,4 +1,4 @@
-#### Task specifies
+#### Task
 ```
 {
     "_id": ObjectId -> Auto generated id,

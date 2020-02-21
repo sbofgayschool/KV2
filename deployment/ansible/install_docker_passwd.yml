@@ -1,1 +1,1 @@
-password: "password"
+ansible_become_pass: "password"

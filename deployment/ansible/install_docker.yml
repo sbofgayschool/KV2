@@ -3,14 +3,23 @@
   roles:
     - role: geerlingguy.docker
       become: yes
-      ansible_become_password: "{{password}}"
-  - tasks:
+  tasks:
     - name: set docker log limit
-      shell: echo -e "{\n  \"log-driver\":\"json-file\",\n  "log-opts": {\"max-size\":\"200m\", \"max-file\":\"3\"}\n}\n" > /etc/docker/daemon.json
+      copy:
+        dest: "/etc/docker/daemon.json"
+        force: yes
+        content: |
+          {
+            "log-driver": "json-file",
+            "log-opts": {"max-size": "200m", "max-file": "3"}
+          }
+
+      become: yes
     - name: restart docker service
       service:
         name: docker
         state: restarted
+      become: yes
 - hosts: localhost
   connection: local
   tasks:

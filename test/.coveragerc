@@ -33,7 +33,7 @@ exclude_lines =
     if __name__ == .__main__.:
 
     # Don't care about docker service in etcd
-    \"service\" in config\[\"etcd\"\]\[\"cluster\"\]:
+    if \"service\" in config\[\"etcd\"\]\[\"cluster\"\]:
 
     # Don't care about empty dir check
     if not check_empty_dir\(config
