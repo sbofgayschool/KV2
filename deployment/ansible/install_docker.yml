@@ -1,10 +1,18 @@
 ---
-- hosts: localhost
-  connection: local
+- hosts: khala_manager:khala_worker
   roles:
     - role: geerlingguy.docker
       become: yes
       ansible_become_password: "{{password}}"
+  - tasks:
+    - name: set docker log limit
+      shell: echo -e "{\n  \"log-driver\":\"json-file\",\n  "log-opts": {\"max-size\":\"200m\", \"max-file\":\"3\"}\n}\n" > /etc/docker/daemon.json
+    - name: restart docker service
+      service:
+        name: docker
+        state: restarted
+- hosts: localhost
+  connection: local
   tasks:
     - name: init docker swarm
       shell: "docker swarm init"
@@ -12,11 +20,6 @@
     - name: init docker overlay network
       shell: "docker network create -d overlay --attachable khala"
       ignore_errors: true
-- hosts: khala_manager:khala_worker
-  roles:
-    - role: geerlingguy.docker
-      become: yes
-      ansible_become_password: "{{password}}"
 - hosts: khala_manager
   tasks:
     - name: get docker swarm token

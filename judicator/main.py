@@ -69,7 +69,8 @@ def register(config, local_etcd, local_mongodb, logger):
         "delete judicator from etcd",
         local_etcd.delete,
         reg_key,
-        reg_value
+        reg_value,
+        True
     )
     logger.info("Deleted judicator registration from etcd.")
     logger.info("Register thread terminating.")

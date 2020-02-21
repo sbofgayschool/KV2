@@ -1,3 +1,4 @@
 [khala_manager]
+localhost ansible_connection=local
 
 [khala_worker]

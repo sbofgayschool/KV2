@@ -120,13 +120,16 @@ def run(module_name, etcd_conf_path="config/etcd.json"):
             daemon_logger.error("Failed to connect to docker engine.", exc_info=True)
             daemon_logger.error("%s etcd_daemon program exiting." % module_name)
             exit(1)
-        # Delete local etcd from the list, if it is found
-        try:
-            services.remove(
-                "http://" + config["etcd"]["advertise"]["address"] + ":" + config["etcd"]["advertise"]["client_port"]
-            )
-        except:
-            daemon_logger.warning("Failed to find current task in list.", exc_info=True)
+        # When local etcd is not in proxy mode, try to delete local etcd from the list, if it is found
+        if "proxy" not in config["etcd"]:
+            try:
+                services.remove(
+                    "http://" + config["etcd"]["advertise"]["address"] + ":" + config["etcd"]["advertise"]["client_port"]
+                )
+            except:
+                daemon_logger.warning("Failed to find current docker task in list.", exc_info=True)
+        else:
+            daemon_logger.info("Detected proxy mode. Skipped removing current docker task from list.")
         # If one or more docker service tasks are running, join the first created one
         # Else, initialize the cluster by itself if it is not in proxy mode, or exit
         if services:
@@ -136,7 +139,7 @@ def run(module_name, etcd_conf_path="config/etcd.json"):
             config["etcd"]["cluster"]["client"] = services[0]
             daemon_logger.info("Selected %s as member client." % config["etcd"]["cluster"]["client"])
         else:
-            daemon_logger.info("No available member detected.")
+            daemon_logger.warning("No available member detected.")
             if "proxy" not in config["etcd"]:
                 config["etcd"]["cluster"] = {"type": "init"}
                 daemon_logger.info("Initializing cluster by local etcd.")
