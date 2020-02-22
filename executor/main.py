@@ -64,7 +64,6 @@ def execute(id, config, logger):
         "execute_output": b"",
         "execute_error": b""
     }
-    cancel = False
 
     work_dir = join(config["data_dir"], task["id"])
     download_dir = join(work_dir, config["task"]["dir"]["download"])
@@ -122,162 +121,160 @@ def execute(id, config, logger):
             if task["execute"]["command"]:
                 f.write(zlib.decompress(task["execute"]["command"]))
         # Changing the owner of source dir
-        subprocess.Popen(
+        subprocess.call(
             ["chown", "-R", str(config["task"]["user"]["uid"]) + ":" + str(config["task"]["user"]["gid"]), source_dir]
-        ).wait()
+        )
         logger.info("Generated all directories and files for task %s." % task["id"])
+        cancel = False
     except:
         logger.error("Failed to generate directories and files for task %s." % task["id"], exc_info=True)
         cancel = True
 
     # Start to compile
     # Acquire the lock
-    lock.acquire()
-    cancel = cancel or task["cancel"]
-    # If not cancelled, start subprocess to compile it
-    # Otherwise, clean and exit
-    try:
-        if not cancel:
-            logger.info("Compiling task %s." % task["id"])
-            task["status"] = TASK_STATUS["COMPILING"]
-            with open(compile_output, "wb") as ostream, open(compile_error, "wb") as estream:
-                task["process"] = subprocess.Popen(
-                    ["bash", config["task"]["compile"]["command"]],
-                    stdout=ostream,
-                    stderr=estream,
-                    cwd=source_dir,
-                    preexec_fn=change_user(config)
-                )
-        else:
-            task["done"] = True
-    except:
-        logger.error("Failed to compile task %s." % task["id"], exc_info=True)
-        cancel = True
-    finally:
-        # Lock must be released
-        lock.release()
-        if cancel:
-            logger.info("Working thread for task %s terminating." % task["id"])
-            shutil.rmtree(work_dir)
-            return
+    with lock:
+        try:
+            cancel = cancel or task["cancel"]
+            # If not cancelled, start subprocess to compile it
+            # Otherwise, clean and exit
+            if not cancel:
+                logger.info("Compiling task %s." % task["id"])
+                task["status"] = TASK_STATUS["COMPILING"]
+                with open(compile_output, "wb") as ostream, open(compile_error, "wb") as estream:
+                    task["process"] = subprocess.Popen(
+                        ["bash", config["task"]["compile"]["command"]],
+                        stdout=ostream,
+                        stderr=estream,
+                        cwd=source_dir,
+                        preexec_fn=change_user(config)
+                    )
+            else:
+                task["done"] = True
+        except:
+            logger.error("Failed to compile task %s." % task["id"], exc_info=True)
+            cancel = True
+    if cancel:
+        logger.info("Working thread for task %s terminating." % task["id"])
+        shutil.rmtree(work_dir)
+        return
 
     # Wait for the compilation with timeout
     try:
         res = task["process"].wait(task["compile"]["timeout"])
-        success = res == 0
         logger.info("Compiled task %s with exit code %d." % (task["id"], res))
+        success = res == 0
+        error_message = b""
     except Exception as e:
         # Check if it is timed out or something else happened
         if isinstance(e, subprocess.TimeoutExpired):
             logger.warning("Exceeded time limit when compiling task %s." % task["id"], exc_info=True)
-            task["result"]["compile_error"] = zlib.compress(b"Compile time out.")
+            error_message = b"Compile time out."
         else:
             logger.error("Failed to finish compilation of task %s." % task["id"], exc_info=True)
-            task["result"]["compile_error"] = zlib.compress(b"Unknown error.")
+            error_message = b"Unknown error."
         # Kill and wait for the subprocess
-        success = False
         task["process"].kill()
         task["process"].wait()
+        success = False
 
     # Start to execute
     # Acquire the lock
-    lock.acquire()
-    # If compilation is success, start subprocess to compile it
-    # Otherwise, clean and exit
-    try:
-        # Add compile result
-        logger.info("Collecting compilation result for task %s." % task["id"])
-        with open(compile_output, "rb") as f:
-            task["result"]["compile_output"] = zlib.compress(f.read())
-        if not task["result"]["compile_error"]:
-            with open(compile_error, "rb") as f:
-                task["result"]["compile_error"] = zlib.compress(f.read())
-        # If the compilation output goes beyond the limitation
-        tmp_task = dict(task)
-        tmp_task.pop("process", None)
-        tmp_task.pop("thread", None)
-        if not check_task_dict_size(tmp_task):
-            task["result"]["compile_output"] = b""
-            task["result"]["compile_error"] = zlib.compress(b"Compile output limitation exceeded.")
+    with lock:
+        # If compilation is success, start subprocess to execute it
+        # Otherwise, clean and exit
+        try:
+            # Add compile result
+            logger.info("Collecting compilation result for task %s." % task["id"])
+            with open(compile_output, "rb") as f:
+                task["result"]["compile_output"] = zlib.compress(f.read())
+            if not error_message:
+                with open(compile_error, "rb") as f:
+                    task["result"]["compile_error"] = zlib.compress(f.read())
+            else:
+                task["result"]["compile_error"] = zlib.compress(error_message)
+            # If the compilation output goes beyond the limitation
+            tmp_task = dict(task)
+            tmp_task.pop("process", None)
+            tmp_task.pop("thread", None)
+            if not check_task_dict_size(tmp_task):
+                task["result"]["compile_output"] = b""
+                task["result"]["compile_error"] = zlib.compress(b"Compile output limitation exceeded.")
+                success = False
+            # If compilation is successful, execute it
+            if success:
+                logger.info("Running task %s." % task["id"])
+                task["status"] = TASK_STATUS["RUNNING"]
+                with open(execute_input, "rb") as istream, \
+                        open(execute_output, "wb") as ostream, \
+                        open(execute_error, "wb") as estream:
+                    task["process"] = subprocess.Popen(
+                        ["bash", config["task"]["execute"]["command"]],
+                        stdin=istream,
+                        stdout=ostream,
+                        stderr=estream,
+                        cwd=source_dir,
+                        preexec_fn=change_user(config)
+                    )
+            else:
+                task["status"] = TASK_STATUS["COMPILE_FAILED"]
+                task["done"] = True
+                task["process"] = None
+        except:
+            logger.error("Failed to collect compilation result or run task %s." % task["id"], exc_info=True)
             success = False
-        # If compilation is successful, execute it
-        if success:
-            logger.info("Running task %s." % task["id"])
-            task["status"] = TASK_STATUS["RUNNING"]
-            with open(execute_input, "rb") as istream, \
-                    open(execute_output, "wb") as ostream, \
-                    open(execute_error, "wb") as estream:
-                task["process"] = subprocess.Popen(
-                    ["bash", config["task"]["execute"]["command"]],
-                    stdin=istream,
-                    stdout=ostream,
-                    stderr=estream,
-                    cwd=source_dir,
-                    preexec_fn=change_user(config)
-                )
-    except:
-        logger.error("Failed to collect compilation result or run task %s." % task["id"], exc_info=True)
-        success = False
-    finally:
-        # It not successful, set status to compile failed
-        if not success:
-            task["status"] = TASK_STATUS["COMPILE_FAILED"]
-            task["done"] = True
-            task["process"] = None
-        # Lock must be released
-        lock.release()
-        # It not successful, clean and exit
-        if not success:
-            logger.info("Working thread for task %s terminating." % task["id"])
-            shutil.rmtree(work_dir)
-            return
+    # It not successful, set status to compile failed
+    if not success:
+        logger.info("Working thread for task %s terminating." % task["id"])
+        shutil.rmtree(work_dir)
+        return
 
     # Wait for the execution with timeout
     try:
         res = task["process"].wait(task["execute"]["timeout"])
-        success = res == 0
         logger.info("Run task %s with exit code %d." % (task["id"], res))
+        success = res == 0
+        error_message = b""
     except Exception as e:
         # Check if it is timed out or something else happened
         if isinstance(e, subprocess.TimeoutExpired):
             logger.warning("Exceeded time limit when running task %s." % task["id"], exc_info=True)
-            task["result"]["execute_error"] = zlib.compress(b"Execution time out.")
+            error_message = b"Execution time out."
         else:
             logger.error("Failed to finish execution of task %s." % task["id"], exc_info=True)
-            task["result"]["execute_error"] = zlib.compress(b"Unknown error.")
+            error_message = b"Unknown error."
         # Kill and wait for the subprocess
-        success = False
         task["process"].kill()
         task["process"].wait()
+        success = False
 
     # Adjust task status accordingly
     # Acquire the lock first
-    lock.acquire()
-    try:
-        # Add execution result
-        logger.info("Collecting execution result.")
-        with open(execute_output, "rb") as f:
-            task["result"]["execute_output"] = zlib.compress(f.read())
-        if not task["result"]["execute_error"]:
-            with open(execute_error, "rb") as f:
-                task["result"]["execute_error"] = zlib.compress(f.read())
-        # If the execution output goes beyond the limitation
-        tmp_task = dict(task)
-        tmp_task.pop("process", None)
-        tmp_task.pop("thread", None)
-        if not check_task_dict_size(tmp_task):
-            task["result"]["execute_output"] = b""
-            task["result"]["execute_error"] = zlib.compress(b"Execution output limitation exceeded.")
-            success = False
-        task["status"] = TASK_STATUS["SUCCESS"] if success else TASK_STATUS["RUN_FAILED"]
-    except:
-        logger.error("Failed to collect execution result of task %s." % task["id"], exc_info=True)
-        task["status"] = TASK_STATUS["RUN_FAILED"]
-    finally:
-        task["done"] = True
-        task["process"] = None
-        # Lock must be released
-        lock.release()
+    with lock:
+        try:
+            # Add execution result
+            logger.info("Collecting execution result.")
+            with open(execute_output, "rb") as f:
+                task["result"]["execute_output"] = zlib.compress(f.read())
+            if not error_message:
+                with open(execute_error, "rb") as f:
+                    task["result"]["execute_error"] = zlib.compress(f.read())
+            else:
+                task["result"]["execute_error"] = zlib.compress(error_message)
+            # If the execution output goes beyond the limitation
+            tmp_task = dict(task)
+            tmp_task.pop("process", None)
+            tmp_task.pop("thread", None)
+            if not check_task_dict_size(tmp_task):
+                task["result"]["execute_output"] = b""
+                task["result"]["execute_error"] = zlib.compress(b"Execution output limitation exceeded.")
+                success = False
+            task["status"] = TASK_STATUS["SUCCESS"] if success else TASK_STATUS["RUN_FAILED"]
+        except:
+            logger.error("Failed to collect execution result of task %s." % task["id"], exc_info=True)
+            task["status"] = TASK_STATUS["RUN_FAILED"]
+    task["done"] = True
+    task["process"] = None
+    # Lock must be released
 
     logger.info("Working thread for task %s terminating." % task["id"])
     # Clean files
@@ -342,8 +339,9 @@ def run(module_name="Executor", etcd_conf_path="config/etcd.json", main_conf_pat
     if not check_empty_dir(config["data_dir"]):
         shutil.rmtree(config["data_dir"])
         os.mkdir(config["data_dir"])
-        os.chmod(config["data_dir"], 0o700)
         logger.info("Previous data directory deleted with a new one created.")
+    os.chmod(config["data_dir"], 0o700)
+    logger.info("Data directory privilege changed to 0700.")
 
     # If task user id and group id is not specified, use the current user and group
     if "user" not in config["task"]:
@@ -352,17 +350,16 @@ def run(module_name="Executor", etcd_conf_path="config/etcd.json", main_conf_pat
 
     # Report tasks execution status regularly
     logger.info("Starting executor routines.")
-    while True:
-        try:
+    try:
+        while True:
             time.sleep(config["report_interval"])
 
             # Collect things to report
             logger.info("Collecting report content.")
             complete, executing = [], []
             vacant = config["task"]["vacant"]
-            try:
-                # Acquire lock first before modifying global variable
-                lock.acquire()
+            # Acquire lock first before modifying global variable
+            with lock:
                 try:
                     for t in tasks:
                         if not tasks[t]["cancel"]:
@@ -373,13 +370,10 @@ def run(module_name="Executor", etcd_conf_path="config/etcd.json", main_conf_pat
                                 executing.append(generate(tasks[t], True))
                                 vacant -= 1
                                 logger.info("Task %s added to executing list." % t)
+                except KeyboardInterrupt:
+                    raise
                 except:
                     logger.error("Failed to collect report content.", exc_info=True)
-                finally:
-                    # Lock must be released
-                    lock.release()
-            except:
-                logger.error("Failed to obtain lock for report content collection.", exc_info=True)
 
             # Try to report to judicator and get response
             logger.info("Executor current vacancy: %d." % vacant)
@@ -408,9 +402,8 @@ def run(module_name="Executor", etcd_conf_path="config/etcd.json", main_conf_pat
 
             # Update tasks information
             logger.info("Updating tasks information.")
-            try:
-                # Acquire lock first before modifying global variable
-                lock.acquire()
+            # Acquire lock first before modifying global variable
+            with lock:
                 try:
                     # Cancel tasks
                     logger.info("Checking tasks to be cancelled.")
@@ -452,19 +445,26 @@ def run(module_name="Executor", etcd_conf_path="config/etcd.json", main_conf_pat
                         tasks[t["id"]]["thread"] = threading.Thread(target=execute, args=(t["id"], config, logger))
                         tasks[t["id"]]["thread"].setDaemon(True)
                         tasks[t["id"]]["thread"].start()
+                except KeyboardInterrupt:
+                    raise
                 except:
                     logger.error("Failed to update tasks.", exc_info=True)
-                finally:
-                    # Lock must be released
-                    lock.release()
-            except:
-                logger.error("Failed to obtain lock for task updating.", exc_info=True)
 
             logger.info("Finished executor routine work.")
 
-        except KeyboardInterrupt:
-            logger.info("Received SIGINT.")
-            break
+    except KeyboardInterrupt:
+        logger.info("Received SIGINT. Cleaning up all subprocess.", exc_info=True)
+
+    # Clean up and kill all subprocess to prevent zombie process
+    # Acquire the lock until exit to ensure that no more subprocess are generated
+    lock.acquire()
+    for t in tasks:
+        if tasks[t]["process"]:
+            tasks[t]["process"].kill()
+            tasks[t]["process"].wait()
+            logger.info("Killed subprocess of task %s." % t)
+        else:
+            logger.info("Task %s has no subprocess running." % t)
 
     logger.info("%s main program exiting." % module_name)
     return

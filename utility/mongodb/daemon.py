@@ -190,7 +190,7 @@ def run(module_name="Judicator", etcd_conf_path="config/etcd.json", mongodb_conf
     except:
         daemon_logger.error("Accidentally terminated. Killing mongodb process.", exc_info=True)
         mongodb_proc.terminate()
-    # Wait until mongodb process exit
+    # Wait until mongodb process exit to prevent zombie process
     mongodb_proc.wait()
 
     daemon_logger.info("%s mongodb_daemon program exiting." % module_name)

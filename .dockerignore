@@ -47,6 +47,7 @@ gateway/data/*
 
 # Pid file
 **/*.pid
+**/*.pid.lock
 
 # Config file
 judicator/config/*.json

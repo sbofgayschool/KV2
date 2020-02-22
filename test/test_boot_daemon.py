@@ -113,6 +113,7 @@ class TestBootDaemon(unittest.TestCase):
         shutil.rmtree("config")
         os.remove("uwsgi.ini")
         os.remove("uwsgi.pid")
+        os.remove("uwsgi.pid.lock")
         return
 
 if __name__ == "__main__":

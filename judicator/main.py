@@ -349,6 +349,16 @@ class RPCService:
 
         delete_list, assign_list = [], []
         executing_list = []
+        # Operation taken when the result is too big to write in mongodb
+        too_big_operation = {
+            "$set": {
+                "done": True,
+                "status": TASK_STATUS["UNKNOWN_ERROR"],
+                "executor": None,
+                "report_time": datetime.datetime.now(),
+                "result": None
+            }
+        }
         # Update all completed tasks, if the task indeed belong to the executor, and request the executor to delete it
         for t in complete:
             try:
@@ -374,15 +384,7 @@ class RPCService:
                         self.logger.error("Failed to update task %s as it is too large." % task["id"], exc_info=True)
                         result = self.mongodb_task.find_one_and_update(
                             {"_id": ObjectId(task["id"]), "executor": executor},
-                            {
-                                "$set": {
-                                    "done": True,
-                                    "status": TASK_STATUS["UNKNOWN_ERROR"],
-                                    "executor": None,
-                                    "report_time": datetime.datetime.now(),
-                                    "result": None
-                                }
-                            }
+                            too_big_operation
                         )
                     else:
                         raise e
@@ -390,15 +392,7 @@ class RPCService:
                     self.logger.error("Failed to update task %s as it is too large." % task["id"], exc_info=True)
                     result = self.mongodb_task.find_one_and_update(
                         {"_id": ObjectId(task["id"]), "executor": executor},
-                        {
-                            "$set": {
-                                "done": True,
-                                "status": TASK_STATUS["UNKNOWN_ERROR"],
-                                "executor": None,
-                                "report_time": datetime.datetime.now(),
-                                "result": None
-                            }
-                        }
+                        too_big_operation
                     )
                 except:
                     self.logger.error("Failed to update task %s." % task["id"], exc_info=True)
@@ -544,7 +538,7 @@ def run(
         logger.info("Starting rpc server.")
         server.serve()
     except KeyboardInterrupt:
-        logger.info("Received SIGINT. Cancelling judicator registration on etcd.")
+        logger.info("Received SIGINT. Cancelling judicator registration on etcd.", exc_info=True)
         # Wait for the register thread to delete registration and then stop
         working = False
         register_thread.join()
