@@ -39,7 +39,10 @@ set a full limitation (CPU, memory, disk space, etc.) on all single tasks.
 - Add user functions (user register, login, etc.) and admin functions.
 - Internationalize.
 - Windows OS support in un-docker environment.
-- Authentication in RPC calls in all RPC interfaces.
+- Authentication in RPC calls for all RPC interfaces.
+- Make all parameters, especially including paths to configurations, configerable in command line
+(at least paths to config templates, config files, data directories, pid files and all runtime used files),
+so multiple instances can be runned using only one excutable scripts without docker environment.
 
 #### Finished / Canceled:
 - Avoid all hard-coded IP address.

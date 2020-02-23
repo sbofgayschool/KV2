@@ -33,7 +33,7 @@ class TestEtcdDaemon(unittest.TestCase):
         """
         print("Initializing environment.\n")
         # Generate temp dirs
-        for d in ["etcd1", "etcd2", "etcd3"]:
+        for d in ["etcd1", "etcd2", "etcd3", "etcd4"]:
             os.mkdir(d)
             for sd in ["etcd", "etcd_init"]:
                 os.mkdir(d + "/" + sd)
@@ -128,11 +128,44 @@ class TestEtcdDaemon(unittest.TestCase):
                     }
                 }
             }, indent=4))
+        with open("etcd4/conf.json", "w") as f:
+            f.write(json.dumps({
+                "daemon": {
+                    "retry": {
+                        "times": 3,
+                        "interval": 5
+                    },
+                    "raw_log_symbol_pos": 27,
+                },
+                "etcd": {
+                    "exe": "etcd",
+                    "name": "etcd4",
+                    "data_dir": "etcd4/etcd",
+                    "data_init_dir": "etcd4/etcd_init",
+                    "listen": {
+                        "address": "0.0.0.0",
+                        "peer_port": "2006",
+                        "client_port": "2007"
+                    },
+                    "advertise": {
+                        "address": "localhost",
+                        "peer_port": "2006",
+                        "client_port": "2007"
+                    },
+                    "proxy": "on",
+                    "cluster": {
+                        "type": "join",
+                        "client": "http://localhost:2001"
+                    }
+                }
+            }, indent=4))
+
 
         # Sub processes
         cls.etcd1 = None
         cls.etcd2 = None
         cls.etcd3 = None
+        cls.etcd4 = None
         return
 
     def test_000_run_etcd_daemon(self):
@@ -146,6 +179,10 @@ class TestEtcdDaemon(unittest.TestCase):
         cls.etcd1 = multiprocessing.Process(target=run, args=("Etcd1", "etcd1/conf.json"))
         cls.etcd1.daemon = True
         cls.etcd1.start()
+        time.sleep(2)
+        cls.etcd4 = multiprocessing.Process(target=run, args=("Etcd4", "etcd4/conf.json"))
+        cls.etcd4.daemon = True
+        cls.etcd4.start()
         time.sleep(2)
         cls.etcd2 = multiprocessing.Process(target=run, args=("Etcd2", "etcd2/conf.json"))
         cls.etcd2.daemon = True
@@ -213,9 +250,13 @@ class TestEtcdDaemon(unittest.TestCase):
             if cls.etcd3.pid:
                 os.kill(cls.etcd3.pid, signal.SIGINT)
             cls.etcd3.join()
+        if cls.etcd4 and cls.etcd4.is_alive():
+            if cls.etcd4.pid:
+                os.kill(cls.etcd4.pid, signal.SIGINT)
+            cls.etcd4.join()
 
         # Remove temp dir
-        for d in ["etcd1", "etcd2", "etcd3"]:
+        for d in ["etcd1", "etcd2", "etcd3", "etcd4"]:
             shutil.rmtree(d)
         return
 

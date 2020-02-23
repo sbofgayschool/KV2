@@ -38,9 +38,8 @@ def etcd_generate_run_command(etcd_config):
         command.append("10000")
 
     # If strict reconfig mode is on
-    if "strict_reconfig" in etcd_config:
+    if etcd_config.get("strict_reconfig", False):
         command.append("--strict-reconfig-check")
-        command.append("true" if etcd_config["strict_reconfig"] else "false")
 
     # If cluster information exists
     if "cluster" in etcd_config:

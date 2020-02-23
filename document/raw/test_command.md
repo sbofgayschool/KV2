@@ -57,7 +57,7 @@ mongod --replSet "rs0" --bind_ip localhost --port 7001 --dbpath /Users/chentingy
 mongod --replSet "rs0" --bind_ip localhost --port 7002 --dbpath /Users/chentingyu/Programme/Practice/MongoDB/store2
 ```
 
-#### Clear iptables
+#### Clear Iptables
 ```
 Ref: https://www.digitalocean.com/community/tutorials/how-to-list-and-delete-iptables-firewall-rules
 
@@ -72,4 +72,11 @@ sudo iptables -X
 sudo apt-get -y remove fail2ban ufw
 sudo apt-get -y purge fail2ban ufw
 sudo apt-get -y autoremove
+```
+
+#### System
+```
+export PYTHONPATH=../../KV2/
+
+python3 ../../KV2/judicator/boot.py --boot-print-log --etcd-print-log --mongodb-print-log --main-print-log --etcd-cluster-init-independent
 ```
