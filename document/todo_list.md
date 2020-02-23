@@ -3,6 +3,7 @@ This file contains todo list for the whole project.
 
 ## Short Term
 - Add full documents, majorly about usage and maintenance, but also should also have something about source code.
+- Build and upload formal v0.1 image on docker host.
 
 #### Finished / Canceled:
 - Add file size check for both gateway and executor when encountering too large task files.
@@ -22,8 +23,10 @@ This can be tested on VM of DoC IC.
 - Write one-shot scripts to install the whole thing,
 including docker (on both local and remote computer), docker service initialize, cluster initialize, etc.
 - Formalize logs.
+- Remove warning from thrift generation.
 - Necessary tests on VM of Doc IC.
-- Build and upload the v0.1 image on docker host.
+- More strict check on input.
+- Make maintain.py be able to lock multiple pid files.
 - <b>CANCELED, shellx.doc.ic.ac.uk does not open any possible ports due to the configuration of its iptables 
 (or something else) .</b> <del>A python based proxy for Khala on VM of Doc IC (Small Independent Project).</del>
 - Add full tests:
@@ -43,7 +46,4 @@ set a full limitation (CPU, memory, disk space, etc.) on all single tasks.
 - Better use of docker DNS, and get rid of container-id.
 - Add new nodes to the system even when the system has failed nodes.
 - Make restart of a killed, randomly port-mapped docker container available.
-- Remove warning from thrift generation.
 - Refactor codes to avoid duplication, especially in boot.py and etcd_daemon.py
-- More strict check on input.
-- Make maintain.py be able to lock multiple pid files.

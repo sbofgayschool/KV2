@@ -114,8 +114,8 @@ class Server(flask.Flask):
             self.logger.info("Generating all extra fields for added task.")
             # Deal with compile source
             compile_source = flask.request.files.get("compile_source")
-            compile_source_str = flask.request.form.get("compile_source_str")
             compile_source_name = flask.request.form.get("compile_source_name")
+            compile_source_str = flask.request.form.get("compile_source_str")
             # If the zip file has been uploaded, use it
             # Else if some text is given, zipped it and use it
             if compile_source:
@@ -139,8 +139,8 @@ class Server(flask.Flask):
 
             # Deal with execute data
             execute_data = flask.request.files.get("execute_data")
-            execute_data_str = flask.request.form.get("execute_data_str")
             execute_data_name = flask.request.form.get("execute_data_name")
+            execute_data_str = flask.request.form.get("execute_data_str")
             # If the zip file has been uploaded, use it
             # Else if some text is given, zipped it and use it
             if execute_data:

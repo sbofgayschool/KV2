@@ -274,7 +274,6 @@ def execute(id, config, logger):
             task["status"] = TASK_STATUS["RUN_FAILED"]
     task["done"] = True
     task["process"] = None
-    # Lock must be released
 
     logger.info("Working thread for task %s terminating." % task["id"])
     # Clean files
@@ -455,7 +454,7 @@ def run(module_name="Executor", etcd_conf_path="config/etcd.json", main_conf_pat
     except KeyboardInterrupt:
         logger.info("Received SIGINT. Cleaning up all subprocess.", exc_info=True)
 
-    # Clean up and kill all subprocess to prevent zombie process
+    # Clean up and kill all subprocess
     # Acquire the lock until exit to ensure that no more subprocess are generated
     lock.acquire()
     for t in tasks:

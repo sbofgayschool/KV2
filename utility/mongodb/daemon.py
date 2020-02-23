@@ -140,7 +140,7 @@ def run(module_name="Judicator", etcd_conf_path="config/etcd.json", mongodb_conf
     # If not, copy it to the data dir
     if not check_empty_dir(config["mongodb"]["data_init_dir"]):
         shutil.rmtree(config["mongodb"]["data_dir"])
-        shutil.copytree(config["mongodb"]["init_data_dir"], config["mongodb"]["data_dir"])
+        shutil.copytree(config["mongodb"]["data_init_dir"], config["mongodb"]["data_dir"])
         daemon_logger.info("Found existing data initialize directory.")
 
     # Generate command and run mongodb instance as a subprocess
@@ -190,7 +190,7 @@ def run(module_name="Judicator", etcd_conf_path="config/etcd.json", mongodb_conf
     except:
         daemon_logger.error("Accidentally terminated. Killing mongodb process.", exc_info=True)
         mongodb_proc.terminate()
-    # Wait until mongodb process exit to prevent zombie process
+    # Wait until mongodb process exit
     mongodb_proc.wait()
 
     daemon_logger.info("%s mongodb_daemon program exiting." % module_name)

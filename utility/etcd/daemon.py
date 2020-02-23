@@ -96,7 +96,7 @@ def run(module_name, etcd_conf_path="config/etcd.json"):
     if "data_init_dir" in config["etcd"] and not check_empty_dir(config["etcd"]["data_init_dir"]):
         del config["etcd"]["cluster"]
         shutil.rmtree(config["etcd"]["data_dir"])
-        shutil.copytree(config["etcd"]["init_data_dir"], config["etcd"]["data_dir"])
+        shutil.copytree(config["etcd"]["data_init_dir"], config["etcd"]["data_dir"])
         daemon_logger.info("Found existing data initialize directory. Skipped cluster parameters.")
 
     # If cluster config exists, this node is going to either explicitly join a cluster or initialize one
@@ -217,7 +217,7 @@ def run(module_name, etcd_conf_path="config/etcd.json"):
     except:
         daemon_logger.error("Accidentally terminated. Killing etcd process.", exc_info=True)
         etcd_proc.terminate()
-    # Wait for the subprocess to prevent zombie process
+    # Wait for the subprocess
     etcd_proc.wait()
 
     daemon_logger.info("%s etcd_daemon program exiting." % module_name)

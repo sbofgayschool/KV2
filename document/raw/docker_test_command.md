@@ -8,7 +8,7 @@ docker push comradestukov/khala:v0.1
 ```
 IP=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
 
-IP=158.143.100.42
+IP=158.143.102.232
 
 docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --expose 2000 \
@@ -39,7 +39,7 @@ docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --etcd-print-log \
 --mongodb-print-log \
 --main-print-log \
---etcd-cluster-join-member-client=http://$IP:32770 \
+--etcd-cluster-join-member-client=http://$IP:32774 \
 --etcd-advertise-address=$IP \
 --mongodb-advertise-address=$IP \
 --main-advertise-address=$IP  \
@@ -54,14 +54,14 @@ docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --boot-print-log \
 --etcd-print-log \
 --uwsgi-print-log \
---etcd-cluster-join-member-client=http://$IP:32770
+--etcd-cluster-join-member-client=http://$IP:32774
 
 docker container run -v /var/run/docker.sock:/var/run/docker.sock comradestukov/khala:v0.1 executor \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
 --etcd-print-log \
 --main-print-log \
---etcd-cluster-join-member-client=http://$IP:32770
+--etcd-cluster-join-member-client=http://$IP:32774
 
 docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --expose 2000 \

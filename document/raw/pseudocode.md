@@ -42,7 +42,7 @@ run():
                 config.cluster.client = choose_one(joining_nodes)
         IF config.cluster.type == "join" and NOT config.cluster.member:
             IF NOT config.proxy:
-                remote_etcd = etcd_proxy(config.cluster.client)
+                remote_etcd = EtcdProxy(config.cluster.client)
                 remote_etcd.add_member(config.address)
             config.cluster.member = remote_etcd.get_member()
     etcd_process = subprocess.run(config)
@@ -153,8 +153,7 @@ Service.report(executor, complete_task, executing_task, vacant):
             .set(done=TRUE, executor=NULL, status=stask.status, report_time=current_time(), result=task.result)
         cancel_task.append(task.id)
     FOR task IN executing_task:
-        IF NOT mongodb.task.find(id=task.id, executor=executor)
-            .set(status=task.status, report_time=current_time())
+        IF NOT mongodb.task.find(id=task.id, executor=executor).set(status=task.status, report_time=current_time()):
             cancel_task.append(task.id)
     FOR task IN (mongodb.task.find(executor=executor) - executing_list):
         mongodb.task.find(id=task.id).set(executor=NULL, status=retrying)

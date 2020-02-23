@@ -78,7 +78,7 @@ def run(module_name="Gateway", uwsgi_conf_path="config/uwsgi.json"):
     except:
         daemon_logger.error("Accidentally terminated. Killing uwsgi process.", exc_info=True)
         uwsgi_proc.terminate()
-    # Wait for the subprocess to prevent zombie process
+    # Wait for the subprocess to prevent
     uwsgi_proc.wait()
 
     daemon_logger.info("%s uwsgi_daemon program exiting." % module_name)

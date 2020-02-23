@@ -34,11 +34,13 @@ def etcd_generate_run_command(etcd_config):
     if "proxy" in etcd_config:
         command.append("--proxy")
         command.append(etcd_config["proxy"])
-        command.append("--proxy-refresh-interval=10000")
+        command.append("--proxy-refresh-interval")
+        command.append("10000")
 
     # If strict reconfig mode is on
     if "strict_reconfig" in etcd_config:
-        command.append("--strict-reconfig-check=" + ("true" if etcd_config["strict_reconfig"] else "false"))
+        command.append("--strict-reconfig-check")
+        command.append("true" if etcd_config["strict_reconfig"] else "false")
 
     # If cluster information exists
     if "cluster" in etcd_config:

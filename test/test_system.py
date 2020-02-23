@@ -144,7 +144,7 @@ class TestSystem(unittest.TestCase):
                 },
                 "lead": {
                     "etcd_path": "judicator/leader",
-                    "interval": 20,
+                    "interval": 10,
                     "ttl": 45
                 },
                 "register": {
@@ -155,12 +155,12 @@ class TestSystem(unittest.TestCase):
                 "task": {
                     "database": "judicator",
                     "collection": "task",
-                    "expiration": 30
+                    "expiration": 10
                 },
                 "executor": {
                     "database": "judicator",
                     "collection": "executor",
-                    "expiration": 40
+                    "expiration": 15
                 },
             }, indent=4))
         with open("config/executor.json", "w") as f:
@@ -384,6 +384,42 @@ class TestSystem(unittest.TestCase):
         self.assertEqual(res["task"]["status"], TASK_STATUS["SUCCESS"])
         self.assertEqual(res["task"]["result"]["compile_output"], "bebebe\ncompiled.\n")
         self.assertEqual(res["task"]["result"]["execute_output"], "nrnrnr\nexecuted.\n")
+
+        return
+
+    def test_004_executor_exit(self):
+        """
+        # Test when executor exit
+        :return: None
+        """
+        cls = self.__class__
+
+        task = dict(task_template)
+        task["compile_timeout"] = 100
+        task["compile_command"] = "sleep 99"
+        res = json.loads(requests.post("http://localhost:7000/api/task", data=task).text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        id = res["id"]
+        while True:
+            time.sleep(1)
+            res = json.loads(requests.get("http://localhost:7000/api/task", params={"id": id}).text)
+            self.assertEqual(res["result"], ReturnCode.OK)
+            if res["task"]["executor"]:
+                break
+
+        time.sleep(1)
+
+        os.kill(cls.executor.pid, signal.SIGINT)
+
+        time.sleep(30)
+
+        res = json.loads(requests.get("http://localhost:7000/api/task", params={"id": id}).text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        self.assertEqual(res["task"]["status"], TASK_STATUS["RETRYING"])
+        self.assertEqual(res["task"]["executor"], None)
+        res = json.loads(requests.get("http://localhost:7000/api/executors").text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        self.assertEqual(len(res["executors"]), 0)
 
         return
 
