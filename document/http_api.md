@@ -3,9 +3,9 @@
 This page describes HTTP interface provided by Gateway in details. In fact, the website held by the Gateay
 also uses these APIs.
 
-### Common Code
+## Common Code
 
-##### Response Code
+#### Response Code
 
 | value | meaning |
 | :---: | :---: |
@@ -15,7 +15,7 @@ also uses these APIs.
 | 3 | too large |
 | 4 | invalid input |
 
-##### Task Status Code
+#### Task Status Code
 
 | value | meaning |
 | :---: | :---: |
@@ -29,7 +29,7 @@ also uses these APIs.
 | 7 | cancelled |
 | 8 | unknown error |
 
-### Test
+## Test
 
 Test if the web server is working.
 
@@ -39,7 +39,7 @@ Test if the web server is working.
 - **Response formate:** Text
 - **Response:** "Khala gateway server is working."
 
-### Add
+## Add
 
 Add a task to the system.
 
@@ -73,7 +73,7 @@ Add a task to the system.
 | result | int | response code | true | false | see common response code | 0 |
 | id | string | id of newly added task | true | true | a string with length of 24 | 0123456789abcdef01234567 |
 
-### Cancel
+## Cancel
 
 Cancel an undone task.
 
@@ -92,7 +92,7 @@ Cancel an undone task.
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | result | int | response code | true | false | see common response code | 0 |
 
-### Search
+## Search
 
 Search tasks according to conditions
 
@@ -176,7 +176,7 @@ compile_error, execute_output, execute_error.
 
 | key | type | meaning | must exist | can be null | note | example |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| source | boot | if there is a compilation source zip file for the task | true | false | | true |
+| source | bool | if there is a compilation source zip file for the task | true | false | | true |
 | command | string | compilation command | true | false | | g++ -o main main.cpp |
 | timeout | int | compilation time out | true | false | must between 0 and 2147483647 | 1 |
 
@@ -185,14 +185,23 @@ compile_error, execute_output, execute_error.
 | key | type | meaning | must exist | can be null | note | example |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | input | string | input stream of compiled program | true | false | | 1 2 |
-| data | boot | if there is a extra execution data zip file for the task | true | false | | true |
+| data | bool | if there is a extra execution data zip file for the task | true | false | | true |
 | execute_command | string | execution command | true | false | | ./main |
 | execute_timeout | int | execution time out | true | false | must between 0 and 2147483647 | 1 |
 | execute_standard | string | execution standard output | true | false | | 3 |
 
-### Executors
+- **Result structure:**
+
+| key | type | meaning | must exist | can be null | note | example |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| compile_output | string | output stream of compilation | true | false | | all done |
+| compile_error | string | error stream of compilation | true | false | | some error |
+| compile_output | string | output stream of execution | true | false | | 3 |
+| compile_error | string | error stream of execution | true | false | | some error |
+
+## Executors
 
 
-### Judicators
+## Judicators
 
 

@@ -2,7 +2,7 @@
 
 This document introduces the general architecture of the system.
 
-### Overview
+## Overview
 
 The system consists of three kind of nodes:
 - **Judicator:** Manager nodes connecting to each other, forming a cluster with high availability. These nodes
@@ -17,11 +17,11 @@ The general architecture of the system looks like the following.
 
 ![Architecture](img/architecture.png)
 
-### Layers in Nodes
+## Layers in Nodes
 
 There are different layers inside a node which form different layers.
 
-##### Judicator
+#### Judicator
 
 - **Etcd:** Etcd forms the bottom layer. The etcd component in Judicator node either initializes the cluster
 or connects to the existing cluster by designated IP address or docker DNS. It forms an Etcd cluster providing
@@ -35,13 +35,13 @@ the MongoDB replica set. The MongdoDB replica set provides robust and uniform da
 business. It uses Etcd to register itself as available services, and use MongoDB to store data for tasks and Executors.
 It also uses Etcd to compete on a single key to perform leader election.
 
-##### Executor
+#### Executor
 - **Etcd:** Similar to Judicators, Etcd also form the bottom layer in Executors. However, Etcd in Executor only
 connects to Etcd cluster formed by Judicator Etcd in proxy mode.
 - **Executor Main:** Executor main layer is based on Etcd layer and carries out logic business. It uses Etcd layer to
 search for available Judicator main services after which report is going to maker.
 
-##### Gateway
+#### Gateway
 - **Etcd:** *Exactly the same to Etcd layer in Executors.*
 - **Uwsgi / Gateway Server:** This layer takes the responsibility to provide HTTP service. Like Executor main, it
 uses Etcd layer to search for available Judicator main services when required.
@@ -50,7 +50,7 @@ The structure of the system in the layer view looks like the following.
 
 ![Layer view](img/layer.png)
 
-### Working Principles
+## Working Principles
 
 As mentioned above, each node consists of several layers which will have one or more processes. All of these processes
 will be started up by a single process.<br>
@@ -59,7 +59,7 @@ will be started up by a single process.<br>
 program then starts up all components in subprocess. The Boot process also check the status of all subprocess regularly 
 and restart those which is down.
 
-##### Judicator
+#### Judicator
 
 - **Etcd:** Etcd daemon process is started by Boot process. It loads config from config file and arguments first, then 
 either initializes a cluster or joins an existing cluster. Upon joining, Etcd daemon will add local Etcd to the cluster 
@@ -83,7 +83,7 @@ The Judicator processes relationship looks like the following.
 
 ![Judicator process relationship](img/judicator.png)
 
-##### Executor
+#### Executor
 
 - **Etcd:** *Same to Etcd in Judicators, but can only be run in proxy mode.*
 - **Executor Main:** Again, it will load config first, before it begins to report to Judicators regularly. Before every
@@ -97,7 +97,7 @@ The Executor processes relationship looks like the following.
 
 ![Executor process relationship](img/executor.png)
 
-##### Gateway
+#### Gateway
 - **Etcd:** *Exactly the same to Etcd in Executors.*
 - **Uwsgi:** The Uwsgi daemon will write loaded configuration into a ini file before start the real Uwsgi program. It
 handles all of the Uwsgi's logs until receiving SIGINT.
