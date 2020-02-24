@@ -104,8 +104,8 @@ Search tasks according to conditions
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | id | string | exact task id | false | null | a string with length of 24 | 0123456789abcdef01234567 |
 | user | int | id of user owning the task | false | null | must between 0 and 2147483647 | 0 |
-| start_time | string | earliest add time of the task | false | null | should be in a valid time format | 2020-01-01T00:00:00Z |
-| end_time | string | latest add time of the task | false | null | should be in a valid time format | 2020-01-01T23:59:59Z |
+| start_time | string | earliest add time of the task | false | null | should be in a valid time format | 2020-01-01T00:00:00 |
+| end_time | string | latest add time of the task | false | null | should be in a valid time format | 2020-01-01T23:59:59 |
 | old_to_new | string | if the result should be ranker from old to new | false | null | any non-empty string | 1 |
 | limit | int | max size of the search result | false | 0 | must between 0 and 2147483647, if it is 0 meanings no limitation | 10 |
 | page | int | the page number of result | false | 0 | must between 0 and 2147483647, start from 0 | 0 |
@@ -125,13 +125,13 @@ Search tasks according to conditions
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | id | string | exact task id | true | false | a string with length of 24 | 0123456789abcdef01234567 |
 | user | int | id of user | true | false | must between 0 and 2147483647 | 0 |
-| add_time | string | time when the task is added | true | false | either empty or in iso format | 2020-01-01T00:00:00Z |
+| add_time | string | time when the task is added | true | false | either empty or in iso format | 2020-01-01T00:00:00.000000 |
 | done | bool | if the task has been done | true | false | | true |
 | status | int | status code of the task | true | false | see common task status code | 1 |
 | executor | string | name of Executor executing the task | true | true | | executor.1 |
-| report_time | string | time of last report from executor | true | false | either empty or in iso format | 2020-01-01T23:59:59Z |
+| report_time | string | time of last report from executor | true | false | either empty or in iso format | 2020-01-01T23:59:59.000000 |
 
-### Get
+## Get
 
 Get a task in details.
 
@@ -163,11 +163,11 @@ compile_error, execute_output, execute_error.
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | id | string | exact task id | true | false | a string with length of 24 | 0123456789abcdef01234567 |
 | user | int | id of user | true | false | must between 0 and 2147483647 | 0 |
-| add_time | string | time when the task is added | true | false | either empty or in iso format | 2020-01-01T00:00:00Z |
+| add_time | string | time when the task is added | true | false | either empty or in iso format | 2020-01-01T00:00:00.000000 |
 | done | bool | if the task has been done | true | false | | true |
 | status | int | status code of the task | true | false | see common task status code | 1 |
 | executor | string | name of Executor executing the task | true | true | | executor.1 |
-| report_time | string | time of last report from executor | true | false | either empty or in iso format | 2020-01-01T23:59:59Z |
+| report_time | string | time of last report from executor | true | false | either empty or in iso format | 2020-01-01T23:59:59.000000 |
 | compile | Compile | compilation parameters description | true | true | see below for Compile structure | |
 | execute | Execute | execution parameters description | true | true | see below for Execute structure | |
 | result | Result | result of the task | true | true | see below for Result structure | |
