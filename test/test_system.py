@@ -365,7 +365,7 @@ class TestSystem(unittest.TestCase):
 
         # Success but big output
         task = dict(task_template)
-        task["execute_command"] = "echo '%s'" % ("a" * 1500)
+        task["compile_command"] = "echo '%s'" % ("a" * 1500)
         res = json.loads(requests.post("http://localhost:7000/api/task", data=task).text)
         self.assertEqual(res["result"], ReturnCode.OK)
         truncate_id = res["id"]
@@ -375,7 +375,7 @@ class TestSystem(unittest.TestCase):
         self.assertEqual(res["result"], ReturnCode.OK)
         success_id = res["id"]
 
-        time.sleep(11)
+        time.sleep(21)
 
         # Check result
         res = json.loads(requests.get("http://localhost:7000/api/task", params={"id": compile_timeout_id}).text)
@@ -395,7 +395,7 @@ class TestSystem(unittest.TestCase):
         )
         self.assertEqual(res["result"], ReturnCode.OK)
         self.assertEqual(res["task"]["status"], TASK_STATUS["SUCCESS"])
-        self.assertEqual(res["task"]["result"]["compile_output"], "a" * 1500)
+        self.assertEqual(res["task"]["result"]["compile_output"], ("a" * 1500) + "\n")
         res = json.loads(requests.get("http://localhost:7000/api/task", params={"id": success_id}).text)
         self.assertEqual(res["result"], ReturnCode.OK)
         self.assertEqual(res["task"]["status"], TASK_STATUS["SUCCESS"])

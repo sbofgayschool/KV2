@@ -1,11 +1,14 @@
 # Todo list
-This file contains todo list for the whole project.
+
+This page contains todo list for the whole project.
 
 ## Short Term
+
 - Add full documents, majorly about usage and maintenance, but also should also have something about source code.
 - Build and upload formal v0.1 image on docker host.
 
 #### Finished / Canceled:
+
 - Add file size check for both gateway and executor when encountering too large task files.
 - Add exception handler after insert/update mongodb on judicator to prevent write failure when writing large files.
 - <b>NOT POSSIBLE</b> <del>Figure out if it is possible to limit the disk space of the docker container.</del>
@@ -33,6 +36,7 @@ including docker (on both local and remote computer), docker service initialize,
 etcd_proxy, etcd_daemon, mongodb_proxy, mongodb_daemon, uwsgi_daemon, boot_daemon (with uwsgi), system (integrated).
 
 ## Long Term
+
 - <b>Security issue:</b> Find out a way to completely isolate all single tasks
 OR
 set a full limitation (CPU, memory, disk space, etc.) on all single tasks.
@@ -45,6 +49,7 @@ set a full limitation (CPU, memory, disk space, etc.) on all single tasks.
 so multiple instances can be runned using only one excutable scripts without docker environment.
 
 #### Finished / Canceled:
+
 - Avoid all hard-coded IP address.
 - Better use of docker DNS, and get rid of container-id.
 - Add new nodes to the system even when the system has failed nodes.

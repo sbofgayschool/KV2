@@ -53,8 +53,12 @@
 
 --etcd-exe
 --etcd-name
---etcd-peer-port
---etcd-client-port
+--etcd-proxy
+--etcd-strict-reconfig
+--etcd-listen-peer-port
+--etcd-listen-client-port
+--etcd-advertise-peer-port
+--etcd-advertise-client-port
 --etcd-cluster-init-discovery
 --etcd-cluster-join-member-client
 --etcd-cluster-service
@@ -79,8 +83,12 @@
 
 --etcd-exe
 --etcd-name
---etcd-peer-port
---etcd-client-port
+--etcd-proxy
+--etcd-strict-reconfig
+--etcd-listen-peer-port
+--etcd-listen-client-port
+--etcd-advertise-peer-port
+--etcd-advertise-client-port
 --etcd-cluster-init-discovery
 --etcd-cluster-join-member-client
 --etcd-cluster-service

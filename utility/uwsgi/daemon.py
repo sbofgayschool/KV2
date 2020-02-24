@@ -93,7 +93,7 @@ def command_parser(parser):
     # Add needed args
     parser.add_argument("--uwsgi-host", dest="uwsgi_host", default=None,
                         help="Listen address of uwsgi")
-    parser.add_argument("--uwsgi-port", dest="uwsgi_port", default=None,
+    parser.add_argument("--uwsgi-port", type=int, dest="uwsgi_port", default=None,
                         help="Listen port of uwsgi")
     parser.add_argument("--uwsgi-process", type=int, dest="uwsgi_process", default=None,
                         help="Number of process of the uwsgi")

@@ -482,7 +482,7 @@ def command_parser(parser):
     parser.add_argument("--main-report-interval", type=int, dest="main_report_interval", default=None,
                         help="Interval between reports made to judicator from executor")
     parser.add_argument("--main-task-user-group", dest="main_task_user_group", default=None,
-                        help="User:group string indicating execution user/group when executing real tasks.")
+                        help="User:group string indicating execution user/group when executing real tasks")
     parser.add_argument("--main-print-log", dest="main_print_log", action="store_const", const=True, default=False,
                         help="Print the log of main module to stdout")
 

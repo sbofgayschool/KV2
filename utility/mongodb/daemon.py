@@ -208,13 +208,13 @@ def command_parser(parser):
     parser.add_argument("--mongodb-name", dest="mongodb_name", default=None,
                         help="Name of the mongodb node")
     parser.add_argument("--mongodb-listen-address", dest="mongodb_listen_address", default=None,
-                        help="Listen address of the mongodb node, default is 0.0.0.0")
+                        help="Listen address of the mongodb node")
     parser.add_argument("--mongodb-listen-port", type=int, dest="mongodb_listen_port", default=None,
-                        help="Listen port of the etcd node, default is 3000")
+                        help="Listen port of the etcd node")
     parser.add_argument("--mongodb-advertise-address", dest="mongodb_advertise_address", default=None,
-                        help="Advertise address of the mongodb node, default is localhost")
+                        help="Advertise address of the mongodb node")
     parser.add_argument("--mongodb-advertise-port", dest="mongodb_advertise_port", default=None,
-                        help="Advertise port of the etcd node, default is 3000")
+                        help="Advertise port of the etcd node")
     parser.add_argument("--mongodb-replica-set", dest="mongodb_replica_set", default=None,
                         help="Name of the replica set which the mongodb node is going to join")
     parser.add_argument("--mongodb-print-log", dest="mongodb_print_log", action="store_const", const=True,

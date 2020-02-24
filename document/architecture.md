@@ -1,6 +1,6 @@
 # Architecture
 
-This document introduces the general architecture of the system.
+This page introduces the general architecture of the system.
 
 ## Overview
 

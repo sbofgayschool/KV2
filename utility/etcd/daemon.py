@@ -242,18 +242,18 @@ def command_parser(parser, fixed_address=False, join_only=False):
                         const=True, default=None, help="If the etcd should be in strict reconfig mode")
     if not fixed_address:
         parser.add_argument("--etcd-listen-address", dest="etcd_listen_address", default=None,
-                            help="Listen address of the etcd node, default is 0.0.0.0")
+                            help="Listen address of the etcd node")
     parser.add_argument("--etcd-listen-peer-port", type=int, dest="etcd_listen_peer_port", default=None,
-                        help="Listen peer port of the etcd node, default is 2000")
+                        help="Listen peer port of the etcd node")
     parser.add_argument("--etcd-listen-client-port", type=int, dest="etcd_listen_client_port", default=None,
-                        help="Listen client port of the etcd node, default is 2001")
+                        help="Listen client port of the etcd node")
     if not fixed_address:
         parser.add_argument("--etcd-advertise-address", dest="etcd_advertise_address", default=None,
-                            help="Advertise address of the etcd node, default is localhost")
+                            help="Advertise address of the etcd node")
     parser.add_argument("--etcd-advertise-peer-port", dest="etcd_advertise_peer_port", default=None,
-                        help="Advertise peer port of the etcd node, default is 2000")
+                        help="Advertise peer port of the etcd node")
     parser.add_argument("--etcd-advertise-client-port", dest="etcd_advertise_client_port", default=None,
-                        help="Advertise client port of the etcd node, default is 2001")
+                        help="Advertise client port of the etcd node")
     parser.add_argument("--etcd-cluster-init-discovery", dest="etcd_cluster_init_discovery", default=None,
                         help="Discovery token url of etcd node")
     if not join_only:
@@ -266,7 +266,7 @@ def command_parser(parser, fixed_address=False, join_only=False):
                         help="Client url of a member of the cluster which this etcd node is going to join")
     parser.add_argument("--etcd-cluster-service", dest="etcd_cluster_service", default=None,
                         help="Service name if the etcd is going to use docker swarm and dns to auto detect members")
-    parser.add_argument("--etcd-cluster-service-port", dest="etcd_cluster_service_port", default=None,
+    parser.add_argument("--etcd-cluster-service-port", type=int, dest="etcd_cluster_service_port", default=None,
                         help="Etcd client port used for auto detection, default is 2001")
     parser.add_argument("--etcd-print-log", dest="etcd_print_log", action="store_const", const=True, default=False,
                         help="Print the log of etcd module to stdout")
@@ -332,7 +332,8 @@ def command_parser(parser, fixed_address=False, join_only=False):
         if args.etcd_cluster_service is not None:
             config_sub["etcd"]["cluster"] = {
                 "service": args.etcd_cluster_service,
-                "client_port": args.etcd_cluster_service_port if args.etcd_cluster_service_port is not None else "2001"
+                "client_port":
+                    str(args.etcd_cluster_service_port) if args.etcd_cluster_service_port is not None else "2001"
             }
         if args.etcd_print_log:
             config_sub["daemon"].pop("log_daemon", None)
