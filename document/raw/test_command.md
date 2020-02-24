@@ -76,6 +76,8 @@ sudo apt-get -y autoremove
 
 #### System
 ```
+source ../../KV2/venv/bin/activate
+
 export PYTHONPATH=../../KV2/
 
 python3 ../../KV2/judicator/boot.py --boot-print-log --etcd-print-log --mongodb-print-log --main-print-log --etcd-cluster-init-independent
