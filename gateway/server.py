@@ -218,14 +218,12 @@ class Server(flask.Flask):
                         return flask.jsonify(failed_result)
                 start_time = flask.request.args.get("start_time", None)
                 end_time = flask.request.args.get("end_time", None)
-                old_to_new = flask.request.args.get("old_to_new", None)
-                if old_to_new is not None:
-                    old_to_new = True
+                old_to_new = bool(flask.request.args.get("old_to_new", False))
                 limit = int(flask.request.args.get("limit", 0))
-                if not limit >= 0:
+                if not check_int(limit):
                     return flask.jsonify(failed_result)
                 page = int(flask.request.args.get("page", 0))
-                if not page >= 0:
+                if not check_int(page):
                     return flask.jsonify(failed_result)
             except:
                 self.logger.error("Failed to get all search conditions.", exc_info=True)
@@ -263,9 +261,10 @@ class Server(flask.Flask):
             Flask Handler: API Interface: Get a specified task, or one of its files
             :return: A file if getting a file, or a json containing tasks
             """
-            # Get the id and the name of the file
+            # Get the id and the name of the file, and if the plain text should be truncate
             id = flask.request.args.get("id", None)
             file = flask.request.args.get("file", None)
+            truncate = not flask.request.args.get("no_truncate", False)
             # Return directly if no id is specified
             if id is None:
                 return flask.jsonify({"result": ReturnCode.INVALID_INPUT, "task": None})
@@ -336,19 +335,19 @@ class Server(flask.Flask):
 
             self.logger.info("Decompressing all fields compressed by zlib of task %s." % id)
             # Deal with zlib decompressed field in compile section
-            task["compile"]["command"] = decompress_and_truncate(task["compile"]["command"])
+            task["compile"]["command"] = decompress_and_truncate(task["compile"]["command"], truncate)
 
             # Deal with zlib decompressed field in execute section
-            task["execute"]["input"] = decompress_and_truncate(task["execute"]["input"])
-            task["execute"]["command"] = decompress_and_truncate(task["execute"]["command"])
-            task["execute"]["standard"] = decompress_and_truncate(task["execute"]["standard"])
+            task["execute"]["input"] = decompress_and_truncate(task["execute"]["input"], truncate)
+            task["execute"]["command"] = decompress_and_truncate(task["execute"]["command"], truncate)
+            task["execute"]["standard"] = decompress_and_truncate(task["execute"]["standard"], truncate)
 
             # Deal with zlib decompressed field in result section
             if task["result"]:
-                task["result"]["compile_output"] = decompress_and_truncate(task["result"]["compile_output"])
-                task["result"]["compile_error"] = decompress_and_truncate(task["result"]["compile_error"])
-                task["result"]["execute_output"] = decompress_and_truncate(task["result"]["execute_output"])
-                task["result"]["execute_error"] = decompress_and_truncate(task["result"]["execute_error"])
+                task["result"]["compile_output"] = decompress_and_truncate(task["result"]["compile_output"], truncate)
+                task["result"]["compile_error"] = decompress_and_truncate(task["result"]["compile_error"], truncate)
+                task["result"]["execute_output"] = decompress_and_truncate(task["result"]["execute_output"], truncate)
+                task["result"]["execute_error"] = decompress_and_truncate(task["result"]["execute_error"], truncate)
 
             # Deal with time section
             task["add_time"] = "" if not task["add_time"] else task["add_time"].isoformat()

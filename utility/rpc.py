@@ -23,6 +23,7 @@ def extract(task, brief=False, compile=True, execute=True, result=True):
     """
     # Fundamental fields
     # This is all TaskBrief structure contains
+    # Time string is parsed into datetime object
     res = {
         "id": task.id,
         "user": task.user,
@@ -30,7 +31,6 @@ def extract(task, brief=False, compile=True, execute=True, result=True):
         "done": task.done,
         "status": task.status,
         "executor": task.executor,
-        # Parse the time string to a datetime object
         "report_time": dateutil.parser.parse(task.report_time) if task.report_time else None
     }
     if brief:

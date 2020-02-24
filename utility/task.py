@@ -58,14 +58,15 @@ def check_int(x):
     """
     return 0 <= x <= 2147483647
 
-def decompress_and_truncate(zipped, max_length=1000):
+def decompress_and_truncate(zipped, truncate=True, max_length=1000):
     """
     Decompress a string zipped by zlib and truncate it
     :param zipped: Zipped string
+    :param truncate: If it result be truncated
     :param max_length: Specified length
     :return:
     """
     res = zlib.decompress(zipped).decode("utf-8") if zipped else ""
-    if len(res) > max_length:
+    if truncate and len(res) > max_length:
         res = res[: max_length] + "..."
     return res
