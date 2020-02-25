@@ -60,13 +60,13 @@ Add a task to the system.
 | compile_source_name | string | Compilation source file name | true | | | main.cpp |
 | compile_source_str | string | Compilation source file content | true | | | int main() {} |
 | compile_command | string | Compilation command | true | | | g++ -o main main.cpp |
-| compile_timeout | int | Compilation time out | true | | must between 0 and 2147483647 | 1 |
+| compile_timeout | int | Compilation time out | true | | 0 for unlimited, must between 0 and 2147483647 | 1 |
 | execute_input | string | Input stream of compiled program | true | | | 1 2 |
 | execute_data | file | Extra execution data | true | | a zip file, this will override execute_data_name and execute_data_str when it is not empty | |
 | execute_data_name | string | Extra execution data file name | true | | | raw.dat |
 | execute_data_str | string | Extra execution data file content | true | | | data string |
 | execute_command | string | Execution command | true | | | ./main |
-| execute_timeout | int | Execution time out | true | | must between 0 and 2147483647 | 1 |
+| execute_timeout | int | Execution time out | true | | 0 for unlimited, must between 0 and 2147483647 | 1 |
 | execute_standard | string | Execution standard output | true | | this will not be used during task execution | 3 |
 
 - **Response format:** JSON
@@ -182,7 +182,7 @@ compile_error, execute_output, execute_error.
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | source | bool | If there is a compilation source zip file for the task | true | false | | true |
 | command | string | Compilation command | true | false | | g++ -o main main.cpp |
-| timeout | int | Compilation time out | true | false | must between 0 and 2147483647 | 1 |
+| timeout | int | Compilation time out | true | false | 0 for unlimited, must between 0 and 2147483647 | 1 |
 
 - **Execute structure:**
 
@@ -191,7 +191,7 @@ compile_error, execute_output, execute_error.
 | input | string | Input stream of compiled program | true | false | | 1 2 |
 | data | bool | If there is a extra execution data zip file for the task | true | false | | true |
 | execute_command | string | Execution command | true | false | | ./main |
-| execute_timeout | int | Execution time out | true | false | must between 0 and 2147483647 | 1 |
+| execute_timeout | int | Execution time out | true | false | 0 for unlimited, must between 0 and 2147483647 | 1 |
 | execute_standard | string | Execution standard output | true | false | | 3 |
 
 - **Result structure:**

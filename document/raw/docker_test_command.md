@@ -2,6 +2,8 @@
 ```
 docker build -t comradestukov/khala:v0.1 .
 docker push comradestukov/khala:v0.1
+docker tag comradestukov/khala:v0.1 comradestukov/khala:latest
+docker push comradestukov/khala:latest
 ```
 
 #### Single container IP
@@ -339,7 +341,7 @@ docker service rm $(docker service ls -q)
 Ref: https://www.cnblogs.com/sparkdev/p/9962904.html
 Ref: https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html
 
-ansible-playbook -u chenty --ask-vault-pass --extra-vars '@~/.ansible/vault/doc_vm_passwd.yml' pb_docker.yml
+ansible-playbook -u chenty --ask-vault-pass --extra-vars '@~/.ansible/vault/doc_vm_passwd.yml' install_docker.yml
 ansible-playbook -u chenty --extra-vars '@install_docker_passwd.yml' install_docker.yml
 ansible-playbook -u chenty --extra-vars 'ansible_become_pass=your_password' install_docker.yml
 ```

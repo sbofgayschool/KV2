@@ -370,6 +370,16 @@ class TestSystem(unittest.TestCase):
         self.assertEqual(res["result"], ReturnCode.OK)
         truncate_id = res["id"]
 
+        # Success with no timeout
+        task = dict(task_template)
+        task["compile_command"] = "sleep 2"
+        task["compile_timeout"] = 0
+        task["execute_command"] = "sleep 2"
+        task["execute_timeout"] = 0
+        res = json.loads(requests.post("http://localhost:7000/api/task", data=task).text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        sleep_id = res["id"]
+
         # Success
         res = json.loads(requests.post("http://localhost:7000/api/task", data=task_template).text)
         self.assertEqual(res["result"], ReturnCode.OK)
@@ -396,6 +406,11 @@ class TestSystem(unittest.TestCase):
         self.assertEqual(res["result"], ReturnCode.OK)
         self.assertEqual(res["task"]["status"], TASK_STATUS["SUCCESS"])
         self.assertEqual(res["task"]["result"]["compile_output"], ("a" * 1500) + "\n")
+        res = json.loads(requests.get("http://localhost:7000/api/task", params={"id": sleep_id}).text)
+        self.assertEqual(res["result"], ReturnCode.OK)
+        self.assertEqual(res["task"]["status"], TASK_STATUS["SUCCESS"])
+        self.assertEqual(res["task"]["result"]["compile_output"], "")
+        self.assertEqual(res["task"]["result"]["execute_output"], "")
         res = json.loads(requests.get("http://localhost:7000/api/task", params={"id": success_id}).text)
         self.assertEqual(res["result"], ReturnCode.OK)
         self.assertEqual(res["task"]["status"], TASK_STATUS["SUCCESS"])

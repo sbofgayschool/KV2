@@ -15,8 +15,6 @@ in the future).*
 
 #### Boot
 
-|  |  |  |  | |  |
-
 | flag | meaning | type | default | note | example |
 | :---: | :---: | :---: | :---: | :---: | :---: |
 | --docker-sock | Path to mapped docker sock file | string | null | | --docker-sock=unix:///var/run/docker.sock |

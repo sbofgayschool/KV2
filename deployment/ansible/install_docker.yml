@@ -11,7 +11,7 @@
         content: |
           {
             "log-driver": "json-file",
-            "log-opts": {"max-size": "200m", "max-file": "3"}
+            "log-opts": {"max-size": "100m", "max-file": "3"}
           }
 
       become: yes

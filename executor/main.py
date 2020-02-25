@@ -160,7 +160,11 @@ def execute(id, config, logger):
 
     # Wait for the compilation with timeout
     try:
-        res = task["process"].wait(task["compile"]["timeout"])
+        if task["compile"]["timeout"] == 0:
+            logger.info("Task %s has unlimited compile timeout." % task["id"])
+        else:
+            logger.info("Wait for task %s compilation with timeout %d." % (task["id"], task["compile"]["timeout"]))
+        res = task["process"].wait(task["compile"]["timeout"] if task["compile"]["timeout"] != 0 else None)
         logger.info("Compiled task %s with exit code %d." % (task["id"], res))
         success = res == 0
         error_message = b""
@@ -230,7 +234,11 @@ def execute(id, config, logger):
 
     # Wait for the execution with timeout
     try:
-        res = task["process"].wait(task["execute"]["timeout"])
+        if task["execute"]["timeout"] == 0:
+            logger.info("Task %s has unlimited execute timeout." % task["id"])
+        else:
+            logger.info("Wait for task %s execution with timeout %d." % (task["id"], task["execute"]["timeout"]))
+        res = task["process"].wait(task["execute"]["timeout"] if task["execute"]["timeout"] != 0 else None)
         logger.info("Run task %s with exit code %d." % (task["id"], res))
         success = res == 0
         error_message = b""

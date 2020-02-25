@@ -88,7 +88,7 @@ def lead(config, local_etcd, local_mongodb, mongodb_task, mongodb_executor, logg
     :param logger: The logger
     """
     logger.info("Lead thread started.")
-    while True:
+    while working:
         time.sleep(config["lead"]["interval"])
 
         try:
@@ -148,6 +148,8 @@ def lead(config, local_etcd, local_mongodb, mongodb_task, mongodb_executor, logg
                 logger.info("Checked tasks and executors.")
         except:
             logger.error("Failed to carry out leader process.", exc_info=True)
+
+    return
 
 class RPCService:
     """
@@ -545,6 +547,7 @@ def run(
     except:
         logger.error("Accidentally terminated.", exc_info=True)
 
+    working = False
     logger.info("%s main program exiting." % module_name)
     return
 

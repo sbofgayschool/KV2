@@ -56,13 +56,13 @@ def register(config, local_etcd, local_mongodb, mongodb_proc, daemon_logger):
         retry_interval,
         True,
         daemon_logger,
-        "initialize or register local mongodb",
+        "initialize and register local mongodb",
         local_mongodb.initialize,
         config["daemon"]["etcd_path"]["init"],
         config["daemon"]["etcd_path"]["register"]
     )[0]:
         mongodb_proc.terminate()
-        daemon_logger.error("Failed to initialize nor register local mongodb. Killing mongodb.")
+        daemon_logger.error("Failed to initialize or register local mongodb. Killing mongodb.")
         return
 
     # Loop until termination to regularly check whether local mongodb has become primary node of the replica set
@@ -193,6 +193,7 @@ def run(module_name="Judicator", etcd_conf_path="config/etcd.json", mongodb_conf
     # Wait until mongodb process exit
     mongodb_proc.wait()
 
+    working = False
     daemon_logger.info("%s mongodb_daemon program exiting." % module_name)
     return
 
