@@ -11,6 +11,6 @@ This page is a index for all documents.
 
 ## Documents for Developers
 
-- *[Architecture](arguments.md)* 
+- *[Architecture](architecture.md)* 
 - *[HTTP API](http_api.md)*
 - *[Todo List](todo_list.md)*
