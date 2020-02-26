@@ -46,6 +46,7 @@ You can simply start one of the node inside the repository. Here is an example o
 ```bash
 source venv/bin/activate
 cd judicator
+bash clean.bash
 python3 boot.py --boot-print-log --etcd-print-log --mongodb-print-log --main-print-log --etcd-cluster-init-independent
 ```
 
@@ -76,7 +77,8 @@ you can then start up the node.
 python3 PATH_TO_KHALA_REPOSITORY/judicator/boot.py --boot-print-log --etcd-print-log --mongodb-print-log --main-print-log --etcd-cluster-init-independent
 ```
 
-You may wish to run clean.bash before start up to remove runtime generated files of last execution.
+You may wish to run clean.bash before start up to remove runtime generated files of last execution and 
+(re)create necessary working directories.
 
 Also, you can put Etcd and MongoDB startup files in data/etcd_init and data/mongodb_init. These files will be copied
 to Etcd and MongoDB data directories before starting them up.
