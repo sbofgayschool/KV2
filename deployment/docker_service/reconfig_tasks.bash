@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [[ $# != 3 ]]; then
     echo -e "USAGE: $0 service-name task-number adjust-interval\n\

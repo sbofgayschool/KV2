@@ -2,6 +2,9 @@
 
 This page briefly introduces how the system can be deployed.
 
+**It is suggested that you should deploy at least three Judicators, to make use of the high availability of the 
+system.**
+
 *This system is mainly designed to be working in docker containerized environment. You can still make it work
 without docker environment, but may have experience the best performance.*
 
@@ -82,7 +85,8 @@ Use kill -INT to stop the running node.
 
 ## Single Docker Container
 
-Use docker to run nodes in container is far simpler.
+Use docker image from [docker hub](https://hub.docker.com/repository/docker/comradestukov/khala) to run nodes in
+containers is far simpler.
 
 #### Dependency
 
@@ -189,7 +193,7 @@ Use docker cp to copy configuration template and initialize data files into the 
 Use Ctrl-C or docker container stop with timeout of 30s to stop a container. Do not use docker container kill unless 
 necessary, for a killed container will not clean up upon exiting.
 
-## Docker Swarm (Docker Service)
+## Docker Swarm (Docker Service) - RECOMMENDED
 
 The system is designed to work with docker swarm clusters.
 
@@ -214,6 +218,9 @@ be found at ~/.ansible/hosts.
 Add two groups: **khala_manager** (manager nodes in docker swarm) and **khala_worker** (worker
 nodes in docker swarm). Note, the localhost must be in khala_manager group. You may wish to configure other connection
 parameters in the file.
+
+Ansible use ssh to login to target hosts and carry out commands. Please upload the ssh public key of current user
+on local machine to target user account in remote machines.
 
 Then the docker installation and docker swarm configuration can be done by one command. 
 Run the Ansible playbook use a user with sudo privilege in all target hosts.
@@ -253,4 +260,4 @@ cd KV2/deployment/docker_service
 bash start.bash 3 1 1 --output-log
 ```
 
-You can visit http://localhost:7000 to see the website of the cluster.
+You can visit http://localhost:7000 to see the website of the cluster after the deployment.

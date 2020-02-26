@@ -6,7 +6,14 @@ This page introduces how to use the system to execute tasks through website.
 
 ## Principles and Directory structure
 
-When task is executing, the working directory of the task looks like:
+A task is described as a sequence of shell (bash) commands. It is divided into two parts: compile command and
+execute command.
+
+Upon running, compile command will be executed first, and then, if succeeded, execute command will be executed with
+input stream redirected from provided execute input. Both compilation and execution output and error stream will be
+recorded and later returned.
+
+When task is executing, the working directory of the task looks like the following.
 
 ```
 work directory
@@ -25,16 +32,19 @@ work directory
 
 ```
 
-Compile command will be executed first, and then, if succeeded, execute command will be executed with input stream
-redirected from execute.in. Both compilation and execution output and error stream will be recorded and later returned.
+## Website view
+
+The website looks like the following.
+
+![Website View](img/task_search.png)
 
 ## Add Task
 
-Choose TASK - Add tab in the right slide bar if the website.
+Choose TASK - Add tab in the right slide bar of the website.
 
 You have to fill in a form to describe the task.
 
-- *User id:* An int indicating the submitting user. It will only be used as a reference for later searching.
+- *User Id:* An int indicating the submitting user. It will only be used as a reference for later searching.
 - *Compile Source:* The compile source zip file.
 - *Compile Source File Name* and *Compile Source Text:* You can create a compile source zip file contains only one file
 with name specified by Compile Source File Name and content by Compile Source Text. These should be both filled or
@@ -52,7 +62,7 @@ will be overwritten if Execute Data has been uploaded.
 
 ## Search Task, View Task and Cancel Task
 
-Choose TASK - Search tab in the right slide bar if the website.
+Choose TASK - Search tab in the right slide bar of the website.
 
 You can search tasks with conditions:
 
@@ -61,11 +71,11 @@ You can search tasks with conditions:
 - *Start time (earliest time of task submission)*
 - *End time (latest time of task submission)*
 
-You can click the Id to View the task in details. When viewing tasks, compile source and data execute can only be
-downloaded, if exist. All fields which exceeded 1000 chars will be truncated, and you can download the file to view
-full text.
+You can click the Id of each task to view the task in details. When viewing tasks, compile source and data execute can 
+only be downloaded, if exist. All fields which exceeded 1000 chars will be truncated, and you can download the file to
+view full text.
 
-Undone task can be cancelled both on task search web page and task view web page, through the cancel button.
+Undone task can be cancelled both on task search page and task view page, through the Cancel button.
 
 ## Executors and Judicators
 

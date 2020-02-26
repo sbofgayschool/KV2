@@ -114,7 +114,8 @@ judicator/data/mongodb_init.
 
 ## Logs
 
-The logs are stored in log directory of every modules in default.
+The logs are stored in log directory of every modules in default. In docker containers, a soft link to the lock
+directory is also create at /var/log/khala.
 
 If --module-print-log is specified, then the log of corresponding module will be output to stdout stream. If it 
 runs in docker environment, then docker logs or docker service logs commands can be used to fetch it.

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 KHALA='comradestukov/khala:v0.1'
 

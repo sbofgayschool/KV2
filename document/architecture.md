@@ -4,7 +4,11 @@ This page introduces the general architecture of the system.
 
 ## Overview
 
+The system uses Etcd for clustering and service discovering, MongoDB with replica set for data storage, Uwsgi for 
+web server and Apache Thrift for RPC interfaces.
+
 The system consists of three kind of nodes:
+
 - **Judicator:** Manager nodes connecting to each other, forming a cluster with high availability. These nodes
 maintain data of tasks using MongoDB, and provide task management interfaces through  Apache Thrift RPC to other nodes.
 - **Executor:** Working nodes connecting to Judicators. Executors report to Judicators regularly,

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 USAGE="USAGE: $0 ROLE [clean] [OPTIONS]\n\
 Possible Role:\n\

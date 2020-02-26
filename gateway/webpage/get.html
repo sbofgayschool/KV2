@@ -166,6 +166,18 @@ function ()
     // Set title
     document.title = "Khala - View Task";
     $("body").css({"min-width": "1100px"});
+    // Get the task first
+    get_task();
+    // Refresh the result regularly
+    setInterval("get_task();", refresh_interval);
+}
+);
+
+/**
+ * Get all judicators
+ */
+function get_task()
+{
     // Get task through http api
     ajax(
         "api/task",
@@ -179,7 +191,6 @@ function ()
         }
     );
 }
-);
 
 // Vue object of the task
 var task = new Vue(
@@ -219,17 +230,7 @@ function cancel_success()
 {
     show_message(true, "alert-success", "Cancelled!", "Task successfully cancelled!");
     // Get the task again
-    ajax(
-        "api/task",
-        {"id": task.$data.data.id},
-        null,
-        "GET",
-        function(res)
-        {
-            task.$data.data = res.task;
-            task.$data.data.status = task_status[task.$data.data.status];
-        }
-    );
+    get_task();
 }
 </script>
 {%endblock%}

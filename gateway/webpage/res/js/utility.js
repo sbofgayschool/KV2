@@ -23,6 +23,9 @@ var task_status = {
 // Number of searched tasks on a page
 var page_limit = 10;
 
+// Refresh interval
+var refresh_interval = 5000;
+
 /**
  * Handle an error by showing message
  * @param error The error

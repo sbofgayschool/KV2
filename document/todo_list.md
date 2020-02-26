@@ -4,8 +4,7 @@ This page contains todo list for the whole project.
 
 ## Short Term
 
-- Add full documents, majorly about usage and maintenance, but also should also have something about source code.
-- Build and upload formal v0.1 image on docker host.
+- None.
 
 #### Finished / Canceled:
 
@@ -14,7 +13,7 @@ This page contains todo list for the whole project.
 - <b>NOT POSSIBLE</b> <del>Figure out if it is possible to limit the disk space of the docker container.</del>
 - Add RPC input validation for judicator.
 - Add form validation for gateway, both backend and frontend.
-- Add comments on webpage javascript.
+- Add comments on web page javascript.
 - Add argument helper string in all boot.py.
 - Add an argument indicating if the name can be get from the environment variable name.
 - When adding a member to etcd cluster, check if a previous member with same name exists.
@@ -34,6 +33,9 @@ including docker (on both local and remote computer), docker service initialize,
 (or something else) .</b> <del>A python based proxy for Khala on VM of Doc IC (Small Independent Project).</del>
 - Add full tests:
 etcd_proxy, etcd_daemon, mongodb_proxy, mongodb_daemon, uwsgi_daemon, boot_daemon (with uwsgi), system (integrated).
+- Add regular refresh to web pages.
+- Add full documents, majorly about usage and maintenance, but also should also have something about source code.
+- Build and upload formal v0.1 image on docker host.
 
 ## Long Term
 
@@ -44,9 +46,9 @@ set a full limitation (CPU, memory, disk space, etc.) on all single tasks.
 - Internationalize.
 - Windows OS support in un-docker environment.
 - Authentication in RPC calls for all RPC interfaces.
-- Make all parameters, especially including paths to configurations, configerable in command line
+- Make all parameters, especially including paths to configurations, configurable in command line
 (at least paths to config templates, config files, data directories, pid files and all runtime used files),
-so multiple instances can be runned using only one excutable scripts without docker environment.
+so multiple instances can be run using only one executable scripts without docker environment.
 
 #### Finished / Canceled:
 

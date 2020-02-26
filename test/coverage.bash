@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 bash clean.bash
 if [[ $# == 0 ]]; then

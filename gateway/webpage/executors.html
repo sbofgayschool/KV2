@@ -69,6 +69,18 @@ function ()
     document.title = "Khala - Executor List";
     $("body").css({"min-width": "1100px"});
     $("#nav_executors").addClass("active");
+    // Get executors first
+    get_executors();
+    // Refresh the result regularly
+    setInterval("get_executors();", refresh_interval);
+}
+);
+
+/**
+ * Get all executors
+ */
+function get_executors()
+{
     // Make the ajax call
     ajax(
         "api/executors",
@@ -78,7 +90,6 @@ function ()
         function(res) {executors.$data.data = res.executors;}
     );
 }
-);
 
 // Vue object for executors
 var executors = new Vue(

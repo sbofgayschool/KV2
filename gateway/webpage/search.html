@@ -116,6 +116,8 @@ function ()
     $("#nav_search").addClass("active");
     // Search tasks
     go_search();
+    // Refresh the result regularly
+    setInterval("go_search(false, false);", refresh_interval);
 }
 );
 
@@ -221,6 +223,7 @@ function go_search(reset_page, clean_message)
 function cancel_success()
 {
     show_message(true, "alert-success", "Cancelled!", "Task successfully cancelled!");
+    // Get the search result again
     go_search(false, false);
 }
 </script>
