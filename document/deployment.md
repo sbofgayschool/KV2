@@ -64,8 +64,8 @@ bash clean.bash
 source PATH_TO_KHALA_REPOSITORY/venv/bin/activate
 ```
 
-Then you have to edit the exe fields in all configuration template according to the real path to python scripts
-inside Khala repository.
+Then you have to edit the exe and other related fields in all configuration template according to
+the real path to python scripts inside Khala repository.
 
 For example, the line 2 in config/templates/main.json should be edited:
 
@@ -74,6 +74,7 @@ For example, the line 2 in config/templates/main.json should be edited:
 you can then start up the node.
 
 ```bash
+export PYTHONPATH=PATH_TO_KHALA_REPOSITORY
 python3 PATH_TO_KHALA_REPOSITORY/judicator/boot.py --boot-print-log --etcd-print-log --mongodb-print-log --main-print-log --etcd-cluster-init-independent
 ```
 
@@ -99,19 +100,19 @@ containers is far simpler.
 Pull the docker image.
 
 ```bash
-KHALA=comradestukov/khala:v0.1
+KHALA='comradestukov/khala:v0.1'
 docker pull $KHALA
 ```
 
 #### Start up
 
-Set the bash variable IP to the expected value.
+Set the bash variable IP to an exposed address of the host. It can not be localhost, as it must be accessible inside a docker container.
 
 A judicator can be startup with the following command.
 
 ```bash
-IP=EXPECTED_IP
-KHALA=comradestukov/khala:v0.1
+IP=EXPOSED_IP
+KHALA='comradestukov/khala:v0.1'
 docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --expose 2000 \
 --expose 2001 \
@@ -132,14 +133,17 @@ docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --main-advertise-port=DOCKER
 ```
 
-Use the following command to check the exposed port mapped to 2001 (Etcd client) of the started up container,
-and set the bash variable PORT correspondingly.
+Use the following command to check the exposed port mapped to 2001 (Etcd client) of the started up container.
+
+```bash
+docker container ls -a
+```
 
 Similarly, you can also start a Gateway.
 
 ```bash
-IP=EXPECTED_IP
-KHALA=comradestukov/khala:v0.1
+IP=EXPOSED_IP
+KHALA='comradestukov/khala:v0.1'
 docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --expose 7000 -P $KHALA gateway \
 --docker-sock=unix:///var/run/docker.sock \
@@ -152,8 +156,8 @@ docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 An Executor can then be started up.
 
 ```bash
-IP=EXPECTED_IP
-KHALA=comradestukov/khala:v0.1
+IP=EXPOSED_IP
+KHALA='comradestukov/khala:v0.1'
 docker container run -v /var/run/docker.sock:/var/run/docker.sock $KHALA executor \
 --docker-sock=unix:///var/run/docker.sock \
 --boot-print-log \
@@ -168,8 +172,8 @@ More Executors and Gateways can be started up by the same command. However, if y
 the following commands should be used.
 
 ```bash
-IP=EXPECTED_IP
-KHALA=comradestukov/khala:v0.1
+IP=EXPOSED_IP
+KHALA='comradestukov/khala:v0.1'
 docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --expose 2000 \
 --expose 2001 \

@@ -28,14 +28,14 @@ The easiest way of getting and deploying the system is to use pre-built docker i
 [docker hub](https://hub.docker.com/repository/docker/comradestukov/khala).
 
 ```bash
-KHALA=comradestukov/khala:v0.1
+KHALA='comradestukov/khala:v0.1'
 docker pull $KHALA
 ```
 
 Then, deploy the first Judicator.
 
 ```bash
-KHALA=comradestukov/khala:v0.1
+KHALA='comradestukov/khala:v0.1'
 IP=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
 docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 -p 2000:2000 -p 2001:2001 -p 3000:3000 -p 4000:4000 $KHALA judicator \
@@ -57,7 +57,7 @@ docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 After the Judicator is stable, deploy a Gateway.
 
 ```bash
-KHALA=comradestukov/khala:v0.1
+KHALA='comradestukov/khala:v0.1'
 IP=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
 docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 -p 7000:7000 $KHALA gateway \
@@ -71,7 +71,7 @@ docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 You have to have at least one Executor to execute tasks.
 
 ```bash
-KHALA=comradestukov/khala:v0.1
+KHALA='comradestukov/khala:v0.1'
 IP=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
 docker container run -v /var/run/docker.sock:/var/run/docker.sock $KHALA executor \
 --docker-sock=unix:///var/run/docker.sock \
@@ -85,7 +85,7 @@ You can have more Executors and Gateways using the commands above. If you wish t
 the following commands.
 
 ```bash
-KHALA=comradestukov/khala:v0.1
+KHALA='comradestukov/khala:v0.1'
 IP=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
 docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --expose 2000 \
