@@ -10,7 +10,7 @@ This page contains todo list for the whole project.
 
 - Add file size check for both gateway and executor when encountering too large task files.
 - Add exception handler after insert/update mongodb on judicator to prevent write failure when writing large files.
-- <b>NOT POSSIBLE</b> <del>Figure out if it is possible to limit the disk space of the docker container.</del>
+- **NOT POSSIBLE** <del>Figure out if it is possible to limit the disk space of the docker container.</del>
 - Add RPC input validation for judicator.
 - Add form validation for gateway, both backend and frontend.
 - Add comments on web page javascript.
@@ -29,8 +29,8 @@ including docker (on both local and remote computer), docker service initialize,
 - Necessary tests on VM of Doc IC.
 - More strict check on input.
 - Make maintain.py be able to lock multiple pid files.
-- <b>CANCELED, shellx.doc.ic.ac.uk does not open any possible ports due to the configuration of its iptables 
-(or something else) .</b> <del>A python based proxy for Khala on VM of Doc IC (Small Independent Project).</del>
+- **CANCELED, shellx.doc.ic.ac.uk does not open any possible ports due to the configuration of its iptables 
+(or something else) .** <del>A python based proxy for Khala on VM of Doc IC (Small Independent Project).</del>
 - Add full tests:
 etcd_proxy, etcd_daemon, mongodb_proxy, mongodb_daemon, uwsgi_daemon, boot_daemon (with uwsgi), system (integrated).
 - Add regular refresh to web pages.
@@ -39,7 +39,7 @@ etcd_proxy, etcd_daemon, mongodb_proxy, mongodb_daemon, uwsgi_daemon, boot_daemo
 
 ## Long Term
 
-- <b>Security issue:</b> Find out a way to completely isolate all single tasks
+- **Security issue:** Find out a way to completely isolate all single tasks
 OR
 set a full limitation (CPU, memory, disk space, etc.) on all single tasks.
 - Add user functions (user register, login, etc.) and admin functions.
@@ -49,6 +49,9 @@ set a full limitation (CPU, memory, disk space, etc.) on all single tasks.
 - Make all parameters, especially including paths to configurations, configurable in command line
 (at least paths to config templates, config files, data directories, pid files and all runtime used files),
 so multiple instances can be run using only one executable scripts without docker environment.
+- Find a way to add custom tools and configurations to Executors without building extra docker images.
+- Check the documents.
+- User test and feedback.
 
 #### Finished / Canceled:
 

@@ -44,21 +44,21 @@ Choose TASK - Add tab in the right slide bar of the website.
 
 You have to fill in a form to describe the task.
 
-- *User Id:* An int indicating the submitting user. It will only be used as a reference for later searching.
-- *Compile Source:* The compile source zip file.
-- *Compile Source File Name* and *Compile Source Text:* You can create a compile source zip file contains only one file
+- **User Id:** An int indicating the submitting user. It will only be used as a reference for later searching.
+- **Compile Source:** The compile source zip file.
+- **Compile Source File Name** and **Compile Source Text:** You can create a compile source zip file contains only one file
 with name specified by Compile Source File Name and content by Compile Source Text. These should be both filled or
 empty, and will be overwritten if Compile Source has been uploaded.
-- *Compile Command:* Bash command for compilation.
-- *Compile Timeout:* Timeout for compilation. 0 indicating unlimited compilation timeout.
-- *Execute Input:* Input stream of execution.
-- *Execute Data:* The execute data zip file.
-- *Execute Data File Name* and *Execute Data Text:* You can create an execute data zip file contains only one file with
+- **Compile Command:** Bash command for compilation.
+- **Compile Timeout:** Timeout for compilation. 0 indicating unlimited compilation timeout.
+- **Execute Input:** Input stream of execution.
+- **Execute Data:** The execute data zip file.
+- **Execute Data File Name** and **Execute Data Text:** You can create an execute data zip file contains only one file with
 name specified by Execute Data File Name and content by Execute Data Text. These should be both filled or empty, and
 will be overwritten if Execute Data has been uploaded.
-- *Execute Command:* Bash command for execution.
-- *Execute Timeout:* Timeout for execution. 0 indicating unlimited execution timeout.
-- *Execution Standard:* Standard output of execution. It will only be used as a reference for checking execution result.
+- **Execute Command:** Bash command for execution.
+- **Execute Timeout:** Timeout for execution. 0 indicating unlimited execution timeout.
+- **Execution Standard:** Standard output of execution. It will only be used as a reference for checking execution result.
 
 ## Search Task, View Task and Cancel Task
 
@@ -66,10 +66,10 @@ Choose TASK - Search tab in the right slide bar of the website.
 
 You can search tasks with conditions:
 
-- *Task Id*
-- *User Id*
-- *Start time (earliest time of task submission)*
-- *End time (latest time of task submission)*
+- **Task Id**
+- **User Id**
+- **Start time (earliest time of task submission)**
+- **End time (latest time of task submission)**
 
 You can click the Id of each task to view the task in details. When viewing tasks, compile source and data execute can 
 only be downloaded, if exist. All fields which exceeded 1000 chars will be truncated, and you can download the file to

@@ -194,7 +194,8 @@ docker container run -v /var/run/docker.sock:/var/run/docker.sock \
 --main-advertise-port=DOCKER
 ```
 
-Use docker cp to copy configuration template and initialize data files into the container before it starts up.
+Use docker cp or mount to copy configuration template and initialize data files into the containers.
+You may also wish to use this method to put custom tools and configurations into the containers (especially Executors).
 
 Use Ctrl-C or docker container stop with timeout of 30s to stop a container. Do not use docker container kill unless 
 necessary, for a killed container will not clean up upon exiting.
@@ -267,3 +268,5 @@ bash start.bash 3 1 1 --output-log
 ```
 
 You can visit http://localhost:7000 to see the website of the cluster after the deployment.
+
+**Using docker service shares something same with using single docker container. Reference to each other when needed.**
