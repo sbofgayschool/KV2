@@ -141,7 +141,13 @@ def run(module_name, etcd_conf_path="config/etcd.json"):
                 daemon_logger.error("Failed to connect to docker engine.", exc_info=True)
                 daemon_logger.error("%s etcd_daemon program exiting." % module_name)
                 exit(1)
+
+            daemon_logger.debug("Found following members with service name %s:" % config["etcd"]["cluster"]["service"])
+            for x in services:
+                daemon_logger.debug("%s" % x)
+
             # When local etcd is not in proxy mode, try to delete current task from service list, if it is found
+            # Else, exit as it should never happen
             if "proxy" not in config["etcd"]:
                 try:
                     services.remove(
@@ -149,7 +155,9 @@ def run(module_name, etcd_conf_path="config/etcd.json"):
                         ":" + config["etcd"]["advertise"]["client_port"]
                     )
                 except:
-                    daemon_logger.warning("Failed to find current docker task in list.", exc_info=True)
+                    daemon_logger.error("Failed to find current docker task in list.", exc_info=True)
+                    daemon_logger.error("%s etcd_daemon program exiting." % module_name)
+                    exit(1)
             else:
                 daemon_logger.info("Detected proxy mode. Skipped removing current docker task from service list.")
 
