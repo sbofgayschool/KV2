@@ -135,7 +135,7 @@ def run(module_name, etcd_conf_path="config/etcd.json"):
                     for x in sorted(
                         client.tasks({"service": config["etcd"]["cluster"]["service"]}), key=lambda x: x["CreatedAt"]
                     )
-                    if x["Status"]["State"] == "running" and x["DesiredState"] == "running"
+                    if x["DesiredState"] == "running"
                 ]
             except:
                 daemon_logger.error("Failed to connect to docker engine.", exc_info=True)
