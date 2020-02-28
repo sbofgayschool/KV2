@@ -49,7 +49,8 @@ set a full limitation (CPU, memory, disk space, etc.) on all single tasks.
 - Make all parameters, especially including paths to configurations, configurable in command line
 (at least paths to config templates, config files, data directories, pid files and all runtime used files),
 so multiple instances can be run using only one executable scripts without docker environment.
-- Find a way to add custom tools and configurations to Executors without building extra docker images.
+- Find ways to add custom tools and configurations to Executors without building extra docker images (using docker cp
+and file mounting is one way, but not good and easy enough to use).
 - Check the documents.
 - User test and feedback.
 
