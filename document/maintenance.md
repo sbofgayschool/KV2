@@ -132,4 +132,10 @@ the future.*
 
 Rolling update can be applied manually when running without docker and in single docker container, or by
 [rolling update](https://docs.docker.com/engine/swarm/swarm-tutorial/rolling-update/) mechanism provided by 
-docker swarm when the system in running in docker swarm.
+docker swarm when the system in running in docker swarm. Please allow sufficient time interval during rolling updating.
+
+The following command is an example of rolling updating judicator service.
+
+```bash
+docker service update --image comradestukov/khala:v0.1 --update-delay=60s judicator
+```

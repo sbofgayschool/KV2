@@ -336,6 +336,11 @@ docker service create \
 docker service rm $(docker service ls -q)
 ```
 
+#### Update Service
+```
+docker service update --image comradestukov/khala:v0.1 --update-delay=60s judicator
+```
+
 #### Ansible install docker
 ```
 Ref: https://www.cnblogs.com/sparkdev/p/9962904.html
