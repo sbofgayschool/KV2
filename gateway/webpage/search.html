@@ -115,7 +115,7 @@ function ()
     $("body").css({"min-width": "1100px"});
     $("#nav_search").addClass("active");
     // Search tasks
-    go_search();
+    go_search(false, false);
     // Refresh the result regularly
     setInterval("go_search(false, false);", refresh_interval);
 }
@@ -133,6 +133,14 @@ var search = new Vue(
         }
     }
 );
+
+// Variable for real search
+var search_data = {
+    id: "",
+    user: "",
+    start_time: "",
+    end_time: ""
+};
 
 // Vue object of tasks list
 var tasks = new Vue(
@@ -164,27 +172,33 @@ var page = new Vue(
 
 /**
  * Search all tasks through http api
- * @param reset_page If page selection is going to be reset
+ * @param change_condition If condition changes should be applied and page selection should be reset
  * @param clean_message If message is going to be cleaned before search
  */
-function go_search(reset_page, clean_message)
+function go_search(change_condition, clean_message)
 {
     // Clean the message, if required
     if (clean_message)
         show_message(false);
-    // Validate all fields
-    if ($("#search_id").val() && !/^[a-f0-9]{24}$/.test($("#search_id").val()))
+    // If the change to condition should be applied
+    if (change_condition)
     {
-        show_message(true, "alert-warning", "Validation Failed!", "Value of id is not valid!");
-        return;
-    }
-    if ($("#search_user").val() && parseInt($("#search_user").val()) < 0)
-    {
-        show_message(true, "alert-warning", "Validation Failed!", "Value of user is not valid!");
-        return;
+        // Validate all fields
+        if ($("#search_id").val() && !/^[a-f0-9]{24}$/.test($("#search_id").val()))
+        {
+            show_message(true, "alert-warning", "Validation Failed!", "Value of id is not valid!");
+            return;
+        }
+        if ($("#search_user").val() && parseInt($("#search_user").val()) < 0)
+        {
+            show_message(true, "alert-warning", "Validation Failed!", "Value of user is not valid!");
+            return;
+        }
+        // Change data for real search
+        search_data = JSON.parse(JSON.stringify(search.$data));
     }
     // Modify or generate data fields
-    var data = JSON.parse(JSON.stringify(search.$data));
+    var data = JSON.parse(JSON.stringify(search_data));
     var keys = JSON.parse(JSON.stringify(Object.keys(data)));
     // Delete all data with null value
     for (var k in keys)
@@ -195,7 +209,7 @@ function go_search(reset_page, clean_message)
     }
     data["limit"] = page_limit;
     // Reset page, if required
-    if (reset_page)
+    if (change_condition)
         page.$data.page = 1;
     data["page"] = page.$data.page - 1;
     // Make the ajax request

@@ -75,8 +75,7 @@ You can click the Id of each task to view the task in details. When viewing task
 only be downloaded, if exist. All fields which exceeded 1000 chars will be truncated, and you can download the file to
 view full text.
 
-Task search and task view page will refresh regularly. The refreshed result of task search page might be different if 
-the search condition has changed.
+Task search and task view page will refresh regularly.
 
 Undone task can be cancelled both on task search page and task view page, through the Cancel button.
 
