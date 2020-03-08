@@ -54,6 +54,7 @@ and file mounting is one way, but not good and easy enough to use).
 - Check the documents.
 - User test and feedback.
 - Add more informative information when returning error result for both HTTP and RPC interfaces.
+- Make webpages (especially task search and task add pages) more user-friendly.
 
 #### Finished / Canceled:
 
