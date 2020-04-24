@@ -147,7 +147,7 @@ Get a task in details.
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | id | string | Exact task id | false | null | a string with length of 24 | 0123456789abcdef01234567 |
 | file | string | If requesting any particular result file | false | null | see below for possible values | execute_output |
-| no_truncate | string | String | if the long text in result should not be truncate | false | false | only work when not getting a file | 1 |
+| no_truncate | string | if the long text in result should not be truncate | false | null | only work when not getting a file | 1 |
 
 - **Zip files can be requested:** compile_source, execute_data
 - **Text files can be requested:** compile_command, execute_input, execute_command, execute_standard, compile_output, 
@@ -159,7 +159,7 @@ compile_error, execute_output, execute_error.
 | key | type | meaning | must exist | can be null | note | example |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | result | int | Response code | true | false | see common response code | 0 |
-| tasks | Task | Search result | true | true | see below for Task structure | |
+| task | Task | Search result | true | true | see below for Task structure | |
 
 - **Task structure:**
 
@@ -200,8 +200,8 @@ compile_error, execute_output, execute_error.
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | compile_output | string | Output stream of compilation | true | false | | all done |
 | compile_error | string | Error stream of compilation | true | false | | some error |
-| compile_output | string | Output stream of execution | true | false | | 3 |
-| compile_error | string | Error stream of execution | true | false | | some error |
+| execute_output | string | Output stream of execution | true | false | | 3 |
+| execute_error | string | Error stream of execution | true | false | | some error |
 
 ## Executors
 

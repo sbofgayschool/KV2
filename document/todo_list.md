@@ -52,6 +52,7 @@ so multiple instances can be run using only one executable scripts without docke
 - Find ways to add custom tools and configurations to Executors without building extra docker images (using docker cp
 and file mounting is one way, but not good and easy enough to use).
 - Check the documents.
+- Check comments in code.
 - User test and feedback.
 - Add more informative information when returning error result for both HTTP and RPC interfaces.
 - Make webpages more user-friendly.

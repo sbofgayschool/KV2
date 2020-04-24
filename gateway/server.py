@@ -66,7 +66,7 @@ class Server(flask.Flask):
         self.jinja_env.variable_end_string = "]]"
         self.config["MAX_CONTENT_LENGTH"] = TASK_DICTIONARY_MAX_SIZE
 
-        # Generate proxy for etcd and mongodb
+        # Generate proxy for etcd
         with open(etcd_conf_path, "r") as f:
             self.local_etcd = generate_local_etcd_proxy(json.load(f)["etcd"], self.logger)
 
