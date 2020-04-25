@@ -69,7 +69,8 @@ class TestUwsgiDaemon(unittest.TestCase):
                     "port": "7000",
                     "module": "test_uwsgi_daemon:temp_server",
                     "master": True,
-                    "process": 1
+                    "processes": 2,
+                    "threads": 2
                 }
             }, indent=4))
 

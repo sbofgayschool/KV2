@@ -96,5 +96,6 @@ in the future).*
 | :---: | :---: | :---: | :---: | :---: | :---: |
 | --uwsgi-host | Listen address of uwsgi | string | 0.0.0.0 | DOCKER for full container name, NI name in upper letters for address of that NI | --uwsgi-host=0.0.0.0 |
 | --uwsgi-port | Listen port of uwsgi | int | 7000 | | --uwsgi-port=7000 |
-| --uwsgi-process | Number of process of the uwsgi | int | 3 | | --uwsgi-process=3 |
+| --uwsgi-processes | Number of process of the uwsgi | int | 4 | | --uwsgi-processes=3 |
+| --uwsgi-threads | Number of thread in each the uwsgi process | int | 2 | | --uwsgi-threads=2 |
 | --uwsgi-print-log | Print the log of uwsgi module to stdout | bool | false | | --uwsgi-print-log |

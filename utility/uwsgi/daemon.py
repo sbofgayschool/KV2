@@ -72,7 +72,8 @@ def run(module_name="Gateway", uwsgi_conf_path="config/uwsgi.json"):
     ini["uwsgi"] = {
         "http": config["uwsgi"]["host"] + ":" + config["uwsgi"]["port"],
         "module": config["uwsgi"]["module"],
-        "process": config["uwsgi"]["process"],
+        "processes": config["uwsgi"]["processes"],
+        "threads": config["uwsgi"]["threads"],
         "master": config["uwsgi"]["master"]
     }
     with open(config["uwsgi"]["exe"][-1], "w") as f:
@@ -116,8 +117,10 @@ def command_parser(parser):
                         help="Listen address of uwsgi")
     parser.add_argument("--uwsgi-port", type=int, dest="uwsgi_port", default=None,
                         help="Listen port of uwsgi")
-    parser.add_argument("--uwsgi-process", type=int, dest="uwsgi_process", default=None,
+    parser.add_argument("--uwsgi-processes", type=int, dest="uwsgi_processes", default=None,
                         help="Number of process of the uwsgi")
+    parser.add_argument("--uwsgi-threads", type=int, dest="uwsgi_threads", default=None,
+                        help="Number of thread in each the uwsgi process")
     parser.add_argument("--uwsgi-print-log", dest="uwsgi_print_log", action="store_const", const=True, default=False,
                         help="Print the log of uwsgi module to stdout")
 
@@ -136,8 +139,10 @@ def command_parser(parser):
             config_sub["uwsgi"]["host"] = transform_address(args.uwsgi_host, client)
         if args.uwsgi_port is not None:
             config_sub["uwsgi"]["port"] = str(args.uwsgi_port)
-        if args.uwsgi_process is not None:
-            config_sub["uwsgi"]["process"] = args.uwsgi_process
+        if args.uwsgi_processes is not None:
+            config_sub["uwsgi"]["processes"] = args.uwsgi_processes
+        if args.uwsgi_threads is not None:
+            config_sub["uwsgi"]["threads"] = args.uwsgi_threads
         if args.uwsgi_print_log:
             config_sub["daemon"].pop("log_daemon", None)
             config_sub["daemon"].pop("log_uwsgi", None)

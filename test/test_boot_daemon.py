@@ -76,7 +76,8 @@ class TestBootDaemon(unittest.TestCase):
                     "port": "7000",
                     "module": "test_boot_daemon:temp_server",
                     "master": True,
-                    "process": 1
+                    "processes": 1,
+                    "threads": 1
                 }
             }, indent=4))
         os.mkdir("config")

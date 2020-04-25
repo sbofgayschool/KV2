@@ -21,7 +21,8 @@
         "port": "7000",
         "module": "server:server",
         "master": true,
-        "process": 3
+        "processes": 4,
+		"threads": 2
     },
     "server":
     {
