@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 bash clean.bash
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 if [[ $# == 0 ]]; then
     i=0
     for file in `ls`; do
